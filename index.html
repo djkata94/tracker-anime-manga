@@ -1455,7 +1455,42 @@
 </head>
 <body>
 
+    <!-- ===================================================================
+         🔐 SCHERMATA DI LOGIN (Supabase Auth)
+         Resta nel DOM sempre; viene mostrata/nascosta via JS a seconda che
+         ci sia o meno una sessione valida. Non tocca il resto della grafica.
+    ==================================================================== -->
+    <div id="loginOverlay" style="display:none; position:fixed; inset:0; z-index:100000; background:var(--bg-dark); align-items:center; justify-content:center; padding:20px;">
+        <div style="width:100%; max-width:360px; background:var(--surface-solid); border:1px solid var(--border-color); border-radius:var(--radius); padding:32px 28px; box-shadow:0 20px 60px rgba(0,0,0,0.5);">
+            <div style="text-align:center; margin-bottom:24px;">
+                <div style="font-family:monospace; font-weight:800; letter-spacing:1px; color:var(--primary); font-size:20px;">🎮 NERD.TRACKER</div>
+                <div style="color:var(--text-muted); font-size:13px; margin-top:4px;">Accedi per continuare</div>
+            </div>
+            <form id="loginForm">
+                <label style="display:block; font-size:13px; color:var(--text-muted); margin-bottom:6px;">Email</label>
+                <input type="email" id="loginEmail" required autocomplete="username"
+                       style="width:100%; padding:10px 12px; margin-bottom:16px; background:var(--surface); border:1px solid var(--border-color); border-radius:var(--radius-sm); color:var(--text); font-size:14px;">
+                <label style="display:block; font-size:13px; color:var(--text-muted); margin-bottom:6px;">Password</label>
+                <input type="password" id="loginPassword" required autocomplete="current-password"
+                       style="width:100%; padding:10px 12px; margin-bottom:8px; background:var(--surface); border:1px solid var(--border-color); border-radius:var(--radius-sm); color:var(--text); font-size:14px;">
+                <div id="loginError" style="color:var(--danger); font-size:13px; min-height:18px; margin-bottom:8px;"></div>
+                <button type="submit" id="loginSubmitBtn"
+                        style="width:100%; padding:11px; background:var(--primary); border:none; border-radius:var(--radius-sm); color:#fff; font-weight:600; font-size:14px; cursor:pointer;">
+                    Accedi
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- ===================================================================
+         Da qui in giù: il sito vero e proprio, invariato — solo avvolto in
+         un contenitore che resta nascosto finché l'autenticazione non è
+         confermata (vedi script di autenticazione in fondo alla pagina).
+    ==================================================================== -->
+    <div id="appRoot" style="display:none;">
+
     <div class="navbar">
+        <button id="btnLogout" class="btn btn-nav" style="margin-left:auto;" onclick="handleLogout()" title="Esci">🚪 Esci</button>
         <span style="font-weight: 800; color: var(--primary); margin-right: 20px; font-family: monospace; letter-spacing: 1px;">🎮 NERD.TRACKER</span>
         <button id="nav-home" class="btn btn-nav active-view" onclick="switchView('home')">🏠 Home</button>
         <button id="nav-anime" class="btn btn-nav" onclick="switchView('anime')">📺 Anime</button>
@@ -2295,6 +2330,87 @@
     </div>
       <button id="backToTop" title="Torna in alto">↑</button>
       <div id="toastContainer"></div>
+
+    </div><!-- /#appRoot -->
+
+    <!-- ===================================================================
+         🔐 Client Supabase + gestione autenticazione (login/logout)
+         Va PRIMA di ogni altro script perché decide se mostrare il sito
+         o la schermata di login.
+    ==================================================================== -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script>
+        // --- Configurazione connessione a Supabase --------------------------
+        // Questi due valori NON sono segreti: sono pensati apposta per stare
+        // in chiaro nel codice del frontend. La vera protezione dei dati la
+        // fanno il login (Auth) + le regole RLS sul database, non la
+        // segretezza di questi valori.
+        const SUPABASE_URL = 'https://jcclzcyezqbhmxptlnoo.supabase.co';
+        const SUPABASE_ANON_KEY = 'sb_publishable_YsZNPRv7TVA39DoOi1P5cg_VJds36b5';
+
+        const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+        const loginOverlayEl = document.getElementById('loginOverlay');
+        const appRootEl = document.getElementById('appRoot');
+        const loginFormEl = document.getElementById('loginForm');
+        const loginErrorEl = document.getElementById('loginError');
+        const loginSubmitBtnEl = document.getElementById('loginSubmitBtn');
+
+        function mostraApp_() {
+            loginOverlayEl.style.display = 'none';
+            appRootEl.style.display = '';
+        }
+
+        function mostraLogin_() {
+            appRootEl.style.display = 'none';
+            loginOverlayEl.style.display = 'flex';
+        }
+
+        // Al caricamento della pagina: c'è già una sessione valida (es. non
+        // hai mai fatto logout e il browser se la ricorda) o serve loggarsi?
+        supabaseClient.auth.getSession().then(function(result) {
+            const session = result.data.session;
+            if (session) {
+                mostraApp_();
+            } else {
+                mostraLogin_();
+            }
+        });
+
+        // Se la sessione scade o l'utente fa logout da un'altra scheda,
+        // reagiamo comunque mostrando il login.
+        supabaseClient.auth.onAuthStateChange(function(event, session) {
+            if (event === 'SIGNED_OUT') {
+                mostraLogin_();
+            }
+        });
+
+        loginFormEl.addEventListener('submit', function(e) {
+            e.preventDefault();
+            loginErrorEl.textContent = '';
+            loginSubmitBtnEl.disabled = true;
+            loginSubmitBtnEl.textContent = 'Accesso in corso...';
+
+            const email = document.getElementById('loginEmail').value.trim();
+            const password = document.getElementById('loginPassword').value;
+
+            supabaseClient.auth.signInWithPassword({ email: email, password: password })
+                .then(function(result) {
+                    loginSubmitBtnEl.disabled = false;
+                    loginSubmitBtnEl.textContent = 'Accedi';
+                    if (result.error) {
+                        loginErrorEl.textContent = '❌ Email o password non corrette.';
+                        return;
+                    }
+                    mostraApp_();
+                });
+        });
+
+        function handleLogout() {
+            supabaseClient.auth.signOut();
+        }
+    </script>
+
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
     <script>
         // Lista Globale dei Generi unificata
