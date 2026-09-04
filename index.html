@@ -2561,21 +2561,97 @@
         // ==========================================
         //                  LOGICA ANIME
         // ==========================================
+        // ==========================================
+        //   FASE 11 — GRUPPO ANIME (Supabase diretto)
+        // ==========================================
+
+        // Porting 1:1 di calcolaColoreVisioneAnime_ da codice.gs — pura
+        // logica, nessuna chiamata al server, quindi la traduzione è
+        // identica riga per riga.
+        function calcolaColoreVisioneAnime_(stagioniTotali, stagioniViste, filmTotali, filmVisti, stato, haProgressoParziale) {
+            const statoClean = String(stato || '').trim().toLowerCase();
+            const completato = (stagioniViste === stagioniTotali) && (filmVisti === filmTotali);
+            const iniziato = (stagioniViste > 0) || (filmVisti > 0) || !!haProgressoParziale;
+            if (!iniziato) return 'bianco';
+            if (!completato) return 'celeste';
+            return (statoClean === 'concluso') ? 'verde' : 'giallo';
+        }
+
+        // Porting di getAnimeData(): legge la tabella anime + episodi_anime da
+        // Supabase e ricostruisce esattamente lo stesso "shape" di dati che
+        // produceva codice.gs (stessi nomi di campo, stesso calcolo colore,
+        // stesso auto-link delle URL nelle note).
+        async function getAnimeDataSB_() {
+            const [animeRes, episodiRes] = await Promise.all([
+                supabaseClient.from('anime').select('*').order('titolo', { ascending: true }),
+                supabaseClient.from('episodi_anime').select('anime_titolo,tipo,numero,episodi_totali,episodi_visti')
+            ]);
+            if (animeRes.error) throw animeRes.error;
+            if (episodiRes.error) throw episodiRes.error;
+
+            const animeRows = animeRes.data || [];
+            const episodiRows = episodiRes.data || [];
+
+            const titoliConProgressoParziale = new Set();
+            episodiRows.forEach(function(e) {
+                if ((parseInt(e.episodi_visti) || 0) > 0) {
+                    titoliConProgressoParziale.add(e.anime_titolo);
+                }
+            });
+
+            return animeRows.map(function(a) {
+                let notaTesto = a.note || '';
+                if (typeof notaTesto === 'string' && !notaTesto.includes('<a ') && notaTesto.match(/https?:\/\/[^\s]+/i)) {
+                    notaTesto = notaTesto.replace(/(https?:\/\/[^\s]+)/gi, '<a href="$1" target="_blank" style="color: #00ffcc; text-decoration: underline; font-weight: 500;">$1</a>');
+                }
+
+                const haProgressoParziale = titoliConProgressoParziale.has(a.titolo);
+                const coloreVisione = calcolaColoreVisioneAnime_(
+                    a.stagioni_totali, a.stagioni_viste, a.film_totali, a.film_visti, a.stato, haProgressoParziale
+                );
+
+                return {
+                    titolo: a.titolo, stato: a.stato || 'In corso', note: notaTesto,
+                    valutazione: (a.valutazione === null || a.valutazione === undefined) ? '-' : a.valutazione,
+                    stagioniTotali: a.stagioni_totali || 0, stagioniViste: a.stagioni_viste || 0,
+                    filmTotali: a.film_totali || 0, filmVisti: a.film_visti || 0,
+                    coloreVisione: coloreVisione, generi: a.generi || '', preferito: !!a.preferito,
+                    immagine: a.immagine || '', priorita: !!a.priorita
+                };
+            });
+        }
+
+        // Porting di getTuttiEpisodiAnime()
+        async function getTuttiEpisodiAnimeSB_() {
+            const { data, error } = await supabaseClient
+                .from('episodi_anime')
+                .select('anime_titolo,tipo,numero,episodi_totali,episodi_visti');
+            if (error) throw error;
+            return (data || []).map(function(r) {
+                return { titolo: r.anime_titolo, tipo: r.tipo, numero: r.numero, episodiTotali: r.episodi_totali, episodiVisti: r.episodi_visti };
+            });
+        }
+
         function caricaDatiAnime() {
             document.getElementById('loadingAnime').style.display = 'block';
             document.getElementById('animeTable').style.display = 'none';
-            
-            google.script.run.withSuccessHandler(function(data) {
-                animeList = data || [];
-                // NUOVO: carica anche le righe episodi (stagioni/film) di tutti i titoli,
-                // necessarie per il contatore globale e per l'overlay episodi
-                google.script.run.withSuccessHandler(function(epData) {
+
+            getAnimeDataSB_()
+                .then(function(data) {
+                    animeList = data || [];
+                    return getTuttiEpisodiAnimeSB_();
+                })
+                .then(function(epData) {
                     episodiAnimeList = epData || [];
                     document.getElementById('loadingAnime').style.display = 'none';
                     document.getElementById('animeTable').style.display = 'table';
                     renderListAnime();
-                }).getTuttiEpisodiAnime();
-            }).getAnimeData();
+                })
+                .catch(function(err) {
+                    console.error('Errore caricamento dati Anime da Supabase:', err);
+                    document.getElementById('loadingAnime').style.display = 'none';
+                    alert('❌ Errore nel caricamento degli anime. Controlla la console per i dettagli.');
+                });
         }
 
         function renderListAnime() {
