@@ -3342,12 +3342,11 @@ document.getElementById('btnRandomAnime').onclick = function() {
                 // la scriviamo ora sul foglio satellite: a questo punto la riga in SinossiAnime
                 // esiste di sicuro (creata da addAnime, o già presente in caso di modifica).
                 if (sinossiPendenteAnime) {
-                    google.script.run
-                        .withFailureHandler(function(err) {
+                    impostaSinossiSB_(dati.titolo, 'anime', sinossiPendenteAnime)
+                        .catch(function(err) {
                             console.error('Errore salvataggio sinossi AniList: ' + err);
                             showToast('Opera salvata, ma la sinossi AniList non è stata scritta. Riprova dal pulsante 🔎.', 'error');
-                        })
-                        .impostaSinossi(dati.titolo, 'anime', sinossiPendenteAnime);
+                        });
                     sinossiPendenteAnime = null;
                 }
                 document.getElementById('btnSalvaAnime').innerText = "Salva";
@@ -4282,12 +4281,11 @@ function apriLightbox(url) {
                 // Se in questa sessione del modale è stata scelta una sinossi da AniList,
                 // la scriviamo ora sul foglio satellite (vedi commento analogo per l'anime).
                 if (sinossiPendenteManga) {
-                    google.script.run
-                        .withFailureHandler(function(err) {
+                    impostaSinossiSB_(dati.titolo, 'manga', sinossiPendenteManga)
+                        .catch(function(err) {
                             console.error('Errore salvataggio sinossi AniList: ' + err);
                             showToast('Opera salvata, ma la sinossi AniList non è stata scritta. Riprova dal pulsante 🔎.', 'error');
-                        })
-                        .impostaSinossi(dati.titolo, 'manga', sinossiPendenteManga);
+                        });
                     sinossiPendenteManga = null;
                 }
                 document.getElementById('btnSalvaManga').innerText = "Salva";
@@ -5483,7 +5481,44 @@ function togglePinManga(titolo, btn, event) {
         });
 }
 
+// ==========================================
+//   FASE 11 — GRUPPO SINOSSI (Supabase diretto)
+// ==========================================
 
+async function getSinossiSB_(titolo, tipo) {
+    const tabella = (tipo === 'anime') ? 'sinossi_anime' : 'sinossi_manga';
+    const colonnaTitolo = (tipo === 'anime') ? 'anime_titolo' : 'manga_titolo';
+    const messaggioErrore = "Nessuna informazione su questa opera!";
+
+    const { data, error } = await supabaseClient.from(tabella).select('sinossi').eq(colonnaTitolo, String(titolo).trim());
+    if (error) throw error;
+    if (!data || data.length === 0) return messaggioErrore;
+
+    const sinossi = String(data[0].sinossi || '').trim();
+    return sinossi ? sinossi : messaggioErrore;
+}
+
+async function impostaSinossiSB_(titolo, tipo, testo) {
+    const tabella = (tipo === 'anime') ? 'sinossi_anime' : 'sinossi_manga';
+    const colonnaTitolo = (tipo === 'anime') ? 'anime_titolo' : 'manga_titolo';
+    const titoloTrim = String(titolo).trim();
+
+    const { data, error: errSel } = await supabaseClient.from(tabella).select(colonnaTitolo).eq(colonnaTitolo, titoloTrim);
+    if (errSel) throw errSel;
+
+    if (data && data.length > 0) {
+        const { error: errUpd } = await supabaseClient.from(tabella).update({ sinossi: testo || '' }).eq(colonnaTitolo, titoloTrim);
+        if (errUpd) throw errUpd;
+    } else {
+        const nuovaRiga = {};
+        nuovaRiga[colonnaTitolo] = titoloTrim;
+        nuovaRiga.sinossi = testo || '';
+        const { error: errIns } = await supabaseClient.from(tabella).insert([nuovaRiga]);
+        if (errIns) throw errIns;
+    }
+    return true;
+}
+		
 // === NUOVE FUNZIONI DI GESTIONE OVERLAY PER LE SINOSSI ===
 function mostraSinossi(titolo, tipo) {
     let overlay = document.getElementById('sinossiOverlay');
@@ -5541,16 +5576,14 @@ function mostraSinossi(titolo, tipo) {
     overlay.style.opacity = '1';
     document.getElementById('sinossiContent').style.transform = 'scale(1)';
     
-    // Esegue la chiamata asincrona al server di Google Apps Script
-    google.script.run
-        .withSuccessHandler(function(testoSinossi) {
+    getSinossiSB_(titolo, tipo)
+        .then(function(testoSinossi) {
             document.getElementById('sinossiBody').innerText = testoSinossi;
         })
-        .withFailureHandler(function(err) {
+        .catch(function(err) {
             console.error("Errore nel recupero della sinossi:", err);
             document.getElementById('sinossiBody').innerText = "Errore di connessione durante il recupero dei dati.";
-        })
-        .getSinossi(titolo, tipo);
+        });
 }
 
 function chiudiSinossi() {
