@@ -4774,16 +4774,10 @@ function apriLightbox(url) {
             // reale del foglio collegato allo script e lo imposta come href.
             const driveBtnEl = document.getElementById('driveShortcutBtn');
             if (driveBtnEl) {
-                google.script.run
-                    .withSuccessHandler(function(url) {
-                        if (url) driveBtnEl.href = url;
-                        driveBtnEl.classList.remove('is-loading');
-                    })
-                    .withFailureHandler(function(err) {
-                        console.error('Errore nel recupero dell\'URL del Google Sheet:', err);
-                        driveBtnEl.classList.remove('is-loading');
-                    })
-                    .getSpreadsheetUrl();
+                const matchProgetto = SUPABASE_URL.match(/^https:\/\/([a-z0-9]+)\.supabase\.co/i);
+                const projectRef = matchProgetto ? matchProgetto[1] : '';
+                if (projectRef) driveBtnEl.href = 'https://supabase.com/dashboard/project/' + projectRef + '/editor';
+                driveBtnEl.classList.remove('is-loading');
             }
 
             const searchCinemaEl = document.getElementById('searchInpCinema');
