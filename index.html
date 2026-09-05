@@ -3835,16 +3835,182 @@ document.getElementById('btnRandomAnime').onclick = function() {
         // ==========================================
         //                  LOGICA MANGA
         // ==========================================
+
+        function calcolaColoreLetturaManga_(volumiTotali, volumiLetti, stato) {
+            const totali = parseInt(volumiTotali) || 0;
+            const letti = parseInt(volumiLetti) || 0;
+            const statoNorm = String(stato || '').trim().toLowerCase();
+            if (totali <= 0 || letti <= 0) return 'bianco';
+            if (letti < totali) return 'giallo';
+            return (statoNorm === 'in corso') ? 'giallo' : 'verde';
+        }
+
+        async function getMangaDataSB_() {
+            const { data, error } = await supabaseClient.from('manga').select('*').order('titolo', { ascending: true });
+            if (error) throw error;
+            return (data || []).map(function(m) {
+                let notaTesto = m.note || '';
+                if (typeof notaTesto === 'string' && !notaTesto.includes('<a ') && notaTesto.match(/https?:\/\/[^\s]+/i)) {
+                    notaTesto = notaTesto.replace(/(https?:\/\/[^\s]+)/gi, '<a href="$1" target="_blank" style="color: #00ffcc; text-decoration: underline; font-weight: 500;">$1</a>');
+                }
+                const coloreLettura = calcolaColoreLetturaManga_(m.volumi, m.volumi_letti, m.stato);
+                return {
+                    titolo: m.titolo, tipologia: m.tipologia || 'Manga', volumi: m.volumi || 0,
+                    stato: m.stato || 'In corso', acquistato: m.acquistato ? 'Sì' : 'No', note: notaTesto,
+                    coloreLettura: coloreLettura, generi: m.generi || '', preferito: !!m.preferito,
+                    immagine: m.immagine || '', volumiLetti: m.volumi_letti || 0, priorita: !!m.priorita
+                };
+            });
+        }
+
+        async function addMangaSB_(dati) {
+            const acquistatoBool = (dati.acquistato === 'Sì');
+            const { error: errIns } = await supabaseClient.from('manga').insert([{
+                titolo: dati.titolo || '', tipologia: dati.tipologia || 'Manga', volumi: parseInt(dati.volumi) || 0,
+                stato: dati.stato || 'In corso', acquistato: acquistatoBool, note: dati.note || '',
+                generi: dati.generi || '', preferito: false, immagine: dati.immagine || '',
+                volumi_letti: 0, priorita: false
+            }]);
+            if (errIns) throw errIns;
+
+            await supabaseClient.from('sinossi_manga').insert([{ manga_titolo: dati.titolo, sinossi: '' }]);
+            await registraLogSB_(dati.titolo, 'MANGA', 'CREAZIONE', 'N/D', dati.stato || 'In corso');
+            if (acquistatoBool) await registraLogSB_(dati.titolo, 'MANGA', 'ACQUISTO', 'No', 'Sì');
+
+            return getMangaDataSB_();
+        }
+
+        async function updateMangaSB_(vecchioTitolo, dati) {
+            const vecchioTitoloTrim = String(vecchioTitolo).trim();
+            const { data: righeVecchie, error: errSel } = await supabaseClient.from('manga').select('*').eq('titolo', vecchioTitoloTrim);
+            if (errSel) throw errSel;
+            if (!righeVecchie || righeVecchie.length === 0) return getMangaDataSB_();
+            const vecchiaRiga = righeVecchie[0];
+
+            const volumiTotaliNuovi = parseInt(dati.volumi) || 0;
+            const statoNuovo = dati.stato || 'In corso';
+            const vecchioStatoLogManga = vecchiaRiga.stato || 'In corso';
+            const vecchioAcquistatoLogManga = vecchiaRiga.acquistato ? 'Sì' : 'No';
+
+            let volumiLettiEsistenti = vecchiaRiga.volumi_letti || 0;
+            if (volumiTotaliNuovi > 0 && volumiLettiEsistenti > volumiTotaliNuovi) {
+                volumiLettiEsistenti = volumiTotaliNuovi;
+            }
+
+            const acquistatoNuovo = dati.acquistato || 'No';
+
+            const { error: errUpd } = await supabaseClient.from('manga').update({
+                titolo: dati.titolo || '', tipologia: dati.tipologia || 'Manga', volumi: volumiTotaliNuovi,
+                stato: statoNuovo, acquistato: (acquistatoNuovo === 'Sì'), note: dati.note || '',
+                generi: dati.generi || '', immagine: dati.immagine || '', volumi_letti: volumiLettiEsistenti
+            }).eq('titolo', vecchioTitoloTrim);
+            if (errUpd) throw errUpd;
+
+            try {
+                const titoloLogManga = dati.titolo || vecchioTitolo;
+                if (String(statoNuovo).trim() !== String(vecchioStatoLogManga).trim()) {
+                    const eraConcluso = String(vecchioStatoLogManga).trim().toLowerCase().includes('conclus');
+                    const oraConcluso = String(statoNuovo).trim().toLowerCase().includes('conclus');
+                    if (oraConcluso && !eraConcluso) {
+                        await registraLogSB_(titoloLogManga, 'MANGA', 'COMPLETAMENTO', vecchioStatoLogManga, statoNuovo);
+                    } else {
+                        await registraLogSB_(titoloLogManga, 'MANGA', 'CAMBIO_STATO', vecchioStatoLogManga, statoNuovo);
+                    }
+                }
+                if (String(acquistatoNuovo).trim() !== String(vecchioAcquistatoLogManga).trim() && acquistatoNuovo === 'Sì') {
+                    await registraLogSB_(titoloLogManga, 'MANGA', 'ACQUISTO', vecchioAcquistatoLogManga, acquistatoNuovo);
+                }
+            } catch (logErr) {
+                console.error("Errore durante la valutazione degli eventi di log per updateManga: " + logErr);
+            }
+
+            return getMangaDataSB_();
+        }
+
+        async function updateMangaVolumiLettiSB_(titolo, nuovoValore) {
+            const titoloTrim = String(titolo).trim();
+            const { data: righe, error: errSel } = await supabaseClient
+                .from('manga').select('volumi,stato,volumi_letti').eq('titolo', titoloTrim);
+            if (errSel) throw errSel;
+            if (!righe || righe.length === 0) return false;
+
+            const volumiTotali = righe[0].volumi || 0;
+            const statoOpera = righe[0].stato || 'In corso';
+            const volumiLettiPrecedenti = righe[0].volumi_letti || 0;
+
+            let volumiLetti = parseInt(nuovoValore) || 0;
+            if (volumiLetti < 0) volumiLetti = 0;
+            if (volumiTotali > 0 && volumiLetti > volumiTotali) volumiLetti = volumiTotali;
+
+            const coloreCalcolato = calcolaColoreLetturaManga_(volumiTotali, volumiLetti, statoOpera);
+
+            const { error: errUpd } = await supabaseClient.from('manga').update({ volumi_letti: volumiLetti }).eq('titolo', titoloTrim);
+            if (errUpd) throw errUpd;
+
+            try {
+                if (volumiLetti !== volumiLettiPrecedenti) {
+                    await registraLogSB_(titolo, 'MANGA', 'AVANZAMENTO', volumiLettiPrecedenti, volumiLetti);
+                    if (coloreCalcolato === 'verde' && volumiTotali > 0 && volumiLettiPrecedenti < volumiTotali) {
+                        await registraLogSB_(titolo, 'MANGA', 'COMPLETAMENTO',
+                            volumiLettiPrecedenti + '/' + volumiTotali, volumiLetti + '/' + volumiTotali);
+                    }
+                }
+            } catch (logErr) {
+                console.error("Errore durante la valutazione degli eventi di log per updateMangaVolumiLetti: " + logErr);
+            }
+
+            return { volumiLetti: volumiLetti, coloreLettura: coloreCalcolato };
+        }
+
+        async function deleteMangaSB_(titolo) {
+            const { error } = await supabaseClient.from('manga').delete().eq('titolo', String(titolo).trim());
+            if (error) throw error;
+            return getMangaDataSB_();
+        }
+
+        async function toggleMangaPreferitoSB_(titolo, preferitoStato) {
+            const { error } = await supabaseClient.from('manga').update({ preferito: !!preferitoStato }).eq('titolo', String(titolo).trim());
+            if (error) throw error;
+        }
+
+        async function flagMangaAcquistatoSB_(titolo) {
+            const titoloTrim = String(titolo).trim();
+            const { data: righe, error: errSel } = await supabaseClient.from('manga').select('acquistato').eq('titolo', titoloTrim);
+            if (errSel) throw errSel;
+            if (!righe || righe.length === 0) return false;
+            if (righe[0].acquistato === true) return { acquistato: 'Sì' };
+
+            const { error: errUpd } = await supabaseClient.from('manga').update({ acquistato: true }).eq('titolo', titoloTrim);
+            if (errUpd) throw errUpd;
+
+            try {
+                await registraLogSB_(titolo, 'MANGA', 'ACQUISTO', 'No', 'Sì');
+            } catch (logErr) {
+                console.error("Errore durante la registrazione del log per flagMangaAcquistato: " + logErr);
+            }
+
+            return { acquistato: 'Sì' };
+        }
+
+        async function toggleMangaPrioritaSB_(titolo, prioritaStato) {
+            const { error } = await supabaseClient.from('manga').update({ priorita: !!prioritaStato }).eq('titolo', String(titolo).trim());
+            if (error) throw error;
+        }
+		
         function caricaDatiManga() {
             document.getElementById('loadingManga').style.display = 'block';
             document.getElementById('mangaTable').style.display = 'none';
             
-            google.script.run.withSuccessHandler(function(data) {
+                    getMangaDataSB_().then(function(data) {
                 mangaList = data || [];
                 document.getElementById('loadingManga').style.display = 'none';
                 document.getElementById('mangaTable').style.display = 'table';
                 renderListManga();
-            }).getMangaData();
+            }).catch(function(err) {
+                console.error('Errore caricamento dati Manga da Supabase:', err);
+                document.getElementById('loadingManga').style.display = 'none';
+                alert('❌ Errore nel caricamento dei manga. Controlla la console per i dettagli.');
+            });
         }
 
         function renderListManga() {
@@ -4135,27 +4301,25 @@ function apriLightbox(url) {
             };
             
             if (targetEditTitleManga) {
-                google.script.run
-                    .withSuccessHandler(cb)
-                    .withFailureHandler(errorCb)
-                    .updateManga(targetEditTitleManga, dati);
+                updateMangaSB_(targetEditTitleManga, dati).then(cb).catch(errorCb);
             } else {
-                google.script.run
-                    .withSuccessHandler(cb)
-                    .withFailureHandler(errorCb)
-                    .addManga(dati);
+                addMangaSB_(dati).then(cb).catch(errorCb);
             }
         };
 
         window.rimuoviManga = function(titolo) {
             if (confirm("Eliminare definitivamente '" + titolo + "'?")) {
-                google.script.run.withSuccessHandler(function(data) {
+                deleteMangaSB_(titolo).then(function(data) {
                     mangaList = data || [];
                     renderListManga();
                     showToast('Manga eliminato', 'success');
-                }).deleteManga(titolo);
+                }).catch(function(err) {
+                    console.error('Errore eliminazione manga:', err);
+                    alert("❌ Errore durante l'eliminazione.");
+                });
             }
         };
+		
         window.chiudiModale = function(tipo) {
             document.getElementById('modalOverlay' + tipo).classList.remove('active');
         };
@@ -4951,16 +5115,14 @@ function modificaVolumiLettiManga(titolo, delta) {
         renderWidgetInCorso();
     }
 
-    // Chiamata asincrona silente al server Apps Script (aggiorna Excel in background)
-    google.script.run
-        .withSuccessHandler(function(res) {
-            console.log("Volumi Letti aggiornati su Excel per: " + titolo);
+    updateMangaVolumiLettiSB_(titolo, volumiLetti)
+        .then(function(res) {
+            console.log("Volumi Letti aggiornati su Supabase per: " + titolo);
         })
-        .withFailureHandler(function(err) {
+        .catch(function(err) {
             console.error("Errore aggiornamento volumi letti: ", err);
             alert("❌ Errore di sincronizzazione dei volumi letti. Ricarica la pagina.");
-        })
-        .updateMangaVolumiLetti(titolo, volumiLetti);
+        });
 }
 
 // ==========================================================
@@ -5039,15 +5201,13 @@ function toggleFavoriteManga(titolo, btn) {
         renderListManga();
     }
 
-    // Chiamata asincrona silente al server Apps Script (aggiorna Excel in background)
-    google.script.run
-        .withSuccessHandler(function(res) {
-             console.log("Preferito aggiornato su Excel per: " + titolo);
+    toggleMangaPreferitoSB_(titolo, nuovoStato)
+        .then(function() {
+             console.log("Preferito aggiornato su Supabase per: " + titolo);
         })
-        .withFailureHandler(function(err) {
+        .catch(function(err) {
              console.error("Errore aggiornamento preferito: ", err);
-        })
-        .toggleMangaPreferito(titolo, nuovoStato);
+        });
 }
 
 // === NUOVA FUNZIONE: flagga l'acquisto di un manga direttamente dalla lista (senza modale) ===
@@ -5063,21 +5223,20 @@ function flagAcquistoManga(titolo, btn) {
         btn.innerHTML = '⏳';
     }
 
-    google.script.run
-        .withSuccessHandler(function(res) {
+    flagMangaAcquistatoSB_(titolo)
+        .then(function(res) {
             item.acquistato = 'Sì';
             renderListManga();
             showToast('🛒 ' + titolo + ' segnato come acquistato', 'success');
         })
-        .withFailureHandler(function(err) {
+        .catch(function(err) {
             console.error("Errore aggiornamento acquistato: ", err);
             alert("❌ Errore durante l'aggiornamento dello stato di acquisto.");
             if (btn) {
                 btn.disabled = false;
                 btn.innerHTML = '❌ No';
             }
-        })
-        .flagMangaAcquistato(titolo);
+        });
 }
 
 // === NUOVA FUNZIONE: inserisce il voto di un anime direttamente dalla lista (senza modale) ===
@@ -5194,15 +5353,13 @@ function togglePinManga(titolo, btn, event) {
     // Ridisegna subito la tabella: l'opera pinnata deve saltare in cima all'ordinamento
     renderListManga();
 
-    // Chiamata asincrona silente al server Apps Script (aggiorna Excel in background)
-    google.script.run
-        .withSuccessHandler(function(res) {
-             console.log("Priorità aggiornata su Excel per Manga: " + titolo);
+    toggleMangaPrioritaSB_(titolo, nuovoStato)
+        .then(function() {
+             console.log("Priorità aggiornata su Supabase per Manga: " + titolo);
         })
-        .withFailureHandler(function(err) {
+        .catch(function(err) {
              console.error("Errore aggiornamento priorità Manga: ", err);
-        })
-        .toggleMangaPriorita(titolo, nuovoStato);
+        });
 }
 
 
