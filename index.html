@@ -1490,13 +1490,13 @@
     <div id="appRoot" style="display:none;">
 
     <div class="navbar">
-        <button id="btnLogout" class="btn btn-nav" style="margin-left:auto;" onclick="handleLogout()" title="Esci">🚪 Esci</button>
         <span style="font-weight: 800; color: var(--primary); margin-right: 20px; font-family: monospace; letter-spacing: 1px;">🎮 NERD.TRACKER</span>
         <button id="nav-home" class="btn btn-nav active-view" onclick="switchView('home')">🏠 Home</button>
         <button id="nav-anime" class="btn btn-nav" onclick="switchView('anime')">📺 Anime</button>
         <button id="nav-manga" class="btn btn-nav" onclick="switchView('manga')">📚 Manga</button>
         <button id="nav-cinema" class="btn btn-nav" onclick="switchView('cinema')">🎬 Cinema</button>
         <button id="nav-stats" class="btn btn-nav" onclick="switchView('stats')">📊 Stats</button>
+        <button id="btnLogout" class="btn btn-nav" style="margin-left:auto;" onclick="handleLogout()" title="Esci">⏻ Esci</button>
     </div>
 
     <div id="homeView" class="view-container home-dashboard">
@@ -4332,19 +4332,152 @@ function apriLightbox(url) {
         // 'streaming' (solo promemoria streaming), 'all' (entrambi).
         let currentFilterModalitaCinema = 'cinema';
 
+		        // ==========================================
+        //   FASE 11 — GRUPPO CINEMA (Supabase diretto)
+        // ==========================================
+
+        function formattaDataCinemaISO_(valoreGrezzo) {
+            if (!valoreGrezzo && valoreGrezzo !== 0) return '';
+            const testo = String(valoreGrezzo).trim();
+            if (/^\d{4}-\d{2}-\d{2}/.test(testo)) return testo.substring(0, 10);
+            const matchItaliano = testo.match(/^(\d{1,2})[\/\-.](\d{1,2})[\/\-.](\d{4})$/);
+            if (matchItaliano) {
+                const gg = matchItaliano[1].padStart(2, '0');
+                const mm = matchItaliano[2].padStart(2, '0');
+                const aaaa = matchItaliano[3];
+                return aaaa + '-' + mm + '-' + gg;
+            }
+            const parsed = new Date(testo);
+            if (!isNaN(parsed)) {
+                const yyyy = parsed.getFullYear();
+                const mm2 = String(parsed.getMonth() + 1).padStart(2, '0');
+                const dd2 = String(parsed.getDate()).padStart(2, '0');
+                return yyyy + '-' + mm2 + '-' + dd2;
+            }
+            return testo;
+        }
+
+        async function getCinemaDataSB_() {
+            const { data, error } = await supabaseClient.from('cinema').select('*').order('titolo', { ascending: true });
+            if (error) throw error;
+            return (data || []).map(function(c) {
+                return {
+                    titolo: c.titolo, dataUscita: c.data_uscita || '', dataVisione: c.data_visione || '',
+                    visione: c.visione ? 'Sì' : 'No', immagine: c.immagine || '', streaming: !!c.streaming
+                };
+            });
+        }
+
+        async function addCinemaSB_(dati) {
+            const isStreaming = !!dati.streaming;
+            const { error } = await supabaseClient.from('cinema').insert([{
+                titolo: dati.titolo || '', data_uscita: formattaDataCinemaISO_(dati.dataUscita || '') || null,
+                data_visione: null, visione: false, immagine: dati.immagine || '', streaming: isStreaming
+            }]);
+            if (error) throw error;
+            if (!isStreaming) await registraLogSB_(dati.titolo, 'CINEMA', 'CREAZIONE', 'N/D', 'Da vedere');
+            return getCinemaDataSB_();
+        }
+
+        async function toggleVisioneCinemaSB_(titolo, nuovoStato, dataVisioneISO) {
+            const titoloTrim = String(titolo).trim();
+            const { data: righe, error: errSel } = await supabaseClient
+                .from('cinema').select('visione,data_visione,streaming').eq('titolo', titoloTrim);
+            if (errSel) throw errSel;
+            if (!righe || righe.length === 0) return false;
+
+            const riga = righe[0];
+            const vecchioStato = riga.visione ? 'Sì' : 'No';
+
+            if (riga.streaming) {
+                throw new Error('I film in streaming non vengono archiviati: usa la conferma di visione per rimuoverli dalla lista.');
+            }
+
+            if (nuovoStato) {
+                const dataFinale = formattaDataCinemaISO_(dataVisioneISO || '') || null;
+                const { error: errUpd } = await supabaseClient.from('cinema')
+                    .update({ data_visione: dataFinale, visione: true }).eq('titolo', titoloTrim);
+                if (errUpd) throw errUpd;
+                await registraLogSB_(titolo, 'CINEMA', 'COMPLETAMENTO', vecchioStato, 'Sì (' + (dataFinale || '') + ')');
+                return { visione: 'Sì', dataVisione: dataFinale || '' };
+            } else {
+                const { error: errUpd } = await supabaseClient.from('cinema').update({ visione: false }).eq('titolo', titoloTrim);
+                if (errUpd) throw errUpd;
+                await registraLogSB_(titolo, 'CINEMA', 'CAMBIO_STATO', vecchioStato, 'No');
+                return { visione: 'No', dataVisione: riga.data_visione || '' };
+            }
+        }
+
+        async function confermaVisioneStreamingCinemaSB_(titolo) {
+            const titoloTrim = String(titolo).trim();
+            const { data: righe, error: errSel } = await supabaseClient.from('cinema').select('streaming').eq('titolo', titoloTrim);
+            if (errSel) throw errSel;
+            if (!righe || righe.length === 0) return getCinemaDataSB_();
+
+            if (!righe[0].streaming) throw new Error('Questo film non è contrassegnato come streaming.');
+
+            const { error: errDel } = await supabaseClient.from('cinema').delete().eq('titolo', titoloTrim);
+            if (errDel) throw errDel;
+            return getCinemaDataSB_();
+        }
+
+        async function trasformaCinemaInStreamingSB_(titolo) {
+            const titoloTrim = String(titolo).trim();
+            const { data: righe, error: errSel } = await supabaseClient.from('cinema').select('visione,streaming').eq('titolo', titoloTrim);
+            if (errSel) throw errSel;
+            if (!righe || righe.length === 0) return getCinemaDataSB_();
+
+            const riga = righe[0];
+            if (riga.visione) throw new Error('Questo film è già stato segnato come visto, non può diventare un promemoria streaming.');
+            if (riga.streaming) return getCinemaDataSB_();
+
+            const { error: errUpd } = await supabaseClient.from('cinema').update({ streaming: true }).eq('titolo', titoloTrim);
+            if (errUpd) throw errUpd;
+            return getCinemaDataSB_();
+        }
+
+        async function modificaDataVisioneCinemaSB_(titolo, nuovaDataISO) {
+            const titoloTrim = String(titolo).trim();
+            const { data: righe, error: errSel } = await supabaseClient.from('cinema').select('titolo').eq('titolo', titoloTrim);
+            if (errSel) throw errSel;
+            if (!righe || righe.length === 0) return false;
+
+            const dataFinale = formattaDataCinemaISO_(nuovaDataISO || '') || null;
+            const { error: errUpd } = await supabaseClient.from('cinema').update({ data_visione: dataFinale }).eq('titolo', titoloTrim);
+            if (errUpd) throw errUpd;
+            return { dataVisione: dataFinale || '' };
+        }
+
+        async function eliminaCinemaSB_(titolo) {
+            const titoloTrim = String(titolo).trim();
+            const { data: righe, error: errSel } = await supabaseClient.from('cinema').select('visione,streaming').eq('titolo', titoloTrim);
+            if (errSel) throw errSel;
+            if (!righe || righe.length === 0) return getCinemaDataSB_();
+
+            const riga = righe[0];
+            if (riga.visione) throw new Error('Non puoi eliminare un film già segnato come visto.');
+
+            const { error: errDel } = await supabaseClient.from('cinema').delete().eq('titolo', titoloTrim);
+            if (errDel) throw errDel;
+
+            if (!riga.streaming) await registraLogSB_(titolo, 'CINEMA', 'CAMBIO_STATO', 'Da vedere', 'ELIMINATO');
+
+            return getCinemaDataSB_();
+        }
+
         function caricaDatiCinema() {
             document.getElementById('loadingCinema').style.display = 'block';
             document.getElementById('cinemaContent').style.display = 'none';
 
-            google.script.run.withSuccessHandler(function(data) {
+            getCinemaDataSB_().then(function(data) {
                 cinemaList = data || [];
                 document.getElementById('loadingCinema').style.display = 'none';
                 document.getElementById('cinemaContent').style.display = 'block';
                 renderListCinema();
-            }).withFailureHandler(function(err) {
+            }).catch(function(err) {
                 console.error('Errore caricamento Cinema: ', err);
                 document.getElementById('loadingCinema').innerText = '⚠️ Errore durante il caricamento dei dati.';
-            }).getCinemaData();
+            });
         }
 
         // Converte una data ISO "YYYY-MM-DD" nel formato italiano "GG/MM/AAAA" per la visualizzazione
@@ -4526,18 +4659,17 @@ function apriLightbox(url) {
                 dataVisioneISO = parsed;
             }
 
-            google.script.run
-                .withSuccessHandler(function(res) {
+            toggleVisioneCinemaSB_(titolo, nuovoStato, dataVisioneISO)
+                .then(function(res) {
                     item.visione = nuovoStato ? 'Sì' : 'No';
                     if (nuovoStato) item.dataVisione = dataVisioneISO;
                     renderListCinema();
                     showToast(nuovoStato ? '🎬 Film segnato come visto' : 'Film rimesso tra i "Da vedere"', 'success');
                 })
-                .withFailureHandler(function(err) {
+                .catch(function(err) {
                     console.error('Errore aggiornamento visione Cinema: ', err);
-                    alert('❌ Errore durante l\'aggiornamento dello stato di visione.');
-                })
-                .toggleVisioneCinema(titolo, nuovoStato, dataVisioneISO);
+                    alert('❌ ' + (err && err.message ? err.message : 'Errore durante l\'aggiornamento dello stato di visione.'));
+                });
         }
 
         // === NUOVO: conferma visione di un promemoria STREAMING ===
@@ -4546,34 +4678,32 @@ function apriLightbox(url) {
         function confermaVisioneStreamingCinemaLista(titolo) {
             if (!confirm('Confermi di aver visto "' + titolo + '" in streaming?\n\nIl film verrà rimosso definitivamente dalla lista.')) return;
 
-            google.script.run
-                .withSuccessHandler(function(data) {
+            confermaVisioneStreamingCinemaSB_(titolo)
+                .then(function(data) {
                     cinemaList = data || [];
                     renderListCinema();
                     showToast('📺 Visione confermata, promemoria rimosso', 'success');
                 })
-                .withFailureHandler(function(err) {
+                .catch(function(err) {
                     console.error('Errore conferma visione streaming: ', err);
                     alert('❌ ' + (err && err.message ? err.message : 'Errore durante la conferma della visione.'));
-                })
-                .confermaVisioneStreamingCinema(titolo);
+                });
         }
 
                 // Sposta un film "da vedere al cinema" tra i promemoria streaming
         function trasformaCinemaInStreamingLista(titolo) {
             if (!confirm('Spostare "' + titolo + '" tra i film da vedere in streaming?\n\nUscirà dalla lista "Al cinema" e diventerà un promemoria streaming.')) return;
 
-            google.script.run
-                .withSuccessHandler(function(data) {
+            trasformaCinemaInStreamingSB_(titolo)
+                .then(function(data) {
                     cinemaList = data || [];
                     renderListCinema();
                     showToast('📺 Film spostato tra lo streaming', 'success');
                 })
-                .withFailureHandler(function(err) {
+                .catch(function(err) {
                     console.error('Errore trasformazione in streaming Cinema: ', err);
                     alert('❌ ' + (err && err.message ? err.message : 'Errore durante lo spostamento in streaming.'));
-                })
-                .trasformaCinemaInStreaming(titolo);
+                });
         }
 
         // Imposta lo switch interno (Al Cinema / Streaming / Tutti) e aggiorna i bottoni
@@ -4610,34 +4740,32 @@ function apriLightbox(url) {
                 return;
             }
 
-            google.script.run
-                .withSuccessHandler(function(res) {
+            modificaDataVisioneCinemaSB_(titolo, parsed)
+                .then(function(res) {
                     item.dataVisione = parsed;
                     renderListCinema();
                     showToast('Data di visione aggiornata', 'success');
                 })
-                .withFailureHandler(function(err) {
+                .catch(function(err) {
                     console.error('Errore modifica data visione Cinema: ', err);
                     alert('❌ Errore durante la modifica della data di visione.');
-                })
-                .modificaDataVisioneCinema(titolo, parsed);
+                });
         }
 
         // Elimina un film "da vedere" (il pulsante cestino è disabilitato per i film già visti)
         function eliminaCinemaLista(titolo) {
             if (!confirm("Eliminare definitivamente '" + titolo + "' dalla lista?")) return;
 
-            google.script.run
-                .withSuccessHandler(function(data) {
+            eliminaCinemaSB_(titolo)
+                .then(function(data) {
                     cinemaList = data || [];
                     renderListCinema();
                     showToast('Film eliminato', 'success');
                 })
-                .withFailureHandler(function(err) {
+                .catch(function(err) {
                     console.error('Errore eliminazione Cinema: ', err);
                     alert('❌ ' + (err && err.message ? err.message : 'Errore durante l\'eliminazione del film.'));
-                })
-                .eliminaCinema(titolo);
+                });
         }
 
         // Gestore ricerca testuale e filtri nella view Cinema
@@ -4836,8 +4964,8 @@ function apriLightbox(url) {
 
         function salvaNuovoCinema_(dati) {
             const eraStreaming = !!dati.streaming;
-            google.script.run
-                .withSuccessHandler(function(data) {
+            addCinemaSB_(dati)
+                .then(function(data) {
                     cinemaList = data || [];
                     ultimoDettaglioCinemaTMDB = null;
                     document.getElementById('modalOverlayCinema').classList.remove('active');
@@ -4850,11 +4978,10 @@ function apriLightbox(url) {
                     }
                     showToast(eraStreaming ? '📺 Promemoria streaming aggiunto' : '🎬 Film aggiunto alla lista', 'success');
                 })
-                .withFailureHandler(function(err) {
+                .catch(function(err) {
                     console.error('Errore salvataggio Cinema: ', err);
                     alert('❌ Errore durante il salvataggio del film.');
-                })
-                .addCinema(dati);
+                });
         }
 
 
@@ -6239,8 +6366,8 @@ function caricaWidgetCinemaProssimi() {
     const emptyEl = document.getElementById('homeCinemaEmpty');
     if (emptyEl) emptyEl.style.display = 'none';
 
-    google.script.run
-        .withSuccessHandler(function(data) {
+        getCinemaDataSB_()
+        .then(function(data) {
             const tutti = data || [];
             // Solo i film "da vedere" (esclusi i promemoria streaming),
             // ordinati per data di uscita crescente. Film senza data valida
@@ -6255,16 +6382,14 @@ function caricaWidgetCinemaProssimi() {
             if (loadingEl) loadingEl.style.display = 'none';
             renderWidgetCinemaProssimi();
         })
-        .withFailureHandler(function(err) {
+        .catch(function(err) {
             console.error('Errore caricamento widget "Prossimi al Cinema": ', err);
             if (loadingEl) {
                 loadingEl.style.display = 'block';
                 loadingEl.innerText = '⚠️ Impossibile caricare i film in uscita.';
             }
-        })
-        .getCinemaData();
+        });
 }
-
 // Ridisegna il widget mostrando al massimo i primi 5 film della coda
 // (già ordinata). Va richiamata anche dopo ogni spunta, così il 6° film,
 // se esiste, prende automaticamente il posto di quello appena confermato.
@@ -6335,21 +6460,20 @@ function creaCinemaUpcomingCard(item) {
         checkBtn.disabled = true;
         dateInput.disabled = true;
 
-        google.script.run
-            .withSuccessHandler(function() {
+        toggleVisioneCinemaSB_(item.titolo, true, dataVisioneISO)
+            .then(function() {
                 // Rimuove il film dalla coda e ridisegna: il 6° film (se esiste)
                 // prende automaticamente il posto di quello appena spuntato.
                 homeCinemaQueue = homeCinemaQueue.filter(x => x.titolo !== item.titolo);
                 renderWidgetCinemaProssimi();
                 showToast('🎬 "' + item.titolo + '" segnato come visto', 'success');
             })
-            .withFailureHandler(function(err) {
+            .catch(function(err) {
                 console.error('Errore aggiornamento visione Cinema (widget home): ', err);
                 alert('❌ Errore durante l\'aggiornamento dello stato di visione.');
                 checkBtn.disabled = false;
                 dateInput.disabled = false;
-            })
-            .toggleVisioneCinema(item.titolo, true, dataVisioneISO);
+            });
     });
 
     return card;
