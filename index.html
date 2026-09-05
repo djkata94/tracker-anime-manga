@@ -3463,9 +3463,101 @@ document.getElementById('btnRandomAnime').onclick = function() {
             container.innerHTML = html;
         }
 
+        // --- Funzioni di scrittura Episodi Anime ---
+
+        async function registraLogEpisodioSB_(titolo, tipo, numero, episodioPrecedente, episodioNuovo, episodiTotali, azione, esito) {
+            try {
+                await supabaseClient.from('log_episodi').insert([{
+                    timestamp: new Date().toISOString(),
+                    titolo: titolo || '', tipo: tipo || '', numero: parseInt(numero) || 0,
+                    episodio_precedente: parseInt(episodioPrecedente) || 0,
+                    episodio_nuovo: parseInt(episodioNuovo) || 0,
+                    episodi_totali: parseInt(episodiTotali) || 0,
+                    azione: azione || '', esito: esito || ''
+                }]);
+            } catch (err) {
+                console.error("Errore durante la registrazione del log episodio ('" + azione + "' su '" + titolo + "' " + tipo + " " + numero + "'): " + err);
+            }
+        }
+
+        async function updateEpisodioVistiSB_(titolo, tipo, numero, delta) {
+            const titoloTrim = String(titolo).trim();
+            const numeroInt = parseInt(numero) || 0;
+            const deltaInt = parseInt(delta) || 0;
+
+            const numeriDaLeggere = (deltaInt > 0 && numeroInt > 1) ? [numeroInt - 1, numeroInt] : [numeroInt];
+            const { data: righe, error: errSel } = await supabaseClient
+                .from('episodi_anime').select('numero,episodi_totali,episodi_visti')
+                .eq('anime_titolo', titoloTrim).eq('tipo', tipo).in('numero', numeriDaLeggere);
+            if (errSel) throw errSel;
+
+            const rigaTarget = (righe || []).find(function(r) { return r.numero === numeroInt; });
+            if (!rigaTarget) return { errore: 'Riga episodi non trovata.' };
+
+            const episodiTotali = rigaTarget.episodi_totali;
+            const episodiVistiAttuale = rigaTarget.episodi_visti;
+
+            if (deltaInt > 0 && numeroInt > 1) {
+                const rigaPrec = righe.find(function(r) { return r.numero === numeroInt - 1; });
+                const rigaPrecedenteCompleta = !!(rigaPrec && rigaPrec.episodi_totali > 0 && rigaPrec.episodi_visti >= rigaPrec.episodi_totali);
+                if (!rigaPrecedenteCompleta) {
+                    return { errore: 'Devi prima completare ' + tipo + ' ' + (numeroInt - 1) + '.' };
+                }
+            }
+
+            let nuovoValore = episodiVistiAttuale + deltaInt;
+            if (nuovoValore < 0) nuovoValore = 0;
+            if (episodiTotali > 0 && nuovoValore > episodiTotali) nuovoValore = episodiTotali;
+
+            const { error: errUpd } = await supabaseClient
+                .from('episodi_anime').update({ episodi_visti: nuovoValore })
+                .eq('anime_titolo', titoloTrim).eq('tipo', tipo).eq('numero', numeroInt);
+            if (errUpd) throw errUpd;
+
+            const risultatoSync = await ricalcolaSincronizzaELoggaSB_(titoloTrim);
+
+            if (nuovoValore !== episodiVistiAttuale) {
+                await registraLogEpisodioSB_(
+                    titoloTrim, tipo, numeroInt, episodiVistiAttuale, nuovoValore, episodiTotali,
+                    (nuovoValore > episodiVistiAttuale) ? 'VISTO' : 'RIMOSSO',
+                    (risultatoSync && risultatoSync.eventoLoggato) || ''
+                );
+            }
+
+            const [animeAggiornato, episodiTutti] = await Promise.all([getAnimeDataSB_(), getTuttiEpisodiAnimeSB_()]);
+            return { episodiVisti: nuovoValore, episodiTotali: episodiTotali, anime: animeAggiornato, episodiTutti: episodiTutti };
+        }
+
+        async function updateEpisodioTotaliSB_(titolo, tipo, numero, nuovoTotale) {
+            const titoloTrim = String(titolo).trim();
+            const numeroInt = parseInt(numero) || 0;
+
+            const { data: righeTarget, error: errSel } = await supabaseClient
+                .from('episodi_anime').select('episodi_visti')
+                .eq('anime_titolo', titoloTrim).eq('tipo', tipo).eq('numero', numeroInt);
+            if (errSel) throw errSel;
+            if (!righeTarget || righeTarget.length === 0) return { errore: 'Riga episodi non trovata.' };
+
+            let totaleNuovo = parseInt(nuovoTotale) || 0;
+            if (totaleNuovo < 0) totaleNuovo = 0;
+
+            let episodiVistiNuovo = righeTarget[0].episodi_visti;
+            if (episodiVistiNuovo > totaleNuovo) episodiVistiNuovo = totaleNuovo;
+
+            const { error: errUpd } = await supabaseClient
+                .from('episodi_anime').update({ episodi_totali: totaleNuovo, episodi_visti: episodiVistiNuovo })
+                .eq('anime_titolo', titoloTrim).eq('tipo', tipo).eq('numero', numeroInt);
+            if (errUpd) throw errUpd;
+
+            await ricalcolaSincronizzaELoggaSB_(titoloTrim);
+
+            const [animeAggiornato, episodiTutti] = await Promise.all([getAnimeDataSB_(), getTuttiEpisodiAnimeSB_()]);
+            return { episodiVisti: episodiVistiNuovo, episodiTotali: totaleNuovo, anime: animeAggiornato, episodiTutti: episodiTutti };
+        }
+		
         window.incrementaEpisodio = function(titolo, tipo, numero, delta) {
-            google.script.run
-                .withSuccessHandler(function(result) {
+            updateEpisodioVistiSB_(titolo, tipo, numero, delta)
+                .then(function(result) {
                     if (result && result.errore) {
                         showToast(result.errore, 'error');
                         return;
@@ -3476,10 +3568,9 @@ document.getElementById('btnRandomAnime').onclick = function() {
                     renderListAnime();
                     aggiornaLogEpisodiSeVisibile();
                 })
-                .withFailureHandler(function(err) {
+                .catch(function(err) {
                     showToast('❌ Errore aggiornamento episodio: ' + err.message, 'error');
-                })
-                .updateEpisodioVisti(titolo, tipo, numero, delta);
+                });
         };
 
         window.modificaTotaleEpisodi = function(titolo, tipo, numero, totaleAttuale) {
@@ -3490,8 +3581,9 @@ document.getElementById('btnRandomAnime').onclick = function() {
                 showToast('❌ Inserisci un numero valido', 'error');
                 return;
             }
-            google.script.run
-                .withSuccessHandler(function(result) {
+			
+            updateEpisodioTotaliSB_(titolo, tipo, numero, nuovoTotale)
+                .then(function(result) {
                     if (result && result.errore) {
                         showToast(result.errore, 'error');
                         return;
@@ -3502,10 +3594,9 @@ document.getElementById('btnRandomAnime').onclick = function() {
                     renderListAnime();
                     showToast('Totale episodi aggiornato', 'success');
                 })
-                .withFailureHandler(function(err) {
+                .catch(function(err) {
                     showToast('❌ Errore aggiornamento totale episodi: ' + err.message, 'error');
-                })
-                .updateEpisodioTotali(titolo, tipo, numero, nuovoTotale);
+                });
         };
 
         // ==========================================================
