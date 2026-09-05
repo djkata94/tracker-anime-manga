@@ -3625,6 +3625,75 @@ document.getElementById('btnRandomAnime').onclick = function() {
             }
         }
 
+        // ==========================================
+        //   FASE 11 — GRUPPO LOG (Supabase diretto)
+        // ==========================================
+
+        async function ottieniUltimiLogSB_(filtroTipoMedia, filtroTipoEvento, filtroTitolo, ordineAsc) {
+            try {
+                const MAX_LOG = 15;
+                const filtroMedia = String(filtroTipoMedia || 'all').toUpperCase();
+                const filtroEvento = String(filtroTipoEvento || 'all').toUpperCase();
+                const filtroTesto = String(filtroTitolo || '').trim();
+                const isAsc = (ordineAsc === true || ordineAsc === 'true');
+
+                let query = supabaseClient.from('log_attivita').select('*');
+                if (filtroMedia !== 'ALL') query = query.eq('tipo_media', filtroMedia);
+                if (filtroEvento !== 'ALL') query = query.eq('tipo_evento', filtroEvento);
+                if (filtroTesto !== '') query = query.ilike('id_titolo', '%' + filtroTesto + '%');
+                query = query.order('timestamp', { ascending: isAsc }).limit(MAX_LOG);
+
+                const { data, error } = await query;
+                if (error) throw error;
+
+                return (data || []).map(function(r) {
+                    return {
+                        timestamp: r.timestamp, idTitolo: r.id_titolo || '', tipoMedia: r.tipo_media || '',
+                        tipoEvento: r.tipo_evento || '', valorePrecedente: r.valore_precedente || '', valoreNuovo: r.valore_nuovo || ''
+                    };
+                });
+            } catch (err) {
+                console.error("Errore in ottieniUltimiLogSB_: " + err);
+                return [];
+            }
+        }
+
+        async function ottieniLogEpisodiSB_(filtroTitolo, filtroTipo, filtroAzione, dataDa, dataA, ordineAsc) {
+            try {
+                const MAX_LOG = 100;
+                const filtroTesto = String(filtroTitolo || '').trim();
+                const filtroTipoNorm = String(filtroTipo || 'all');
+                const filtroAzioneNorm = String(filtroAzione || 'all').toUpperCase();
+                const isAsc = (ordineAsc === true || ordineAsc === 'true');
+
+                let query = supabaseClient.from('log_episodi').select('*');
+                if (filtroTesto !== '') query = query.ilike('titolo', '%' + filtroTesto + '%');
+                if (filtroTipoNorm !== 'all') query = query.eq('tipo', filtroTipoNorm);
+                if (filtroAzioneNorm !== 'ALL') query = query.eq('azione', filtroAzioneNorm);
+                if (dataDa) query = query.gte('timestamp', dataDa + 'T00:00:00');
+                if (dataA) query = query.lte('timestamp', dataA + 'T23:59:59');
+                query = query.order('timestamp', { ascending: isAsc }).limit(MAX_LOG);
+
+                const { data, error } = await query;
+                if (error) throw error;
+
+                return (data || []).map(function(r) {
+                    const episodioPrecedente = r.episodio_precedente || 0;
+                    const episodioNuovo = r.episodio_nuovo || 0;
+                    const azione = String(r.azione || '').toUpperCase();
+                    return {
+                        timestamp: r.timestamp, titolo: r.titolo || '', tipo: r.tipo || '', numero: r.numero || 0,
+                        episodioPrecedente: episodioPrecedente, episodioNuovo: episodioNuovo,
+                        episodiTotali: r.episodi_totali || 0, azione: azione, esito: String(r.esito || '').toUpperCase(),
+                        episodioInteressato: (azione === 'RIMOSSO') ? episodioPrecedente : episodioNuovo
+                    };
+                });
+            } catch (err) {
+                console.error("Errore in ottieniLogEpisodiSB_: " + err);
+                return [];
+            }
+        }
+		
         // Recupera le ultime 100 righe (filtrate/ordinate) dal foglio
         // "Tab_LogEpisodi" tramite ottieniLogEpisodi() e le mostra nella tabella.
         function caricaLogEpisodi() {
@@ -3659,8 +3728,8 @@ document.getElementById('btnRandomAnime').onclick = function() {
 
             const filtriAttivi = (filtroTitolo !== '' || filtroTipo !== 'all' || filtroAzione !== 'all' || dataDal !== '' || dataAl !== '');
 
-            google.script.run
-                .withSuccessHandler(function(logs) {
+            ottieniLogEpisodiSB_(filtroTitolo, filtroTipo, filtroAzione, dataDal, dataAl, ordineAsc)
+                .then(function(logs) {
                     if (loadingEl) loadingEl.style.display = 'none';
                     if (btnRefresh) {
                         btnRefresh.classList.remove('spinning');
@@ -3669,7 +3738,7 @@ document.getElementById('btnRandomAnime').onclick = function() {
                     tableEl.style.display = 'table';
                     renderLogEpisodi(logs || [], filtriAttivi);
                 })
-                .withFailureHandler(function(err) {
+                .catch(function(err) {
                     console.error('Errore nel caricamento del Log Episodi:', err);
                     if (loadingEl) {
                         loadingEl.style.display = 'block';
@@ -3679,8 +3748,7 @@ document.getElementById('btnRandomAnime').onclick = function() {
                         btnRefresh.classList.remove('spinning');
                         btnRefresh.disabled = false;
                     }
-                })
-                .ottieniLogEpisodi(filtroTitolo, filtroTipo, filtroAzione, dataDal, dataAl, ordineAsc);
+                });
         }
 
         function renderLogEpisodi(logs, filtriAttivi) {
@@ -5914,8 +5982,8 @@ function caricaLogAttivita() {
 
     const filtriAttivi = (filtroTipo !== 'all' || filtroEvento !== 'all' || filtroTitolo !== '');
 
-    google.script.run
-        .withSuccessHandler(function(logs) {
+    ottieniUltimiLogSB_(filtroTipo, filtroEvento, filtroTitolo, ordineAsc)
+        .then(function(logs) {
             if (loadingEl) loadingEl.style.display = 'none';
             if (btnRefresh) {
                 btnRefresh.classList.remove('spinning');
@@ -5923,7 +5991,7 @@ function caricaLogAttivita() {
             }
             renderLogAttivita(logs || [], filtriAttivi);
         })
-        .withFailureHandler(function(err) {
+        .catch(function(err) {
             console.error('Errore nel caricamento del Log di Sistema:', err);
             if (loadingEl) {
                 loadingEl.style.display = 'block';
@@ -5933,8 +6001,7 @@ function caricaLogAttivita() {
                 btnRefresh.classList.remove('spinning');
                 btnRefresh.disabled = false;
             }
-        })
-        .ottieniUltimiLog(filtroTipo, filtroEvento, filtroTitolo, ordineAsc);
+        });
 }
 
 // Traduce i dati grezzi del log in frasi dinamiche, colorate e con icone
