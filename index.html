@@ -2631,7 +2631,262 @@
                 return { titolo: r.anime_titolo, tipo: r.tipo, numero: r.numero, episodiTotali: r.episodi_totali, episodiVisti: r.episodi_visti };
             });
         }
+        // --- Funzioni di scrittura Anime (add/update/delete/toggle/voto) ---
 
+        async function registraLogSB_(idTitolo, tipoMedia, tipoEvento, valPrec, valNuovo) {
+            try {
+                await supabaseClient.from('log_attivita').insert([{
+                    timestamp: new Date().toISOString(),
+                    id_titolo: idTitolo || '',
+                    tipo_media: tipoMedia || '',
+                    tipo_evento: tipoEvento || '',
+                    valore_precedente: (valPrec === undefined || valPrec === null || valPrec === '') ? 'N/D' : String(valPrec),
+                    valore_nuovo: (valNuovo === undefined || valNuovo === null || valNuovo === '') ? 'N/D' : String(valNuovo)
+                }]);
+            } catch (err) {
+                console.error("Errore durante la registrazione del log ('" + tipoEvento + "' su '" + idTitolo + "'): " + err);
+            }
+        }
+
+        async function aggiungiRigheEpisodiSB_(titolo, tipo, daNumero, aNumero) {
+            if (daNumero > aNumero) return;
+            const titoloTrim = String(titolo).trim();
+            const nuoveRighe = [];
+            for (let n = daNumero; n <= aNumero; n++) {
+                nuoveRighe.push({ anime_titolo: titoloTrim, tipo: tipo, numero: n, episodi_totali: 0, episodi_visti: 0 });
+            }
+            if (nuoveRighe.length === 0) return;
+            const { error } = await supabaseClient.from('episodi_anime').insert(nuoveRighe);
+            if (error) throw error;
+        }
+
+        async function rimuoviRigheEpisodiEccedentiSB_(titolo, tipo, numeroMinimoDaRimuovere) {
+            const titoloTrim = String(titolo).trim();
+            const { data, error: selErr } = await supabaseClient
+                .from('episodi_anime').select('episodi_visti')
+                .eq('anime_titolo', titoloTrim).eq('tipo', tipo).gte('numero', numeroMinimoDaRimuovere);
+            if (selErr) throw selErr;
+            const avevaProgresso = (data || []).some(function(r) { return (parseInt(r.episodi_visti) || 0) > 0; });
+            const { error: delErr } = await supabaseClient
+                .from('episodi_anime').delete()
+                .eq('anime_titolo', titoloTrim).eq('tipo', tipo).gte('numero', numeroMinimoDaRimuovere);
+            if (delErr) throw delErr;
+            return avevaProgresso;
+        }
+
+        async function calcolaProgressoAnimeSB_(titolo) {
+            const titoloTrim = String(titolo).trim();
+            const { data: righeAnime, error: errAnime } = await supabaseClient
+                .from('anime').select('stato,stagioni_totali,film_totali').eq('titolo', titoloTrim);
+            if (errAnime) throw errAnime;
+            if (!righeAnime || righeAnime.length === 0) return null;
+
+            const { data: righeEpisodi, error: errEp } = await supabaseClient
+                .from('episodi_anime').select('tipo,numero,episodi_totali,episodi_visti').eq('anime_titolo', titoloTrim);
+            if (errEp) throw errEp;
+
+            const stato = righeAnime[0].stato || 'In corso';
+            const stagioniTotali = righeAnime[0].stagioni_totali || 0;
+            const filmTotali = righeAnime[0].film_totali || 0;
+            const episodi = (righeEpisodi || []).map(function(e) {
+                return { tipo: e.tipo, numero: e.numero, episodiTotali: e.episodi_totali, episodiVisti: e.episodi_visti };
+            });
+
+            const stagioniRighe = episodi.filter(function(e) { return e.tipo === 'Stagione'; });
+            const filmRighe = episodi.filter(function(e) { return e.tipo === 'Film'; });
+
+            function contaCompletiContigui(righe) {
+                let count = 0;
+                for (let n = 1; n <= righe.length; n++) {
+                    const riga = righe.find(function(r) { return r.numero === n; });
+                    if (!riga || riga.episodiTotali <= 0 || riga.episodiVisti < riga.episodiTotali) break;
+                    count++;
+                }
+                return count;
+            }
+
+            const stagioniViste = contaCompletiContigui(stagioniRighe);
+            const filmVisti = contaCompletiContigui(filmRighe);
+            const haProgressoParziale = episodi.some(function(e) { return (parseInt(e.episodiVisti) || 0) > 0; });
+            const coloreVisione = calcolaColoreVisioneAnime_(stagioniTotali, stagioniViste, filmTotali, filmVisti, stato, haProgressoParziale);
+
+            return { stagioniViste: stagioniViste, filmVisti: filmVisti, coloreVisione: coloreVisione,
+                     stato: stato, stagioniTotali: stagioniTotali, filmTotali: filmTotali, eventoLoggato: null };
+        }
+
+        async function ricalcolaSincronizzaELoggaSB_(titolo) {
+            const titoloTrim = String(titolo).trim();
+            const { data: righePrima, error: errPrima } = await supabaseClient
+                .from('anime').select('stagioni_viste,film_visti').eq('titolo', titoloTrim);
+            if (errPrima) throw errPrima;
+            if (!righePrima || righePrima.length === 0) return null;
+
+            const vecchieStagioniViste = righePrima[0].stagioni_viste || 0;
+            const vecchiFilmVisti = righePrima[0].film_visti || 0;
+
+            const risultato = await calcolaProgressoAnimeSB_(titoloTrim);
+            if (!risultato) return null;
+
+            let eventoDaLoggare = null;
+            let valPrec = '', valNuovo = '';
+            if (risultato.stagioniViste !== vecchieStagioniViste || risultato.filmVisti !== vecchiFilmVisti) {
+                const tuttoVisto = (risultato.stagioniViste === risultato.stagioniTotali) && (risultato.filmVisti === risultato.filmTotali);
+                const statoConclusoOra = String(risultato.stato).trim().toLowerCase().includes('conclus');
+                valPrec = vecchieStagioniViste + ' stagioni / ' + vecchiFilmVisti + ' film';
+                valNuovo = risultato.stagioniViste + ' stagioni / ' + risultato.filmVisti + ' film';
+                eventoDaLoggare = (tuttoVisto && statoConclusoOra) ? 'COMPLETAMENTO' : (tuttoVisto ? 'IN_PARI' : 'AVANZAMENTO');
+                risultato.eventoLoggato = eventoDaLoggare;
+            }
+
+            const scritture = [
+                supabaseClient.from('anime').update({ stagioni_viste: risultato.stagioniViste, film_visti: risultato.filmVisti }).eq('titolo', titoloTrim)
+            ];
+            if (eventoDaLoggare) scritture.push(registraLogSB_(titoloTrim, 'ANIME', eventoDaLoggare, valPrec, valNuovo));
+            await Promise.all(scritture);
+
+            return risultato;
+        }
+
+        async function addAnimeSB_(dati) {
+            const { error: errIns } = await supabaseClient.from('anime').insert([{
+                titolo: dati.titolo, stato: dati.stato || 'In corso', note: dati.note || '',
+                valutazione: (dati.valutazione === '' || dati.valutazione === undefined || dati.valutazione === '-') ? null : dati.valutazione,
+                stagioni_totali: parseInt(dati.stagioniTotali) || 0, stagioni_viste: parseInt(dati.stagioniViste) || 0,
+                film_totali: parseInt(dati.filmTotali) || 0, film_visti: parseInt(dati.filmVisti) || 0,
+                generi: dati.generi || '', preferito: false, immagine: dati.immagine || '', priorita: false
+            }]);
+            if (errIns) throw errIns;
+
+            await supabaseClient.from('sinossi_anime').insert([{ anime_titolo: dati.titolo, sinossi: '' }]);
+            await registraLogSB_(dati.titolo, 'ANIME', 'CREAZIONE', 'N/D', dati.stato || 'In corso');
+
+            try {
+                const stagioniTotaliNuove = parseInt(dati.stagioniTotali) || 0;
+                const filmTotaliNuovi = parseInt(dati.filmTotali) || 0;
+                if (stagioniTotaliNuove > 0) await aggiungiRigheEpisodiSB_(dati.titolo, 'Stagione', 1, stagioniTotaliNuove);
+                if (filmTotaliNuovi > 0) await aggiungiRigheEpisodiSB_(dati.titolo, 'Film', 1, filmTotaliNuovi);
+            } catch (epErr) {
+                console.error("Errore durante la creazione delle righe episodi per '" + dati.titolo + "': " + epErr);
+            }
+
+            return getAnimeDataSB_();
+        }
+
+        async function updateAnimeSB_(vecchioTitolo, dati) {
+            const vecchioTitoloTrim = String(vecchioTitolo).trim();
+            const { data: righeVecchie, error: errSel } = await supabaseClient.from('anime').select('*').eq('titolo', vecchioTitoloTrim);
+            if (errSel) throw errSel;
+            if (!righeVecchie || righeVecchie.length === 0) return getAnimeDataSB_();
+            const vecchiaRiga = righeVecchie[0];
+
+            const vecchioStatoLog = vecchiaRiga.stato || 'In corso';
+            const vecchiaValutazioneLog = vecchiaRiga.valutazione;
+            const vecchieStagioniTotaliLog = vecchiaRiga.stagioni_totali || 0;
+            const vecchiFilmTotaliLog = vecchiaRiga.film_totali || 0;
+
+            const { error: errUpd } = await supabaseClient.from('anime').update({
+                titolo: dati.titolo, stato: dati.stato, note: dati.note,
+                valutazione: (dati.valutazione === '' || dati.valutazione === undefined || dati.valutazione === '-') ? null : dati.valutazione,
+                stagioni_totali: parseInt(dati.stagioniTotali) || 0, stagioni_viste: parseInt(dati.stagioniViste) || 0,
+                film_totali: parseInt(dati.filmTotali) || 0, film_visti: parseInt(dati.filmVisti) || 0,
+                generi: dati.generi || '', immagine: dati.immagine || ''
+            }).eq('titolo', vecchioTitoloTrim);
+            if (errUpd) throw errUpd;
+
+            const nuovoTitoloEffettivo = dati.titolo || vecchioTitolo;
+            let risultatoProgresso = null;
+            try {
+                const nuoveStagioniTotaliEp = parseInt(dati.stagioniTotali) || 0;
+                const nuoviFilmTotaliEp = parseInt(dati.filmTotali) || 0;
+
+                if (nuoveStagioniTotaliEp > vecchieStagioniTotaliLog) {
+                    await aggiungiRigheEpisodiSB_(nuovoTitoloEffettivo, 'Stagione', vecchieStagioniTotaliLog + 1, nuoveStagioniTotaliEp);
+                } else if (nuoveStagioniTotaliEp < vecchieStagioniTotaliLog) {
+                    const avevaProgresso = await rimuoviRigheEpisodiEccedentiSB_(nuovoTitoloEffettivo, 'Stagione', nuoveStagioniTotaliEp + 1);
+                    if (avevaProgresso) console.warn("Rimosse righe stagioni con episodi già visti per '" + nuovoTitoloEffettivo + "'.");
+                }
+
+                if (nuoviFilmTotaliEp > vecchiFilmTotaliLog) {
+                    await aggiungiRigheEpisodiSB_(nuovoTitoloEffettivo, 'Film', vecchiFilmTotaliLog + 1, nuoviFilmTotaliEp);
+                } else if (nuoviFilmTotaliEp < vecchiFilmTotaliLog) {
+                    const avevaProgresso = await rimuoviRigheEpisodiEccedentiSB_(nuovoTitoloEffettivo, 'Film', nuoviFilmTotaliEp + 1);
+                    if (avevaProgresso) console.warn("Rimosse righe film con episodi già visti per '" + nuovoTitoloEffettivo + "'.");
+                }
+
+                risultatoProgresso = await ricalcolaSincronizzaELoggaSB_(nuovoTitoloEffettivo);
+            } catch (epErr) {
+                console.error("Errore durante la sincronizzazione episodi per '" + nuovoTitoloEffettivo + "': " + epErr);
+            }
+
+            try {
+                const titoloLog = nuovoTitoloEffettivo;
+                const nuovaValutazione = dati.valutazione;
+                const nuovoStato = dati.stato || 'In corso';
+                let completamentoGiaLoggato = !!(risultatoProgresso && risultatoProgresso.eventoLoggato === 'COMPLETAMENTO');
+
+                if (nuovaValutazione && String(nuovaValutazione).trim() !== '' &&
+                    String(nuovaValutazione).trim() !== String(vecchiaValutazioneLog || '').trim()) {
+                    await registraLogSB_(titoloLog, 'ANIME', 'VOTO', vecchiaValutazioneLog || 'N/D', nuovaValutazione);
+                }
+                if (String(nuovoStato).trim() !== String(vecchioStatoLog).trim()) {
+                    const eraConcluso = String(vecchioStatoLog).trim().toLowerCase().includes('conclus');
+                    const oraConcluso = String(nuovoStato).trim().toLowerCase().includes('conclus');
+                    if (oraConcluso && !eraConcluso) {
+                        if (!completamentoGiaLoggato) await registraLogSB_(titoloLog, 'ANIME', 'COMPLETAMENTO', vecchioStatoLog, nuovoStato);
+                    } else {
+                        await registraLogSB_(titoloLog, 'ANIME', 'CAMBIO_STATO', vecchioStatoLog, nuovoStato);
+                    }
+                }
+            } catch (logErr) {
+                console.error("Errore durante la valutazione degli eventi di log per updateAnime: " + logErr);
+            }
+
+            return getAnimeDataSB_();
+        }
+
+        async function deleteAnimeSB_(titolo) {
+            const { error } = await supabaseClient.from('anime').delete().eq('titolo', String(titolo).trim());
+            if (error) throw error;
+            return getAnimeDataSB_();
+        }
+
+        async function toggleAnimePreferitoSB_(titolo, preferitoStato) {
+            const { error } = await supabaseClient.from('anime').update({ preferito: !!preferitoStato }).eq('titolo', String(titolo).trim());
+            if (error) throw error;
+        }
+
+        async function impostaVotoAnimeSB_(titolo, voto) {
+            const votoPulito = String(voto).trim().replace(',', '.');
+            const votoNumerico = parseFloat(votoPulito);
+            if (votoPulito === '' || isNaN(votoNumerico) || votoNumerico < 0 || votoNumerico > 10) {
+                return { errore: 'Voto non valido: deve essere un numero tra 0 e 10.' };
+            }
+            const { data: righe, error: errSel } = await supabaseClient.from('anime').select('valutazione').eq('titolo', String(titolo).trim());
+            if (errSel) throw errSel;
+            if (!righe || righe.length === 0) return { errore: 'Anime non trovato.' };
+
+            const vecchiaValutazione = righe[0].valutazione;
+            if (vecchiaValutazione !== null && vecchiaValutazione !== undefined) {
+                return { errore: 'Questa opera ha già un voto: per modificarlo usa la modale di modifica.' };
+            }
+
+            const { error: errUpd } = await supabaseClient.from('anime').update({ valutazione: votoNumerico }).eq('titolo', String(titolo).trim());
+            if (errUpd) throw errUpd;
+
+            try {
+                await registraLogSB_(titolo, 'ANIME', 'VOTO', 'N/D', votoNumerico);
+            } catch (logErr) {
+                console.error("Errore durante la registrazione del log per impostaVotoAnime: " + logErr);
+            }
+
+            return { valutazione: votoNumerico };
+        }
+
+        async function toggleAnimePrioritaSB_(titolo, prioritaStato) {
+            const { error } = await supabaseClient.from('anime').update({ priorita: !!prioritaStato }).eq('titolo', String(titolo).trim());
+            if (error) throw error;
+        }
+		
         function caricaDatiAnime() {
             document.getElementById('loadingAnime').style.display = 'block';
             document.getElementById('animeTable').style.display = 'none';
@@ -3105,26 +3360,23 @@ document.getElementById('btnRandomAnime').onclick = function() {
                 document.getElementById('btnSalvaAnime').innerText = "Salva";
             };
             
-            if (targetEditTitleAnime) {
-                google.script.run
-                    .withSuccessHandler(cb)
-                    .withFailureHandler(errorCb)
-                    .updateAnime(targetEditTitleAnime, dati);
+                        if (targetEditTitleAnime) {
+                updateAnimeSB_(targetEditTitleAnime, dati).then(cb).catch(errorCb);
             } else {
-                google.script.run
-                    .withSuccessHandler(cb)
-                    .withFailureHandler(errorCb)
-                    .addAnime(dati);
+                addAnimeSB_(dati).then(cb).catch(errorCb);
             }
         };
 
         window.rimuoviAnime = function(titolo) {
             if (confirm("Eliminare definitivamente '" + titolo + "'?")) {
-                google.script.run.withSuccessHandler(function(data) {
+                deleteAnimeSB_(titolo).then(function(data) {
                     animeList = data || [];
                     renderListAnime();
                     showToast('Anime eliminato', 'success');
-                }).deleteAnime(titolo);
+                }).catch(function(err) {
+                    console.error('Errore eliminazione anime:', err);
+                    alert("❌ Errore durante l'eliminazione.");
+                });
             }
         };
 
@@ -4757,11 +5009,11 @@ function impostaVotoAnimeLista(titolo, inputEl) {
 
     inputEl.disabled = true;
 
-    google.script.run
-        .withSuccessHandler(function(res) {
+        impostaVotoAnimeSB_(titolo, votoNumerico)
+        .then(function(res) {
             if (res && res.errore) {
                 alert("❌ " + res.errore);
-                renderListAnime(); // Ripristina la vista corretta (es. un voto già presente)
+                renderListAnime();
                 return;
             }
             const item = animeList.find(x => x.titolo === titolo);
@@ -4769,12 +5021,11 @@ function impostaVotoAnimeLista(titolo, inputEl) {
             renderListAnime();
             showToast('⭐ Voto assegnato a ' + titolo, 'success');
         })
-        .withFailureHandler(function(err) {
+        .catch(function(err) {
             console.error("Errore assegnazione voto anime: ", err);
             alert("❌ Errore durante il salvataggio del voto.");
             inputEl.disabled = false;
-        })
-        .impostaVotoAnime(titolo, votoNumerico);
+        });
 }
 
 function toggleFavoriteAnime(titolo, btn) {
@@ -4800,15 +5051,13 @@ function toggleFavoriteAnime(titolo, btn) {
         renderListAnime();
     }
 
-    // Chiamata asincrona silente al server Apps Script (aggiorna il foglio in background)
-    google.script.run
-        .withSuccessHandler(function(res) {
-             console.log("Preferito aggiornato su Foglio per Anime: " + titolo);
+    toggleAnimePreferitoSB_(titolo, nuovoStato)
+        .then(function() {
+             console.log("Preferito aggiornato su Supabase per Anime: " + titolo);
         })
-        .withFailureHandler(function(err) {
+        .catch(function(err) {
              console.error("Errore aggiornamento preferito Anime: ", err);
-        })
-        .toggleAnimePreferito(titolo, nuovoStato);
+        });
 }
 
 // ==========================================================
@@ -4831,15 +5080,13 @@ function togglePinAnime(titolo, btn, event) {
     // Ridisegna subito la tabella: l'opera pinnata deve saltare in cima all'ordinamento
     renderListAnime();
 
-    // Chiamata asincrona silente al server Apps Script (aggiorna il foglio in background)
-    google.script.run
-        .withSuccessHandler(function(res) {
-             console.log("Priorità aggiornata su Foglio per Anime: " + titolo);
+    toggleAnimePrioritaSB_(titolo, nuovoStato)
+        .then(function() {
+             console.log("Priorità aggiornata su Supabase per Anime: " + titolo);
         })
-        .withFailureHandler(function(err) {
+        .catch(function(err) {
              console.error("Errore aggiornamento priorità Anime: ", err);
-        })
-        .toggleAnimePriorita(titolo, nuovoStato);
+        });
 }
 
 function togglePinManga(titolo, btn, event) {
