@@ -6298,23 +6298,12 @@ function caricaWidgetInCorso() {
     const emptyEl = document.getElementById('homeProgressEmpty');
     if (emptyEl) emptyEl.style.display = 'none';
 
-    // Le tre chiamate (anime, manga, episodi) sono indipendenti tra loro: prima
-    // partivano in serie (ognuna aspettava la precedente), ora partono tutte e
-    // tre insieme e si aspetta solo la più lenta delle tre. A parità di dati
-    // sul foglio, questo riduce i tempi di caricamento del widget.
-    function gsRunAsync_(nomeFunzione) {
-        return new Promise(function(resolve, reject) {
-            google.script.run
-                .withSuccessHandler(resolve)
-                .withFailureHandler(reject)
-                [nomeFunzione]();
-        });
-    }
-
+    // Le tre chiamate (anime, manga, episodi) sono indipendenti tra loro:
+    // partono tutte e tre insieme e si aspetta solo la più lenta delle tre.
     Promise.all([
-        gsRunAsync_('getAnimeData'),
-        gsRunAsync_('getMangaData'),
-        gsRunAsync_('getTuttiEpisodiAnime')
+        getAnimeDataSB_(),
+        getMangaDataSB_(),
+        getTuttiEpisodiAnimeSB_()
     ])
         .then(function(risultati) {
             animeList = risultati[0] || [];
@@ -6612,6 +6601,33 @@ function normalizzaTestoRicerca(str) {
         .replace(/[\u0300-\u036f]/g, '');
 }
 
+async function getIndiceRicercaSB_() {
+    const [animeData, mangaData, cinemaData] = await Promise.all([
+        getAnimeDataSB_(), getMangaDataSB_(), getCinemaDataSB_()
+    ]);
+    const risultati = [];
+    animeData.forEach(function(a) {
+        risultati.push({
+            titolo: a.titolo, tipo: 'anime', stato: a.stato, coloreVisione: a.coloreVisione,
+            valutazione: a.valutazione, stagioniTotali: a.stagioniTotali, stagioniViste: a.stagioniViste,
+            filmTotali: a.filmTotali, filmVisti: a.filmVisti, immagine: a.immagine
+        });
+    });
+    mangaData.forEach(function(m) {
+        risultati.push({
+            titolo: m.titolo, tipo: 'manga', stato: m.stato, acquistato: m.acquistato,
+            volumiLetti: m.volumiLetti, volumi: m.volumi, immagine: m.immagine
+        });
+    });
+    cinemaData.forEach(function(c) {
+        risultati.push({
+            titolo: c.titolo, tipo: 'cinema', dataUscita: c.dataUscita, dataVisione: c.dataVisione,
+            visione: c.visione, immagine: c.immagine, streaming: c.streaming
+        });
+    });
+    return risultati;
+}
+
 // Carica (una sola volta) l'indice di ricerca dal server e lo mette in cache.
 // Se è già in cache o in corso di caricamento, richiama semplicemente il callback.
 function garantisciIndiceRicercaGlobale(callback) {
@@ -6621,19 +6637,18 @@ function garantisciIndiceRicercaGlobale(callback) {
     ricercaGlobaleCaricamento = true;
     mostraStatoRicercaGlobale('⏳ Carico i titoli...');
 
-    google.script.run
-        .withSuccessHandler(function (data) {
+    getIndiceRicercaSB_()
+        .then(function (data) {
             ricercaGlobaleIndice = data || [];
             ricercaGlobaleCaricamento = false;
             callback();
         })
-        .withFailureHandler(function (err) {
+        .catch(function (err) {
             console.error('Errore nel caricamento dell\'indice di ricerca:', err);
             ricercaGlobaleIndice = [];
             ricercaGlobaleCaricamento = false;
             mostraStatoRicercaGlobale('⚠️ Impossibile caricare i titoli. Riprova.');
-        })
-        .getIndiceRicerca();
+        });
 }
 
 function mostraStatoRicercaGlobale(messaggio) {
@@ -6979,24 +6994,354 @@ function toggleStatsWidget(widgetId) {
     }
 }
 
+// ==========================================
+//   FASE 11 — GRUPPO STATISTICHE (Supabase diretto)
+// ==========================================
+
+async function _leggiTabLogCompletoSB_() {
+    const { data, error } = await supabaseClient.from('log_attivita').select('timestamp,id_titolo,tipo_media,tipo_evento');
+    if (error) throw error;
+    const risultato = [];
+    (data || []).forEach(function(r) {
+        const ts = new Date(r.timestamp);
+        if (isNaN(ts.getTime())) return;
+        risultato.push({
+            timestamp: ts, idTitolo: String(r.id_titolo || ''),
+            tipoMedia: String(r.tipo_media || '').toUpperCase(), tipoEvento: String(r.tipo_evento || '').toUpperCase()
+        });
+    });
+    return risultato;
+}
+
+function _round1_(n) { return Math.round(n * 10) / 10; }
+
+function _parseGeneriString_(str) {
+    if (!str) return [];
+    return String(str).split(',').map(function (g) { return g.trim(); }).filter(Boolean);
+}
+
+function _contaGeneri_(items, filterFn) {
+    const conteggio = {};
+    items.forEach(function (item) {
+        if (filterFn && !filterFn(item)) return;
+        _parseGeneriString_(item.generi).forEach(function (g) {
+            conteggio[g] = (conteggio[g] || 0) + 1;
+        });
+    });
+    return conteggio;
+}
+
+function _topN_(conteggioObj, n) {
+    return Object.keys(conteggioObj)
+        .map(function (k) { return { genere: k, conteggio: conteggioObj[k] }; })
+        .sort(function (a, b) { return b.conteggio - a.conteggio; })
+        .slice(0, n);
+}
+
+function _diffGiorniISO_(isoInizio, isoFine) {
+    if (!isoInizio || !isoFine) return null;
+    const d1 = new Date(isoInizio);
+    const d2 = new Date(isoFine);
+    if (isNaN(d1.getTime()) || isNaN(d2.getTime())) return null;
+    return Math.round((d2 - d1) / 86400000);
+}
+
+// Formattazione mese/giorno in ora locale del browser (equivalente diretto
+// di Utilities.formatDate lato Apps Script, che usava il fuso dello script).
+function _formattaMeseLocale_(d) {
+    return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0');
+}
+function _formattaGiornoLocale_(d) {
+    return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+}
+
+function _raggruppaPerMese_(items, getDataFn) {
+    const conteggio = {};
+    items.forEach(function (item) {
+        const iso = getDataFn(item);
+        if (!iso) return;
+        const d = new Date(iso);
+        if (isNaN(d.getTime())) return;
+        const chiave = _formattaMeseLocale_(d);
+        conteggio[chiave] = (conteggio[chiave] || 0) + 1;
+    });
+    return Object.keys(conteggio).sort().map(function (k) {
+        return { mese: k, conteggio: conteggio[k] };
+    });
+}
+
+// ==========================================
+//   Sezione ANIME
+// ==========================================
+function _statsAnime_(anime) {
+    const distribuzioneStati = {};
+    anime.forEach(function (a) {
+        const s = a.stato || 'In corso';
+        distribuzioneStati[s] = (distribuzioneStati[s] || 0) + 1;
+    });
+
+    const distribuzioneColoreVisione = { bianco: 0, celeste: 0, giallo: 0, verde: 0 };
+    anime.forEach(function (a) {
+        const c = a.coloreVisione || 'bianco';
+        if (distribuzioneColoreVisione.hasOwnProperty(c)) distribuzioneColoreVisione[c]++;
+    });
+
+    const istogrammaVoti = new Array(11).fill(0);
+    let sommaVoti = 0, numVoti = 0;
+    anime.forEach(function (a) {
+        const v = parseFloat(String(a.valutazione).replace(',', '.'));
+        if (!isNaN(v) && v >= 0 && v <= 10) {
+            const bucket = Math.min(10, Math.max(0, Math.round(v)));
+            istogrammaVoti[bucket]++;
+            sommaVoti += v;
+            numVoti++;
+        }
+    });
+    const votoMedio = numVoti > 0 ? _round1_(sommaVoti / numVoti) : null;
+
+    const sommaPerGenere = {}, countPerGenere = {};
+    anime.forEach(function (a) {
+        const v = parseFloat(String(a.valutazione).replace(',', '.'));
+        if (isNaN(v)) return;
+        _parseGeneriString_(a.generi).forEach(function (g) {
+            sommaPerGenere[g] = (sommaPerGenere[g] || 0) + v;
+            countPerGenere[g] = (countPerGenere[g] || 0) + 1;
+        });
+    });
+    const votoPerGenere = Object.keys(sommaPerGenere).map(function (g) {
+        return { genere: g, media: _round1_(sommaPerGenere[g] / countPerGenere[g]), conteggio: countPerGenere[g] };
+    }).sort(function (a, b) { return b.media - a.media; });
+
+    const topGeneri = _topN_(_contaGeneri_(anime), 10);
+
+    let stagioniViste = 0, stagioniTotali = 0, filmVisti = 0, filmTotali = 0;
+    anime.forEach(function (a) {
+        stagioniViste += a.stagioniViste || 0;
+        stagioniTotali += a.stagioniTotali || 0;
+        filmVisti += a.filmVisti || 0;
+        filmTotali += a.filmTotali || 0;
+    });
+    const completamento = {
+        stagioni: stagioniTotali > 0 ? _round1_(100 * stagioniViste / stagioniTotali) : 0,
+        film: filmTotali > 0 ? _round1_(100 * filmVisti / filmTotali) : 0,
+        complessivo: (stagioniTotali + filmTotali) > 0
+            ? _round1_(100 * (stagioniViste + filmVisti) / (stagioniTotali + filmTotali)) : 0
+    };
+
+    const preferiti = anime.filter(function (a) { return a.preferito; });
+    const priorita = anime.filter(function (a) { return a.priorita; });
+
+    return {
+        totale: anime.length,
+        distribuzioneStati: distribuzioneStati,
+        distribuzioneColoreVisione: distribuzioneColoreVisione,
+        istogrammaVoti: istogrammaVoti,
+        votoMedio: votoMedio,
+        numeroVoti: numVoti,
+        votoPerGenere: votoPerGenere,
+        topGeneri: topGeneri,
+        completamento: completamento,
+        preferiti: { count: preferiti.length, topGeneri: _topN_(_contaGeneri_(preferiti), 8) },
+        priorita: { count: priorita.length }
+    };
+}
+
+// ==========================================
+//   Sezione MANGA
+// ==========================================
+function _statsManga_(manga) {
+    const distribuzioneStati = {};
+    manga.forEach(function (m) {
+        const s = m.stato || 'In corso';
+        distribuzioneStati[s] = (distribuzioneStati[s] || 0) + 1;
+    });
+
+    const acquistatiSi = manga.filter(function (m) { return m.acquistato === 'Sì'; });
+    const acquistatiNo = manga.filter(function (m) { return m.acquistato !== 'Sì'; });
+    const volumiPosseduti = acquistatiSi.reduce(function (sum, m) { return sum + (parseInt(m.volumi) || 0); }, 0);
+
+    const volumiLettiTotali = manga.reduce(function (sum, m) { return sum + (m.volumiLetti || 0); }, 0);
+    const volumiTotaliTracciati = manga.reduce(function (sum, m) { return sum + (parseInt(m.volumi) || 0); }, 0);
+    const pctLetturaGlobale = volumiTotaliTracciati > 0 ? _round1_(100 * volumiLettiTotali / volumiTotaliTracciati) : 0;
+
+    const inCorso = manga.filter(function (m) {
+        return String(m.stato || '').trim().toLowerCase() === 'in corso' && (parseInt(m.volumi) || 0) > 0;
+    });
+    const piuIndietro = inCorso.map(function (m) {
+        const tot = parseInt(m.volumi) || 0;
+        const letti = m.volumiLetti || 0;
+        return { titolo: m.titolo, percentuale: tot > 0 ? _round1_(100 * letti / tot) : 0, letti: letti, totali: tot };
+    }).sort(function (a, b) { return a.percentuale - b.percentuale; }).slice(0, 5);
+
+    const topGeneri = _topN_(_contaGeneri_(manga), 10);
+
+    const preferiti = manga.filter(function (m) { return m.preferito; });
+    const priorita = manga.filter(function (m) { return m.priorita; });
+
+    return {
+        totale: manga.length,
+        distribuzioneStati: distribuzioneStati,
+        acquistato: { si: acquistatiSi.length, no: acquistatiNo.length, volumiPosseduti: volumiPosseduti },
+        percentualeLettura: {
+            media: pctLetturaGlobale, volumiLetti: volumiLettiTotali,
+            volumiTotali: volumiTotaliTracciati, piuIndietro: piuIndietro
+        },
+        topGeneri: topGeneri,
+        preferiti: { count: preferiti.length, topGeneri: _topN_(_contaGeneri_(preferiti), 8) },
+        priorita: { count: priorita.length }
+    };
+}
+
+// ==========================================
+//   Sezione CINEMA
+// ==========================================
+function _statsCinema_(cinema) {
+    const visti = cinema.filter(function (c) { return c.visione === 'Sì'; });
+    const daVedere = cinema.filter(function (c) { return c.visione !== 'Sì'; });
+    const streaming = cinema.filter(function (c) { return c.streaming; });
+    const sala = cinema.filter(function (c) { return !c.streaming; });
+
+    let sommaGiorni = 0, numCoppie = 0;
+    visti.forEach(function (c) {
+        if (c.streaming) return;
+        const giorni = _diffGiorniISO_(c.dataUscita, c.dataVisione);
+        if (giorni !== null) { sommaGiorni += giorni; numCoppie++; }
+    });
+    const tempoMedioUscitaVisione = numCoppie > 0 ? Math.round(sommaGiorni / numCoppie) : null;
+
+    const filmPerMeseUscita = _raggruppaPerMese_(cinema, function (c) { return c.dataUscita; });
+    const filmVistiPerMese = _raggruppaPerMese_(visti, function (c) { return c.dataVisione; });
+
+    return {
+        totale: cinema.length,
+        vistiVsDaVedere: { visti: visti.length, daVedere: daVedere.length },
+        streamingVsSala: { streaming: streaming.length, sala: sala.length },
+        tempoMedioUscitaVisione: tempoMedioUscitaVisione,
+        filmPerMeseUscita: filmPerMeseUscita,
+        filmVistiPerMese: filmVistiPerMese
+    };
+}
+
+// ==========================================
+//   Sezione CROSS-MEDIA (basata sul log attività)
+// ==========================================
+function _statsCrossMedia_(anime, manga, cinema, log) {
+    const ora = Date.now();
+    const dodiciMesiFa = new Date(ora - 365 * 86400000);
+    const unAnnoFa = new Date(ora - 370 * 86400000);
+
+    const attivitaMap = {};
+    log.forEach(function (ev) {
+        if (ev.tipoEvento !== 'COMPLETAMENTO') return;
+        if (ev.timestamp < dodiciMesiFa) return;
+        const chiave = _formattaMeseLocale_(ev.timestamp);
+        if (!attivitaMap[chiave]) attivitaMap[chiave] = { ANIME: 0, MANGA: 0, CINEMA: 0 };
+        if (attivitaMap[chiave].hasOwnProperty(ev.tipoMedia)) attivitaMap[chiave][ev.tipoMedia]++;
+    });
+    const attivitaPerMese = Object.keys(attivitaMap).sort().map(function (k) {
+        return { mese: k, anime: attivitaMap[k].ANIME, manga: attivitaMap[k].MANGA, cinema: attivitaMap[k].CINEMA };
+    });
+
+    const heatmapMap = {};
+    log.forEach(function (ev) {
+        if (ev.timestamp < unAnnoFa) return;
+        const chiave = _formattaGiornoLocale_(ev.timestamp);
+        heatmapMap[chiave] = (heatmapMap[chiave] || 0) + 1;
+    });
+    const heatmapAttivita = Object.keys(heatmapMap).sort().map(function (k) {
+        return { data: k, conteggio: heatmapMap[k] };
+    });
+
+    return {
+        totali: { anime: anime.length, manga: manga.length, cinema: cinema.length },
+        attivitaPerMese: attivitaPerMese,
+        heatmapAttivita: heatmapAttivita,
+        tempoMedioCompletamento: _tempoMedioCompletamentoPerTipo_(log),
+        radarGeneri: _radarGeneriAnimeManga_(anime, manga)
+    };
+}
+
+function _tempoMedioCompletamentoPerTipo_(log) {
+    const ordinato = log.slice().sort(function (a, b) { return a.timestamp - b.timestamp; });
+    const creazioniInAttesa = {};
+    const giorniPerTipo = { ANIME: [], MANGA: [], CINEMA: [] };
+
+    ordinato.forEach(function (ev) {
+        const chiave = ev.tipoMedia + '||' + ev.idTitolo;
+        if (ev.tipoEvento === 'CREAZIONE') {
+            if (!(chiave in creazioniInAttesa)) creazioniInAttesa[chiave] = ev.timestamp;
+        } else if (ev.tipoEvento === 'COMPLETAMENTO') {
+            if (chiave in creazioniInAttesa) {
+                const giorni = Math.round((ev.timestamp - creazioniInAttesa[chiave]) / 86400000);
+                if (giorni >= 0 && giorniPerTipo.hasOwnProperty(ev.tipoMedia)) {
+                    giorniPerTipo[ev.tipoMedia].push(giorni);
+                }
+                delete creazioniInAttesa[chiave];
+            }
+        }
+    });
+
+    const media = function (arr) {
+        if (!arr.length) return null;
+        return Math.round(arr.reduce(function (s, v) { return s + v; }, 0) / arr.length);
+    };
+
+    return { anime: media(giorniPerTipo.ANIME), manga: media(giorniPerTipo.MANGA), cinema: media(giorniPerTipo.CINEMA) };
+}
+
+function _radarGeneriAnimeManga_(anime, manga) {
+    const contAnime = _contaGeneri_(anime);
+    const contManga = _contaGeneri_(manga);
+
+    const tuttiGeneri = {};
+    Object.keys(contAnime).forEach(function (g) { tuttiGeneri[g] = (tuttiGeneri[g] || 0) + contAnime[g]; });
+    Object.keys(contManga).forEach(function (g) { tuttiGeneri[g] = (tuttiGeneri[g] || 0) + contManga[g]; });
+
+    const generiOrdinati = Object.keys(tuttiGeneri)
+        .sort(function (a, b) { return tuttiGeneri[b] - tuttiGeneri[a]; })
+        .slice(0, 8);
+
+    return {
+        labels: generiOrdinati,
+        anime: generiOrdinati.map(function (g) { return contAnime[g] || 0; }),
+        manga: generiOrdinati.map(function (g) { return contManga[g] || 0; })
+    };
+}
+
+async function getStatsDataSB_() {
+    try {
+        const [anime, manga, cinema, log] = await Promise.all([
+            getAnimeDataSB_(), getMangaDataSB_(), getCinemaDataSB_(), _leggiTabLogCompletoSB_()
+        ]);
+        return {
+            anime: _statsAnime_(anime),
+            manga: _statsManga_(manga),
+            cinema: _statsCinema_(cinema),
+            crossMedia: _statsCrossMedia_(anime, manga, cinema, log)
+        };
+    } catch (err) {
+        console.error('Errore in getStatsDataSB_: ' + err);
+        throw new Error('Impossibile calcolare le statistiche: ' + err.message);
+    }
+}
+
 // Punto di ingresso: carica i dati dal server e poi disegna tutti i grafici
 function caricaDatiStats() {
     document.getElementById('loadingStats').style.display = 'block';
     document.getElementById('statsContent').style.display = 'none';
 
-    google.script.run
-        .withSuccessHandler(function (data) {
+    getStatsDataSB_()
+        .then(function (data) {
             statsData = data || {};
             assicuraDefaultsChartJs();
             document.getElementById('loadingStats').style.display = 'none';
             document.getElementById('statsContent').style.display = 'block';
             renderStatsCharts(statsData);
         })
-        .withFailureHandler(function (err) {
+        .catch(function (err) {
             document.getElementById('loadingStats').innerHTML =
                 '❌ Errore nel caricamento delle statistiche: ' + (err && err.message ? err.message : err);
-        })
-        .getStatsData();
+        });
 }
 
 function renderStatsCharts(data) {
