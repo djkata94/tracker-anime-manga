@@ -5738,6 +5738,150 @@ function mostraOverlayAniList_() {
     document.getElementById('anilistContent').style.transform = 'scale(1)';
 }
 
+// ==========================================
+//   FASE 11/13 — GRUPPO ANILIST (chiamata diretta dal browser)
+//   L'API pubblica di AniList supporta CORS per query pubbliche: nessuna
+//   chiave necessaria, nessuna Edge Function necessaria per questo gruppo.
+// ==========================================
+
+async function eseguireRichiestaAniList_(gqlQuery, variables) {
+    let response;
+    try {
+        response = await fetch('https://graphql.anilist.co', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+            body: JSON.stringify({ query: gqlQuery, variables: variables })
+        });
+    } catch (networkErr) {
+        console.error('AniList - errore di rete: ' + networkErr);
+        throw new Error('Rete: impossibile raggiungere AniList (' + networkErr.message + '). Controlla la connessione o riprova tra qualche minuto.');
+    }
+
+    const statusCode = response.status;
+    const bodyText = await response.text();
+
+    if (statusCode !== 200) {
+        console.error('AniList - HTTP ' + statusCode + ': ' + bodyText.substring(0, 500));
+        let motivo;
+        if (statusCode === 429) motivo = 'troppe richieste in poco tempo (rate limit di AniList). Riprova tra qualche minuto.';
+        else if (statusCode === 502 || statusCode === 503 || statusCode === 504) motivo = 'AniList è temporaneamente non disponibile (probabile manutenzione o sovraccarico dei loro server).';
+        else if (statusCode >= 500) motivo = 'errore interno del server AniList.';
+        else if (statusCode === 400) motivo = 'richiesta non valida (query malformata).';
+        else motivo = 'risposta HTTP inattesa.';
+        throw new Error('AniList non disponibile [HTTP ' + statusCode + ']: ' + motivo);
+    }
+
+    let json;
+    try {
+        json = JSON.parse(bodyText);
+    } catch (parseErr) {
+        console.error('AniList - risposta non JSON: ' + bodyText.substring(0, 500));
+        throw new Error('AniList ha restituito una risposta non valida (JSON malformato). Riprova tra poco.');
+    }
+
+    if (json.errors && json.errors.length > 0) {
+        const msg = json.errors.map(function(e) { return e.message; }).join('; ');
+        console.error('AniList - errore GraphQL: ' + msg);
+        throw new Error('AniList ha segnalato un errore nella richiesta: ' + msg);
+    }
+
+    return json;
+}
+
+async function cercaCandidatiAniListSB_(query, tipoMedia) {
+    const gqlQuery = `
+        query ($search: String, $type: MediaType) {
+            Page(page: 1, perPage: 8) {
+                media(search: $search, type: $type, sort: SEARCH_MATCH) {
+                    id
+                    title { romaji english }
+                    startDate { year }
+                    coverImage { medium }
+                }
+            }
+        }
+    `;
+
+    const json = await eseguireRichiestaAniList_(gqlQuery, { search: query, type: tipoMedia });
+
+    if (!json.data || !json.data.Page || !json.data.Page.media) {
+        console.error('AniList - struttura risposta inattesa: ' + JSON.stringify(json).substring(0, 500));
+        throw new Error('AniList ha restituito una struttura dati inattesa. Riprova tra poco.');
+    }
+
+    return json.data.Page.media.map(function(m) {
+        return {
+            id: m.id,
+            titolo: (m.title && (m.title.english || m.title.romaji)) || 'Senza titolo',
+            titoloAlt: m.title ? m.title.romaji : '',
+            anno: (m.startDate && m.startDate.year) ? m.startDate.year : '',
+            immagine: (m.coverImage && m.coverImage.medium) ? m.coverImage.medium : ''
+        };
+    });
+}
+
+// Traduzione tramite l'endpoint pubblico gratuito di Google Translate (non
+// ufficiale, nessuna chiave richiesta). Se non risponde per qualsiasi
+// motivo, si torna al testo originale in inglese invece di bloccare il
+// flusso: meglio una sinossi in inglese che nessuna sinossi.
+async function tradurreTestoGoogleFree_(testo, sourceLang, targetLang) {
+    if (!testo) return testo;
+    try {
+        const url = 'https://translate.googleapis.com/translate_a/single?client=gtx&sl=' + sourceLang + '&tl=' + targetLang + '&dt=t&q=' + encodeURIComponent(testo);
+        const resp = await fetch(url);
+        if (!resp.ok) throw new Error('HTTP ' + resp.status);
+        const json = await resp.json();
+        if (!json || !json[0]) return testo;
+        return json[0].map(function(segmento) { return segmento[0]; }).join('');
+    } catch (err) {
+        console.error('Errore durante la traduzione: ' + err);
+        return testo;
+    }
+}
+
+async function getDettaglioTraduzioneAniListSB_(id) {
+    const gqlQuery = `
+        query ($id: Int) {
+            Media(id: $id) {
+                title { romaji english }
+                description(asHtml: false)
+                coverImage { extraLarge large }
+                genres
+                tags { name }
+            }
+        }
+    `;
+
+    const json = await eseguireRichiestaAniList_(gqlQuery, { id: parseInt(id) });
+
+    try {
+        if (!json.data || !json.data.Media) throw new Error('Opera non trovata su AniList (ID non valido o rimosso dal catalogo).');
+
+        const media = json.data.Media;
+        const immagine = (media.coverImage && (media.coverImage.extraLarge || media.coverImage.large)) || '';
+
+        let descrizione = media.description || '';
+        descrizione = descrizione
+            .replace(/<br\s*\/?>/gi, '\n')
+            .replace(/<i>[\s\S]*?<\/i>/gi, '')
+            .replace(/<\/?[^>]+(>|$)/g, '')
+            .replace(/\n{3,}/g, '\n\n')
+            .trim();
+
+        const sinossiTradotta = descrizione ? await tradurreTestoGoogleFree_(descrizione, 'en', 'it') : descrizione;
+
+        return {
+            titolo: (media.title && (media.title.english || media.title.romaji)) || '',
+            sinossi: sinossiTradotta || 'Nessuna sinossi disponibile per questa opera.',
+            immagine: immagine,
+            generiSuggeriti: (media.genres || []).concat((media.tags || []).map(function(t) { return t.name; }))
+        };
+    } catch (err) {
+        console.error('Errore dettaglio AniList: ' + err);
+        throw err;
+    }
+}
+		
 function chiudiOverlayAniList() {
     const overlay = document.getElementById('anilistOverlay');
     const content = document.getElementById('anilistContent');
@@ -5763,10 +5907,9 @@ function apriRicercaAniList(tipo) {
     document.getElementById('anilistBody').innerHTML =
         `<span style="color: ${colorLoading}; font-weight: 600; display: inline-block; animation: pulse 1.5s infinite;">⏳ Ricerca dei candidati in corso...</span>`;
 
-    google.script.run
-        .withSuccessHandler(function(candidati) { renderCandidatiAniList_(tipo, candidati); })
-        .withFailureHandler(function(err) { renderErroreAniList_(err); })
-        .cercaCandidatiAniList(titolo, tipo === 'anime' ? 'ANIME' : 'MANGA');
+    cercaCandidatiAniListSB_(titolo, tipo === 'anime' ? 'ANIME' : 'MANGA')
+        .then(function(candidati) { renderCandidatiAniList_(tipo, candidati); })
+        .catch(function(err) { renderErroreAniList_(err); });
 }
 
 function renderCandidatiAniList_(tipo, candidati) {
@@ -5814,10 +5957,9 @@ function selezionaCandidatoAniList_(tipo, id, titoloCandidato) {
     document.getElementById('anilistBody').innerHTML =
         `<span style="color: ${colorLoading}; font-weight: 600; display: inline-block; animation: pulse 1.5s infinite;">⏳ Recupero sinossi e traduzione in corso...</span>`;
 
-    google.script.run
-        .withSuccessHandler(function(dettaglio) { renderDettaglioAniList_(tipo, dettaglio); })
-        .withFailureHandler(function(err) { renderErroreAniList_(err); })
-        .getDettaglioTraduzioneAniList(id);
+	    getDettaglioTraduzioneAniListSB_(id)
+        .then(function(dettaglio) { renderDettaglioAniList_(tipo, dettaglio); })
+        .catch(function(err) { renderErroreAniList_(err); });
 }
 
 function renderDettaglioAniList_(tipo, dettaglio) {
