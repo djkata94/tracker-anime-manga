@@ -4429,7 +4429,8 @@ function apriLightbox(url) {
             return (data || []).map(function(c) {
                 return {
                     titolo: c.titolo, dataUscita: c.data_uscita || '', dataVisione: c.data_visione || '',
-                    visione: c.visione ? 'Sì' : 'No', immagine: c.immagine || '', streaming: !!c.streaming
+                    visione: c.visione ? 'Sì' : 'No', immagine: c.immagine || '', streaming: !!c.streaming,
+                    trama: c.trama || '', generi: c.generi || ''
                 };
             });
         }
@@ -4438,7 +4439,8 @@ function apriLightbox(url) {
             const isStreaming = !!dati.streaming;
             const { error } = await supabaseClient.from('cinema').insert([{
                 titolo: dati.titolo || '', data_uscita: formattaDataCinemaISO_(dati.dataUscita || '') || null,
-                data_visione: null, visione: false, immagine: dati.immagine || '', streaming: isStreaming
+                data_visione: null, visione: false, immagine: dati.immagine || '', streaming: isStreaming,
+                trama: dati.trama || '', generi: dati.generi || ''
             }]);
             if (error) throw error;
             if (!isStreaming) await registraLogSB_(dati.titolo, 'CINEMA', 'CREAZIONE', 'N/D', 'Da vedere');
@@ -4592,9 +4594,15 @@ function apriLightbox(url) {
                 return a.dataUscita.localeCompare(b.dataUscita);
             });
 
-            // Film in streaming: ordine alfabetico
-            daVedereStreaming.sort((a, b) => (a.titolo || '').localeCompare(b.titolo || '', 'it', { sensitivity: 'base' }));
-
+            // Film in streaming: data di uscita più recente in alto, a scendere.
+            // Quelli senza data di uscita nota vanno in coda.
+            daVedereStreaming.sort((a, b) => {
+                if (!a.dataUscita && !b.dataUscita) return (a.titolo || '').localeCompare(b.titolo || '');
+                if (!a.dataUscita) return 1;
+                if (!b.dataUscita) return -1;
+                return b.dataUscita.localeCompare(a.dataUscita);
+            });
+			
             // "Visti" ordinati per data di visione decrescente (i più recenti in cima).
             visti.sort((a, b) => {
                 if (!a.dataVisione && !b.dataVisione) return (a.titolo || '').localeCompare(b.titolo || '');
@@ -4689,6 +4697,10 @@ function apriLightbox(url) {
                 ? `<button class="action-icon-btn" onclick="trasformaCinemaInStreamingLista('${safeTitle}')" title="Sposta tra i film da vedere in streaming">📺</button>`
                 : '';
 
+            const infoBtn = (item.trama || item.generi)
+                ? `<button class="action-icon-btn" onclick="mostraDettaglioCinemaLista_('${safeTitle}')" title="Trama e generi">ℹ️</button>`
+                : '';
+
             const trashDisabled = isVisto ? 'disabled title="Non puoi eliminare un film già visto"' : `onclick="eliminaCinemaLista('${safeTitle}')" title="Elimina film"`;
 
             tr.innerHTML = `
@@ -4696,11 +4708,68 @@ function apriLightbox(url) {
                 ${isVisto ? dataVisioneCol : dataUscitaCol}
                 <td style="text-align:center;">${visioneBtn}</td>
                 <td style="text-align:center;">
+                    ${infoBtn}
                     ${streamingBtn}
                     <button class="action-icon-btn" ${trashDisabled}>🗑️</button>
                 </td>
             `;
             return tr;
+        }
+
+        // Mostra trama e generi di un film già salvato (dati letti da TMDB al
+        // momento dell'aggiunta, nessuna chiamata di rete: sono già in cinemaList).
+        function mostraDettaglioCinemaLista_(titolo) {
+            const item = cinemaList.find(x => x.titolo === titolo);
+            if (!item) return;
+
+            let overlay = document.getElementById('cinemaInfoOverlay');
+            if (!overlay) {
+                overlay = document.createElement('div');
+                overlay.id = 'cinemaInfoOverlay';
+                overlay.style = `
+                    position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+                    background: rgba(5, 5, 7, 0.85); backdrop-filter: blur(4px);
+                    display: flex; align-items: center; justify-content: center;
+                    z-index: 10000; opacity: 0; transition: opacity 0.25s ease; pointer-events: none;
+                `;
+                const content = document.createElement('div');
+                content.id = 'cinemaInfoContent';
+                content.style = `
+                    background: var(--surface-solid, #14162a); border: 1px solid var(--border-color, #262a42);
+                    border-radius: 12px; padding: 24px; max-width: 500px; width: 90%;
+                    box-shadow: 0 20px 40px rgba(0,0,0,0.6), 0 0 20px rgba(0,0,0,0.3);
+                    position: relative; transform: scale(0.9);
+                    transition: transform 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+                `;
+                content.innerHTML = `
+                    <button id="closeCinemaInfoBtn" style="position: absolute; top: 14px; right: 16px; background: none; border: none; color: var(--text-muted, #8890ab); font-size: 20px; cursor: pointer;">✕</button>
+                    <h3 id="cinemaInfoTitle" style="margin-top: 0; margin-bottom: 10px; color: var(--text, #f2f3fa); font-size: 18px; font-weight: 600; padding-right: 24px; border-bottom: 1px solid var(--border-color, #262a42); padding-bottom: 10px;"></h3>
+                    <div id="cinemaInfoGeneri" style="color: var(--primary, #7c6cff); font-size: 13px; margin-bottom: 10px;"></div>
+                    <div id="cinemaInfoBody" style="color: var(--text, #f2f3fa); font-size: 14px; line-height: 1.6; max-height: 250px; overflow-y: auto; white-space: pre-line; padding-right: 5px;"></div>
+                `;
+                overlay.appendChild(content);
+                document.body.appendChild(overlay);
+                document.getElementById('closeCinemaInfoBtn').onclick = chiudiDettaglioCinemaLista_;
+                overlay.onclick = function(e) { if (e.target === overlay) chiudiDettaglioCinemaLista_(); };
+            }
+
+            document.getElementById('cinemaInfoTitle').innerText = item.titolo || '';
+            document.getElementById('cinemaInfoGeneri').innerText = item.generi ? ('🏷️ ' + item.generi) : '';
+            document.getElementById('cinemaInfoBody').innerText = item.trama || 'Nessuna trama disponibile per questo film.';
+
+            overlay.style.pointerEvents = 'auto';
+            overlay.style.opacity = '1';
+            document.getElementById('cinemaInfoContent').style.transform = 'scale(1)';
+        }
+
+        function chiudiDettaglioCinemaLista_() {
+            const overlay = document.getElementById('cinemaInfoOverlay');
+            const content = document.getElementById('cinemaInfoContent');
+            if (overlay && content) {
+                overlay.style.opacity = '0';
+                overlay.style.pointerEvents = 'none';
+                content.style.transform = 'scale(0.9)';
+            }
         }
 
         // Attiva/disattiva il flag Visione direttamente dalla lista. Quando si segna un
@@ -4991,14 +5060,18 @@ function apriLightbox(url) {
 
             const preview = document.getElementById('cinemaDettaglioPreview');
             const safeImg = (dettaglio.immagine || '').replace(/'/g, "\\'");
+            const trama = dettaglio.trama || '';
+            const tramaAnteprima = trama.length > 160 ? trama.substring(0, 160) + '…' : trama;
             preview.innerHTML = `
                 <div style="display:flex; gap:14px; align-items:flex-start; border-top:1px solid var(--border-color); padding-top:14px;">
                     <img src="${safeImg}" style="width:90px; border-radius:8px; flex-shrink:0; background:#222;">
                     <div style="flex:1;">
                         <div style="font-weight:700; margin-bottom:6px;">${dettaglio.titolo || ''}</div>
-                        <div style="font-size:13px; color: var(--text-muted); margin-bottom:12px;">
+                        <div style="font-size:13px; color: var(--text-muted); margin-bottom:6px;">
                             Uscita nelle sale italiane: <strong>${formattaDataItalianaCinema_(dettaglio.dataUscita)}</strong>
                         </div>
+                        ${dettaglio.generi ? `<div style="font-size:12px; color: var(--text-muted); margin-bottom:6px;">🏷️ ${dettaglio.generi}</div>` : ''}
+                        ${tramaAnteprima ? `<div style="font-size:12px; color: var(--text-muted); margin-bottom:12px; font-style:italic;">${tramaAnteprima}</div>` : ''}
                         <button type="button" class="btn btn-cinema" onclick="confermaSalvataggioCinema_()">✅ Salva questo film</button>
                     </div>
                 </div>
@@ -5028,6 +5101,8 @@ function apriLightbox(url) {
                 titolo: titolo,
                 dataUscita: (ultimoDettaglioCinemaTMDB && ultimoDettaglioCinemaTMDB.dataUscita) || '',
                 immagine: (ultimoDettaglioCinemaTMDB && ultimoDettaglioCinemaTMDB.immagine) || '',
+                trama: (ultimoDettaglioCinemaTMDB && ultimoDettaglioCinemaTMDB.trama) || '',
+                generi: (ultimoDettaglioCinemaTMDB && ultimoDettaglioCinemaTMDB.generi) || '',
                 streaming: isStreamingCinemaSelezionato_()
             };
             salvaNuovoCinema_(dati);
