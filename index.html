@@ -4904,6 +4904,30 @@ function apriLightbox(url) {
             }, 50);
         }
 
+        // ==========================================
+        //   FASE 11/12 — GRUPPO TMDB (via Edge Function tmdb-proxy)
+        //   La chiave segreta TMDB non tocca mai il browser: la funzione
+        //   gira sui server Supabase e richiede un utente autenticato.
+        // ==========================================
+
+        async function cercaCandidatiCinemaTMDBSB_(query) {
+            const { data, error } = await supabaseClient.functions.invoke('tmdb-proxy', {
+                body: { action: 'search', query: query }
+            });
+            if (error) throw new Error('Impossibile contattare TMDB. Riprova più tardi.');
+            if (data && data.error) throw new Error(data.error);
+            return data || [];
+        }
+
+        async function getDettaglioCinemaTMDBSB_(id) {
+            const { data, error } = await supabaseClient.functions.invoke('tmdb-proxy', {
+                body: { action: 'detail', id: id }
+            });
+            if (error) throw new Error('Impossibile recuperare i dettagli da TMDB. Riprova più tardi.');
+            if (data && data.error) throw new Error(data.error);
+            return data;
+        }
+
         function cercaCandidatiCinema() {
             const titolo = document.getElementById('inpTitoloCinema').value.trim();
             if (!titolo) {
@@ -4914,10 +4938,9 @@ function apriLightbox(url) {
             const wrapper = document.getElementById('cinemaCandidatiWrapper');
             wrapper.innerHTML = `<p style="color: var(--warning); font-weight:600;">⏳ Ricerca su TMDB in corso...</p>`;
 
-            google.script.run
-                .withSuccessHandler(function(candidati) { renderCandidatiCinema_(candidati); })
-                .withFailureHandler(function(err) { renderErroreCinema_(err); })
-                .cercaCandidatiCinemaTMDB(titolo);
+            cercaCandidatiCinemaTMDBSB_(titolo)
+                .then(function(candidati) { renderCandidatiCinema_(candidati); })
+                .catch(function(err) { renderErroreCinema_(err); });
         }
 
         function renderCandidatiCinema_(candidati) {
@@ -4957,10 +4980,9 @@ function apriLightbox(url) {
             const preview = document.getElementById('cinemaDettaglioPreview');
             preview.innerHTML = `<p style="color: var(--warning); font-weight:600;">⏳ Recupero data di uscita nelle sale italiane...</p>`;
 
-            google.script.run
-                .withSuccessHandler(function(dettaglio) { renderDettaglioCinema_(dettaglio); })
-                .withFailureHandler(function(err) { renderErroreCinema_(err); })
-                .getDettaglioCinemaTMDB(id);
+            getDettaglioCinemaTMDBSB_(id)
+                .then(function(dettaglio) { renderDettaglioCinema_(dettaglio); })
+                .catch(function(err) { renderErroreCinema_(err); });
         }
 
         function renderDettaglioCinema_(dettaglio) {
