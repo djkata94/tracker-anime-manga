@@ -1136,4 +1136,42 @@ Fammi sapere quando vuoi iniziare il collaudo finale, o se preferisci
 prima rivedere/rifinire qualche dettaglio del sito.
 
 ---
+
+# 🔧 PARTE 3 — Miglioramenti post-migrazione
+
+La migrazione (Parti 1 e 2) è conclusa. Da qui in poi la guida raccoglie le
+richieste di modifica fatte sul sito già migrato — utile per ricordare cosa
+è stato cambiato e perché, oltre alle istruzioni per riprodurlo.
+
+## Richiesta 1 — Ordinamento "Da Vedere in Streaming"
+
+Cambiato da alfabetico a **data di uscita più recente in alto**, coerente
+con l'idea che i titoli usciti da poco sono probabilmente quelli più "caldi"
+da recuperare in streaming.
+
+## Richiesta 2 — Trama e generi dai dati TMDB
+
+TMDB fornisce già `overview` (trama, in italiano grazie a `language=it-IT`)
+e `genres` nella stessa risposta di dettaglio che usiamo già: nessuna
+chiamata TMDB aggiuntiva necessaria.
+
+**Modifiche:**
+- 2 nuove colonne sulla tabella `cinema` (`trama` testo, `generi` testo)
+- Edge Function `tmdb-proxy`: la risposta di `action: "detail"` ora include
+  anche `trama` e `generi`
+- `index.html`: le funzioni di lettura/scrittura Cinema salvano e restituiscono
+  questi due campi; la preview nel modale "+ Nuovo Film" li mostra;
+  aggiunto un pulsante **ℹ️** nella lista Cinema (solo sui film che hanno
+  questi dati) per rivedere trama e generi in un popup, riusando lo stesso
+  stile dell'overlay sinossi di Anime/Manga
+
+**Nota:** i film già presenti in lista da prima di questa modifica non
+avranno trama/generi (colonne vuote) finché non vengono ri-aggiunti — non è
+possibile recuperarli retroattivamente senza ripetere la ricerca TMDB per
+ciascuno. Non è un problema per i nuovi film aggiunti da ora in poi.
+
+---
+*Ultimo aggiornamento: Parte 3 avviata — ordinamento streaming per data e trama/generi TMDB.*
+
+---
 *Ultimo aggiornamento: Fase 11 chiusa al 100% (tutti i gruppi, incluso TMDB) — Fase 12 completata. Fasi 13/14 risolte in itinere. Resta solo la Fase 15 (collaudo finale + spegnimento Apps Script).*
