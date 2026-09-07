@@ -601,6 +601,119 @@
             flex-shrink: 0;
         }
 
+        /* ==========================================================
+           WIDGET DELLA VIEW CINEMA (riusano .stats-widget della view Stats)
+           + slider orizzontale "Al cinema" <-> "In streaming"
+           ========================================================== */
+
+        /* Il body del widget cinema non ha il padding generoso dei widget Stats:
+           la tabella deve poter arrivare a filo dei bordi arrotondati. */
+        .cinema-widget .stats-widget-body-inner { padding: 14px 16px 16px 16px; }
+
+        /* Gruppo di controlli a destra nella testata del widget (contatore,
+           switch cinema/streaming, freccia di apertura). */
+        .cinema-widget-header-right {
+            display: flex; align-items: center; gap: 12px; flex-shrink: 0;
+        }
+
+        /* --- Pulsantino di switch Sala / Streaming nella testata --- */
+        .cinema-mode-switch {
+            position: relative;
+            display: inline-flex;
+            background: #10111d;
+            border: 1px solid var(--border-color);
+            border-radius: 999px;
+            padding: 3px;
+            gap: 2px;
+        }
+        /* Pillola scorrevole che evidenzia l'opzione attiva */
+        .cinema-mode-switch::before {
+            content: '';
+            position: absolute;
+            top: 3px; left: 3px; bottom: 3px;
+            width: calc(50% - 3px);
+            border-radius: 999px;
+            background: rgba(124, 108, 255, 0.22);
+            border: 1px solid rgba(124, 108, 255, 0.45);
+            transition: transform 0.35s cubic-bezier(0.65, 0, 0.35, 1);
+        }
+        .cinema-mode-switch[data-modalita="streaming"]::before { transform: translateX(100%); }
+        .cinema-mode-opt {
+            position: relative; z-index: 1;
+            background: none; border: none; cursor: pointer;
+            font-family: inherit; font-size: 11.5px; font-weight: 700;
+            color: var(--text-muted);
+            padding: 5px 12px; border-radius: 999px;
+            white-space: nowrap;
+            transition: color 0.25s ease;
+        }
+        .cinema-mode-opt:hover { color: var(--text); }
+        .cinema-mode-opt.active { color: #fff; }
+
+        /* --- Slider: viewport con overflow nascosto + track a due pannelli --- */
+        .cinema-slider-viewport {
+            position: relative;
+            overflow: hidden;
+            transition: height 0.35s cubic-bezier(0.65, 0, 0.35, 1);
+        }
+        .cinema-slider-track {
+            display: flex;
+            align-items: flex-start;
+            width: 100%;
+            transition: transform 0.35s cubic-bezier(0.65, 0, 0.35, 1);
+        }
+        .cinema-slider-track[data-modalita="streaming"] { transform: translateX(-100%); }
+        /* Il pannello non attivo resta nel flusso (serve per misurarne l'altezza e
+           per farlo scorrere via): resta visibile durante la transizione ed è la
+           viewport a nasconderlo. L'attributo `inert` lo esclude da mouse,
+           tastiera e screen reader senza toccarne la resa grafica. */
+        .cinema-slider-pane { flex: 0 0 100%; min-width: 0; }
+
+        /* --- Area tabella con scorrimento verticale (max 5 righe) --- */
+        /* L'altezza massima esatta viene calcolata a runtime in
+           applicaScrollCinema_(): intestazione + altezza reale delle prime 5 righe. */
+        .cinema-scroll-area {
+            overflow-y: auto;
+            overflow-x: hidden; /* le colonne sono a larghezza fissa: mai scorrimento laterale */
+            -webkit-overflow-scrolling: touch;
+            scrollbar-width: thin;
+            scrollbar-color: var(--border-color) transparent;
+        }
+        .cinema-scroll-area::-webkit-scrollbar { width: 8px; }
+        .cinema-scroll-area::-webkit-scrollbar-track { background: transparent; }
+        .cinema-scroll-area::-webkit-scrollbar-thumb { background: var(--border-color); border-radius: 10px; }
+        .cinema-scroll-area::-webkit-scrollbar-thumb:hover { background: var(--accent); }
+
+        /* Intestazione sempre visibile mentre si scorre l'elenco */
+        .cinema-scroll-area thead th {
+            position: sticky; top: 0; z-index: 2;
+        }
+        /* table-layout fisso + colgroup: ogni riga entra per intero nella larghezza
+           disponibile, così non serve mai lo scorrimento orizzontale. */
+        .cinema-table { table-layout: fixed; width: 100%; }
+        .cinema-table th, .cinema-table td { padding: 12px 14px; }
+        .cinema-table .media-title {
+            white-space: normal;
+            overflow-wrap: anywhere;
+            line-height: 1.3;
+            font-size: 14px;
+        }
+        .cinema-table .action-icon-btn { margin: 0 2px; }
+
+        /* Sotto i ~760px le quattro colonne a larghezza fissa non entrerebbero più:
+           torno al comportamento originale (larghezze automatiche + scorrimento
+           laterale), altrimenti overflow-x:hidden taglierebbe fuori dei dati. */
+        @media (max-width: 760px) {
+            .cinema-scroll-area { overflow-x: auto; }
+            .cinema-table { table-layout: auto; min-width: 560px; }
+            .cinema-table th, .cinema-table td { padding: 10px 10px; }
+            /* Testata su due righe: titolo sopra, contatore + switch + freccia sotto */
+            .cinema-widget .stats-widget-header { flex-wrap: wrap; }
+            .cinema-widget .stats-widget-title-wrap { flex: 1 1 100%; }
+            .cinema-widget-header-right { width: 100%; justify-content: flex-end; gap: 8px; }
+            .cinema-mode-opt { padding: 5px 10px; font-size: 11px; }
+        }
+
         /* --- STILE PER IL SELETTORE MULTIPLO DEI GENERI NELLE MODALI --- */
         .genres-grid-container {
             display: grid;
@@ -1881,11 +1994,8 @@
 
         <div class="filter-bar">
             <input type="search" id="searchInpCinema" placeholder="Cerca titolo...">
-            <div class="filter-group" id="filterGroupModalitaCinema">
-                <button class="filter-btn active" data-modalita="cinema">🎬 Al Cinema</button>
-                <button class="filter-btn" data-modalita="streaming">📺 Streaming</button>
-                <button class="filter-btn" data-modalita="all">Tutti</button>
-            </div>
+            <!-- Lo switch Al Cinema / Streaming non sta più qui: è diventato il
+                 pulsantino nella testata del widget "Da Vedere" (vedi sotto). -->
 
             <!-- FINESTRA FLUTTUANTE FILTRO GENERI CINEMA -->
             <div class="dropdown-container">
@@ -1900,38 +2010,125 @@
         <div id="loadingCinema" style="color:var(--warning); padding:20px; font-weight:600;">Caricamento dati dal server...</div>
 
         <div id="cinemaContent" style="display:none;">
-            <div class="section-title-label" id="cinemaTitoloDaVedere">🎯 Da Vedere al Cinema</div>
-            <div class="table-container">
-                <table>
-                    <thead>
-                        <tr>
-                            <th>Film</th>
-                            <th>Data Uscita</th>
-                            <th style="text-align:center;">Visione</th>
-                            <th style="text-align:center;">Azioni</th>
-                        </tr>
-                    </thead>
-                    <tbody id="cinemaTableBodyDaVedere"></tbody>
-                </table>
-            </div>
-            <div id="cinemaEmptyDaVedere" style="display:none; color:var(--text-muted); padding: 14px 4px; font-size:13px;">Nessun film in programma al momento. Aggiungine uno con "+ Nuovo Film".</div>
 
-            <div id="cinemaBloccoVisti">
-                <div class="section-title-label">✅ Visti</div>
-                <div class="table-container">
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>Film</th>
-                                <th>Data Visione</th>
-                                <th style="text-align:center;">Visione</th>
-                                <th style="text-align:center;">Azioni</th>
-                            </tr>
-                        </thead>
-                        <tbody id="cinemaTableBodyVisti"></tbody>
-                    </table>
+            <!--
+                 🎯 WIDGET "DA VEDERE" — aperto di default.
+                 Contiene due pannelli affiancati (sala / streaming) che scorrono
+                 orizzontalmente al click sul pulsantino di switch nella testata.
+                 Ogni pannello mostra al massimo 5 righe, poi scorre in verticale.
+            -->
+            <div class="stats-widget cinema-widget" id="cinemaWidgetDaVedere">
+                <div class="stats-widget-header" onclick="toggleStatsWidget('cinemaWidgetDaVedere')">
+                    <div class="stats-widget-title-wrap">
+                        <span class="stats-widget-title" id="cinemaWidgetDaVedereTitolo">🎯 Da Vedere al Cinema</span>
+                        <span class="stats-widget-subtitle" id="cinemaWidgetDaVedereSub">I film che ti aspettano in sala, dal più vicino all'uscita.</span>
+                    </div>
+                    <div class="cinema-widget-header-right">
+                        <span class="home-progress-count" id="cinemaWidgetDaVedereCount"></span>
+                        <!-- Lo switch vive dentro una testata cliccabile: gli handler
+                             fermano la propagazione per non aprire/chiudere il widget. -->
+                        <div class="cinema-mode-switch" id="cinemaModeSwitch" data-modalita="cinema" onclick="event.stopPropagation();">
+                            <button type="button" class="cinema-mode-opt active" data-modalita="cinema" title="Mostra i film da vedere al cinema">🎬 Sala</button>
+                            <button type="button" class="cinema-mode-opt" data-modalita="streaming" title="Mostra i film da vedere in streaming">📺 Streaming</button>
+                        </div>
+                        <span class="stats-widget-toggle-icon">▾</span>
+                    </div>
                 </div>
-                <div id="cinemaEmptyVisti" style="display:none; color:var(--text-muted); padding: 14px 4px; font-size:13px;">Nessun film visto ancora registrato.</div>
+                <div class="stats-widget-body">
+                    <div class="stats-widget-body-inner">
+                        <div class="cinema-slider-viewport" id="cinemaSliderViewport">
+                            <div class="cinema-slider-track" id="cinemaSliderTrack" data-modalita="cinema">
+
+                                <!-- Pannello 1: film da vedere AL CINEMA -->
+                                <div class="cinema-slider-pane" id="cinemaPaneCinema" data-modalita="cinema">
+                                    <div class="table-container cinema-scroll-area" id="cinemaScrollDaVedere">
+                                        <table class="cinema-table">
+                                            <colgroup>
+                                                <col>
+                                                <col style="width:120px;">
+                                                <col style="width:132px;">
+                                                <col style="width:142px;">
+                                            </colgroup>
+                                            <thead>
+                                                <tr>
+                                                    <th>Film</th>
+                                                    <th>Data Uscita</th>
+                                                    <th style="text-align:center;">Visione</th>
+                                                    <th style="text-align:center;">Azioni</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody id="cinemaTableBodyDaVedere"></tbody>
+                                        </table>
+                                    </div>
+                                    <div id="cinemaEmptyDaVedere" style="display:none; color:var(--text-muted); padding: 14px 4px; font-size:13px;">Nessun film in programma al momento. Aggiungine uno con "+ Nuovo Film".</div>
+                                </div>
+
+                                <!-- Pannello 2: film da vedere IN STREAMING -->
+                                <div class="cinema-slider-pane" id="cinemaPaneStreaming" data-modalita="streaming" inert>
+                                    <div class="table-container cinema-scroll-area" id="cinemaScrollStreaming">
+                                        <table class="cinema-table">
+                                            <colgroup>
+                                                <col>
+                                                <col style="width:120px;">
+                                                <col style="width:132px;">
+                                                <col style="width:142px;">
+                                            </colgroup>
+                                            <thead>
+                                                <tr>
+                                                    <th>Film</th>
+                                                    <th>Data Uscita</th>
+                                                    <th style="text-align:center;">Visione</th>
+                                                    <th style="text-align:center;">Azioni</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody id="cinemaTableBodyStreaming"></tbody>
+                                        </table>
+                                    </div>
+                                    <div id="cinemaEmptyStreaming" style="display:none; color:var(--text-muted); padding: 14px 4px; font-size:13px;">Nessun promemoria streaming in lista. Aggiungine uno con "+ Nuovo Film" spuntando l'opzione streaming.</div>
+                                </div>
+
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ✅ WIDGET "VISTI" — chiuso di default -->
+            <div class="stats-widget cinema-widget collapsed" id="cinemaWidgetVisti">
+                <div class="stats-widget-header" onclick="toggleStatsWidget('cinemaWidgetVisti')">
+                    <div class="stats-widget-title-wrap">
+                        <span class="stats-widget-title">✅ Visti</span>
+                        <span class="stats-widget-subtitle">Lo storico dei film già visti in sala, dal più recente.</span>
+                    </div>
+                    <div class="cinema-widget-header-right">
+                        <span class="home-progress-count" id="cinemaWidgetVistiCount"></span>
+                        <span class="stats-widget-toggle-icon">▾</span>
+                    </div>
+                </div>
+                <div class="stats-widget-body">
+                    <div class="stats-widget-body-inner">
+                        <div class="table-container cinema-scroll-area" id="cinemaScrollVisti">
+                            <table class="cinema-table">
+                                <colgroup>
+                                    <col>
+                                    <col style="width:120px;">
+                                    <col style="width:132px;">
+                                    <col style="width:142px;">
+                                </colgroup>
+                                <thead>
+                                    <tr>
+                                        <th>Film</th>
+                                        <th>Data Visione</th>
+                                        <th style="text-align:center;">Visione</th>
+                                        <th style="text-align:center;">Azioni</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="cinemaTableBodyVisti"></tbody>
+                            </table>
+                        </div>
+                        <div id="cinemaEmptyVisti" style="display:none; color:var(--text-muted); padding: 14px 4px; font-size:13px;">Nessun film visto ancora registrato.</div>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
@@ -4438,8 +4635,8 @@ function apriLightbox(url) {
         // ==========================================
         let cinemaList = [];
         let currentSearchCinema = '';
-        // Switch interno alla view Cinema: 'cinema' (default, streaming nascosti),
-        // 'streaming' (solo promemoria streaming), 'all' (entrambi).
+        // Pannello attivo nello slider del widget "Da Vedere":
+        // 'cinema' (default, film in sala) oppure 'streaming' (promemoria streaming).
         let currentFilterModalitaCinema = 'cinema';
 
 		        // ==========================================
@@ -4614,9 +4811,11 @@ function apriLightbox(url) {
 
         function renderListCinema() {
             const tbodyDaVedere = document.getElementById('cinemaTableBodyDaVedere');
+            const tbodyStreaming = document.getElementById('cinemaTableBodyStreaming');
             const tbodyVisti = document.getElementById('cinemaTableBodyVisti');
-            if (!tbodyDaVedere || !tbodyVisti) return;
+            if (!tbodyDaVedere || !tbodyStreaming || !tbodyVisti) return;
             tbodyDaVedere.innerHTML = '';
+            tbodyStreaming.innerHTML = '';
             tbodyVisti.innerHTML = '';
 
             const termineRicerca = (currentSearchCinema || '').toLowerCase();
@@ -4665,46 +4864,111 @@ function apriLightbox(url) {
                 return b.dataVisione.localeCompare(a.dataVisione);
             });
 
-            // Composizione della lista "Da Vedere" in base allo switch interno
-            let daVedereMostrati;
-            let mostraVisti = true;
-            if (currentFilterModalitaCinema === 'streaming') {
-                daVedereMostrati = daVedereStreaming;
-                mostraVisti = false;
-            } else if (currentFilterModalitaCinema === 'all') {
-                daVedereMostrati = daVedereCinema.concat(daVedereStreaming);
-            } else {
-                daVedereMostrati = daVedereCinema;
-            }
-
-            // Contatori: sempre indipendenti dallo switch (danno il quadro completo)
+            // Contatori del banner in alto: sempre indipendenti dallo switch
+            // (danno il quadro completo a colpo d'occhio)
             document.getElementById('statCinemaDaVedere').innerText = daVedereCinema.length;
             document.getElementById('statCinemaStreaming').innerText = daVedereStreaming.length;
             document.getElementById('statCinemaVisti').innerText = visti.length;
 
-            const titoloEl = document.getElementById('cinemaTitoloDaVedere');
-            if (titoloEl) {
-                titoloEl.innerText = currentFilterModalitaCinema === 'streaming'
-                    ? '📺 Da Vedere in Streaming'
-                    : (currentFilterModalitaCinema === 'all' ? '🎯 Da Vedere (Cinema + Streaming)' : '🎯 Da Vedere al Cinema');
-            }
+            // I due pannelli dello slider vengono popolati entrambi: lo switch si
+            // limita a far scorrere il track, senza ricostruire nulla.
+            daVedereCinema.forEach(item => tbodyDaVedere.appendChild(costruisciRigaCinema_(item, false)));
+            daVedereStreaming.forEach(item => tbodyStreaming.appendChild(costruisciRigaCinema_(item, false)));
+            visti.forEach(item => tbodyVisti.appendChild(costruisciRigaCinema_(item, true)));
 
-            const mostrati = daVedereMostrati.length + (mostraVisti ? visti.length : 0);
-            document.getElementById('countCinema').textContent = mostrati + ' di ' + cinemaList.length + ' film';
-
-            const emptyDaVedereEl = document.getElementById('cinemaEmptyDaVedere');
-            emptyDaVedereEl.innerText = currentFilterModalitaCinema === 'streaming'
-                ? 'Nessun promemoria streaming in lista. Aggiungine uno con "+ Nuovo Film" spuntando l\'opzione streaming.'
-                : 'Nessun film in programma al momento. Aggiungine uno con "+ Nuovo Film".';
-            emptyDaVedereEl.style.display = daVedereMostrati.length === 0 ? 'block' : 'none';
-
-            // Nella modalità "solo streaming" la sezione dei film visti non ha senso
-            const bloccoVisti = document.getElementById('cinemaBloccoVisti');
-            if (bloccoVisti) bloccoVisti.style.display = mostraVisti ? 'block' : 'none';
+            document.getElementById('cinemaEmptyDaVedere').style.display = daVedereCinema.length === 0 ? 'block' : 'none';
+            document.getElementById('cinemaEmptyStreaming').style.display = daVedereStreaming.length === 0 ? 'block' : 'none';
             document.getElementById('cinemaEmptyVisti').style.display = visti.length === 0 ? 'block' : 'none';
 
-            daVedereMostrati.forEach(item => tbodyDaVedere.appendChild(costruisciRigaCinema_(item, false)));
-            if (mostraVisti) visti.forEach(item => tbodyVisti.appendChild(costruisciRigaCinema_(item, true)));
+            // Contatori nelle testate dei due widget
+            const isStreamingMode = currentFilterModalitaCinema === 'streaming';
+            const countDaVedereEl = document.getElementById('cinemaWidgetDaVedereCount');
+            if (countDaVedereEl) {
+                const n = isStreamingMode ? daVedereStreaming.length : daVedereCinema.length;
+                countDaVedereEl.textContent = n + (n === 1 ? ' film' : ' film');
+            }
+            const countVistiEl = document.getElementById('cinemaWidgetVistiCount');
+            if (countVistiEl) countVistiEl.textContent = visti.length + ' film';
+
+            const mostrati = (isStreamingMode ? daVedereStreaming.length : daVedereCinema.length) + visti.length;
+            document.getElementById('countCinema').textContent = mostrati + ' di ' + cinemaList.length + ' film';
+
+            aggiornaTestataWidgetDaVedere_();
+
+            // Altezza massima delle aree scorrevoli (5 righe) e altezza dello slider:
+            // vanno ricalcolate a ogni render perché dipendono dalle righe appena create.
+            applicaScrollCinema_(document.getElementById('cinemaScrollDaVedere'));
+            applicaScrollCinema_(document.getElementById('cinemaScrollStreaming'));
+            aggiornaAltezzaSliderCinema_();
+        }
+
+        // ----------------------------------------------------------
+        //   Widget "Da Vedere": scorrimento a 5 righe e slider sala/streaming
+        // ----------------------------------------------------------
+
+        // Numero massimo di righe visibili senza scorrere nel widget "Da Vedere"
+        const CINEMA_MAX_RIGHE_VISIBILI = 5;
+
+        // Limita l'area scorrevole all'altezza reale di intestazione + prime 5 righe.
+        // Con 5 film o meno la tabella resta libera di occupare l'altezza che le serve.
+        function applicaScrollCinema_(scrollEl) {
+            if (!scrollEl) return;
+            const righe = scrollEl.querySelectorAll('tbody tr');
+            if (righe.length <= CINEMA_MAX_RIGHE_VISIBILI) {
+                scrollEl.style.maxHeight = '';
+                return;
+            }
+            const thead = scrollEl.querySelector('thead');
+            let altezza = thead ? thead.offsetHeight : 0;
+            for (let i = 0; i < CINEMA_MAX_RIGHE_VISIBILI; i++) altezza += righe[i].offsetHeight;
+            scrollEl.style.maxHeight = altezza + 'px';
+        }
+
+        // Il track dello slider è alto quanto il pannello più alto: fisso a mano
+        // l'altezza della viewport su quella del pannello attivo, così la
+        // transizione di scorrimento accompagna anche il cambio di altezza.
+        function aggiornaAltezzaSliderCinema_() {
+            const viewport = document.getElementById('cinemaSliderViewport');
+            if (!viewport) return;
+            const paneAttivo = document.getElementById(
+                currentFilterModalitaCinema === 'streaming' ? 'cinemaPaneStreaming' : 'cinemaPaneCinema'
+            );
+            if (!paneAttivo) return;
+            const altezza = paneAttivo.offsetHeight;
+            // Se la view Cinema non è a schermo la misura vale 0: meglio lasciare
+            // l'altezza automatica che congelare la viewport a zero.
+            viewport.style.height = altezza > 0 ? altezza + 'px' : '';
+        }
+
+        // Titolo, sottotitolo e stato del pulsantino di switch nella testata
+        function aggiornaTestataWidgetDaVedere_() {
+            const isStreaming = currentFilterModalitaCinema === 'streaming';
+
+            const titoloEl = document.getElementById('cinemaWidgetDaVedereTitolo');
+            if (titoloEl) titoloEl.innerText = isStreaming ? '📺 Da Vedere in Streaming' : '🎯 Da Vedere al Cinema';
+
+            const subEl = document.getElementById('cinemaWidgetDaVedereSub');
+            if (subEl) {
+                subEl.innerText = isStreaming
+                    ? 'I promemoria dei film da recuperare in streaming, dal più recente.'
+                    : "I film che ti aspettano in sala, dal più vicino all'uscita.";
+            }
+
+            const switchEl = document.getElementById('cinemaModeSwitch');
+            if (switchEl) {
+                switchEl.setAttribute('data-modalita', currentFilterModalitaCinema);
+                switchEl.querySelectorAll('.cinema-mode-opt').forEach(function(btn) {
+                    btn.classList.toggle('active', btn.getAttribute('data-modalita') === currentFilterModalitaCinema);
+                });
+            }
+
+            const track = document.getElementById('cinemaSliderTrack');
+            if (track) track.setAttribute('data-modalita', currentFilterModalitaCinema);
+
+            const paneCinema = document.getElementById('cinemaPaneCinema');
+            const paneStreaming = document.getElementById('cinemaPaneStreaming');
+            if (paneCinema) paneCinema.inert = isStreaming;
+            if (paneStreaming) paneStreaming.inert = !isStreaming;
         }
 
         function costruisciRigaCinema_(item, isVisto) {
@@ -4895,16 +5159,25 @@ function apriLightbox(url) {
                 });
         }
 
-        // Imposta lo switch interno (Al Cinema / Streaming / Tutti) e aggiorna i bottoni
+        // Imposta la modalità del widget "Da Vedere" (cinema / streaming).
+        // Il cambio di data-modalita su track e switch fa partire da solo lo
+        // scorrimento orizzontale: qui basta rigenerare le liste e le altezze.
         function impostaModalitaCinema_(valore, riRenderizza) {
-            currentFilterModalitaCinema = valore;
-            const group = document.getElementById('filterGroupModalitaCinema');
-            if (group) {
-                group.querySelectorAll('.filter-btn').forEach(function(btn) {
-                    btn.classList.toggle('active', btn.getAttribute('data-modalita') === valore);
-                });
+            const modalita = valore === 'streaming' ? 'streaming' : 'cinema';
+            if (modalita === currentFilterModalitaCinema && riRenderizza === false) return;
+            currentFilterModalitaCinema = modalita;
+
+            if (riRenderizza !== false) {
+                renderListCinema(); // aggiorna anche testata, switch, track e altezze
+            } else {
+                aggiornaTestataWidgetDaVedere_();
+                aggiornaAltezzaSliderCinema_();
             }
-            if (riRenderizza !== false) renderListCinema();
+
+            // Se il widget era chiuso lo apro: cliccare lo switch senza vedere
+            // il risultato sarebbe disorientante.
+            const widget = document.getElementById('cinemaWidgetDaVedere');
+            if (widget && widget.classList.contains('collapsed')) toggleStatsWidget('cinemaWidgetDaVedere');
         }
 
         function resetFiltriCinema() {
@@ -4985,9 +5258,25 @@ function apriLightbox(url) {
                 btnNuovoCinemaEl.onclick = function() { apriModaleNuovoCinema(); };
             }
 
-            // Switch interno Al Cinema / Streaming / Tutti
-            document.querySelectorAll('#filterGroupModalitaCinema .filter-btn').forEach(function(btn) {
-                btn.onclick = function() { impostaModalitaCinema_(btn.getAttribute('data-modalita')); };
+            // Pulsantino di switch Sala / Streaming nella testata del widget "Da Vedere"
+            document.querySelectorAll('#cinemaModeSwitch .cinema-mode-opt').forEach(function(btn) {
+                btn.onclick = function(e) {
+                    e.stopPropagation(); // non deve aprire/chiudere il widget
+                    impostaModalitaCinema_(btn.getAttribute('data-modalita'));
+                };
+            });
+
+            // Le altezze delle aree scorrevoli dipendono dalla larghezza disponibile
+            // (i titoli lunghi vanno a capo): al resize vanno ricalcolate.
+            let timerResizeCinema = null;
+            window.addEventListener('resize', function() {
+                if (!document.getElementById('cinemaTableBodyDaVedere')) return;
+                clearTimeout(timerResizeCinema);
+                timerResizeCinema = setTimeout(function() {
+                    applicaScrollCinema_(document.getElementById('cinemaScrollDaVedere'));
+                    applicaScrollCinema_(document.getElementById('cinemaScrollStreaming'));
+                    aggiornaAltezzaSliderCinema_();
+                }, 150);
             });
 
             const btnResetCinemaEl = document.getElementById('btnResetFiltriCinema');
