@@ -626,18 +626,25 @@
             padding: 3px;
             gap: 2px;
         }
-        /* Pillola scorrevole che evidenzia l'opzione attiva */
+        /* Pillola scorrevole che evidenzia l'opzione attiva.
+           I due segmenti hanno larghezze diverse ("🎬 Sala" è più corto di
+           "📺 Streaming"), quindi posizione e larghezza non possono essere
+           metà e metà: le misura aggiornaPillolaSwitchCinema_() e le passa qui
+           come variabili CSS, così il bordo combacia al pixel con il segmento. */
         .cinema-mode-switch::before {
             content: '';
             position: absolute;
-            top: 3px; left: 3px; bottom: 3px;
-            width: calc(50% - 3px);
+            top: 3px; bottom: 3px; left: 0;
+            width: var(--pill-w, 0px);
+            transform: translateX(var(--pill-x, 0px));
             border-radius: 999px;
             background: rgba(124, 108, 255, 0.22);
             border: 1px solid rgba(124, 108, 255, 0.45);
-            transition: transform 0.35s cubic-bezier(0.65, 0, 0.35, 1);
+            transition: transform 0.35s cubic-bezier(0.65, 0, 0.35, 1),
+                        width 0.35s cubic-bezier(0.65, 0, 0.35, 1);
         }
-        .cinema-mode-switch[data-modalita="streaming"]::before { transform: translateX(100%); }
+        /* Il primo posizionamento non va animato (partirebbe da larghezza zero) */
+        .cinema-mode-switch.senza-transizione::before { transition: none; }
         .cinema-mode-opt {
             position: relative; z-index: 1;
             background: none; border: none; cursor: pointer;
@@ -4899,6 +4906,7 @@ function apriLightbox(url) {
             // vanno ricalcolate a ogni render perché dipendono dalle righe appena create.
             applicaScrollCinema_(document.getElementById('cinemaScrollDaVedere'));
             applicaScrollCinema_(document.getElementById('cinemaScrollStreaming'));
+            applicaScrollCinema_(document.getElementById('cinemaScrollVisti'), CINEMA_MAX_RIGHE_VISTI);
             aggiornaAltezzaSliderCinema_();
         }
 
@@ -4906,22 +4914,55 @@ function apriLightbox(url) {
         //   Widget "Da Vedere": scorrimento a 5 righe e slider sala/streaming
         // ----------------------------------------------------------
 
-        // Numero massimo di righe visibili senza scorrere nel widget "Da Vedere"
+        // Righe visibili senza scorrere: 5 nel widget "Da Vedere", 15 nello storico "Visti"
         const CINEMA_MAX_RIGHE_VISIBILI = 5;
+        const CINEMA_MAX_RIGHE_VISTI = 15;
 
-        // Limita l'area scorrevole all'altezza reale di intestazione + prime 5 righe.
-        // Con 5 film o meno la tabella resta libera di occupare l'altezza che le serve.
-        function applicaScrollCinema_(scrollEl) {
+        // Limita l'area scorrevole all'altezza reale di intestazione + prime N righe.
+        // Con N film o meno la tabella resta libera di occupare l'altezza che le serve.
+        function applicaScrollCinema_(scrollEl, maxRighe) {
             if (!scrollEl) return;
+            const limite = maxRighe || CINEMA_MAX_RIGHE_VISIBILI;
             const righe = scrollEl.querySelectorAll('tbody tr');
-            if (righe.length <= CINEMA_MAX_RIGHE_VISIBILI) {
+            if (righe.length <= limite) {
                 scrollEl.style.maxHeight = '';
                 return;
             }
             const thead = scrollEl.querySelector('thead');
             let altezza = thead ? thead.offsetHeight : 0;
-            for (let i = 0; i < CINEMA_MAX_RIGHE_VISIBILI; i++) altezza += righe[i].offsetHeight;
+            for (let i = 0; i < limite; i++) altezza += righe[i].offsetHeight;
             scrollEl.style.maxHeight = altezza + 'px';
+        }
+
+        // Allinea la pillola dello switch al segmento attivo. I due segmenti hanno
+        // larghezze diverse, quindi posizione e larghezza vanno misurate: le passo
+        // alla pseudo-classe ::before come variabili CSS.
+        let pillolaSwitchCinemaInizializzata = false;
+        function aggiornaPillolaSwitchCinema_() {
+            const sw = document.getElementById('cinemaModeSwitch');
+            if (!sw) return;
+            const attivo = sw.querySelector('.cinema-mode-opt.active');
+            if (!attivo) return;
+
+            const rettSwitch = sw.getBoundingClientRect();
+            const rettAttivo = attivo.getBoundingClientRect();
+            // Se la view Cinema non è a schermo le misure valgono 0: lascio l'ultima buona
+            if (!rettAttivo.width) return;
+
+            // `left: 0` su un elemento assoluto parte dal bordo interno (padding edge)
+            // del contenitore, mentre le rect partono dal bordo esterno: tolgo il bordo.
+            const bordoSx = parseFloat(getComputedStyle(sw).borderLeftWidth) || 0;
+
+            if (!pillolaSwitchCinemaInizializzata) {
+                pillolaSwitchCinemaInizializzata = true;
+                sw.classList.add('senza-transizione');
+                requestAnimationFrame(function() {
+                    requestAnimationFrame(function() { sw.classList.remove('senza-transizione'); });
+                });
+            }
+
+            sw.style.setProperty('--pill-x', (rettAttivo.left - rettSwitch.left - bordoSx) + 'px');
+            sw.style.setProperty('--pill-w', rettAttivo.width + 'px');
         }
 
         // Il track dello slider è alto quanto il pannello più alto: fisso a mano
@@ -4960,6 +5001,7 @@ function apriLightbox(url) {
                 switchEl.querySelectorAll('.cinema-mode-opt').forEach(function(btn) {
                     btn.classList.toggle('active', btn.getAttribute('data-modalita') === currentFilterModalitaCinema);
                 });
+                aggiornaPillolaSwitchCinema_();
             }
 
             const track = document.getElementById('cinemaSliderTrack');
@@ -5275,6 +5317,8 @@ function apriLightbox(url) {
                 timerResizeCinema = setTimeout(function() {
                     applicaScrollCinema_(document.getElementById('cinemaScrollDaVedere'));
                     applicaScrollCinema_(document.getElementById('cinemaScrollStreaming'));
+                    applicaScrollCinema_(document.getElementById('cinemaScrollVisti'), CINEMA_MAX_RIGHE_VISTI);
+                    aggiornaPillolaSwitchCinema_();
                     aggiornaAltezzaSliderCinema_();
                 }, 150);
             });
