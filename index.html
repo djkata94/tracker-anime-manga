@@ -1886,6 +1886,13 @@
                 <button class="filter-btn" data-modalita="streaming">📺 Streaming</button>
                 <button class="filter-btn" data-modalita="all">Tutti</button>
             </div>
+
+            <!-- FINESTRA FLUTTUANTE FILTRO GENERI CINEMA -->
+            <div class="dropdown-container">
+                <button id="btnToggleGenresCinema" class="btn btn-nav" style="border: 1px solid var(--border-color);">🎭 Filtra Generi (<span id="badgeGenresCinemaCount">0</span>)</button>
+                <div id="dropdownGenresCinema" class="dropdown-genres"></div>
+            </div>
+
             <button type="button" id="btnResetFiltriCinema" class="btn-reset-filters">↺ Reset Filtri</button>
             <span id="countCinema" class="filter-count"></span>
         </div>
@@ -2425,13 +2432,22 @@
             "Supernatural", "Suspense", "Thriller", "Vampire", "Workplace"
         ];
 		
-		
+        // Lista statica dei generi "film" ufficiali di TMDB (stabile da anni,
+        // nessun bisogno di interrogare l'API per recuperarla). Nomi in
+        // italiano, esattamente come restituiti da TMDB con language=it-IT.
+        const TMDB_GENRES_LIST = [
+            "Azione", "Avventura", "Animazione", "Commedia", "Crime", "Documentario",
+            "Dramma", "Famiglia", "Fantasy", "Storia", "Horror", "Musica", "Mistero",
+            "Romantico", "Fantascienza", "Film TV", "Thriller", "Guerra", "Western"
+        ];
+
         // Generazione automatica dei checkbox nelle modali e nei filtri avanzati fluttuanti all'avvio
         function buildGenresForms() {
             const animeGrid = document.getElementById('animeGenresGrid');
             const mangaGrid = document.getElementById('mangaGenresGrid');
             const animeFilterDropdown = document.getElementById('dropdownGenresAnime');
             const mangaFilterDropdown = document.getElementById('dropdownGenresManga');
+            const cinemaFilterDropdown = document.getElementById('dropdownGenresCinema');
             
             if (animeGrid) {
                 animeGrid.innerHTML = MASTER_GENRES_LIST.map(g => 
@@ -2453,6 +2469,11 @@
             if (mangaFilterDropdown) {
                 mangaFilterDropdown.innerHTML = MASTER_GENRES_LIST.map(g => 
                     `<label><input type="checkbox" class="manga-filter-genre-cb" value="${g}"> ${g}</label>`
+                ).join('');
+            }
+            if (cinemaFilterDropdown) {
+                cinemaFilterDropdown.innerHTML = TMDB_GENRES_LIST.map(g =>
+                    `<label><input type="checkbox" class="cinema-filter-genre-cb" value="${g}"> ${g}</label>`
                 ).join('');
             }
         }
@@ -2481,6 +2502,8 @@
         let currentFilterLetturaManga = 'all'; 
         let currentSearchManga = '';
         let selectedGenresManga = []; // Array dei generi attivi nel filtro avanzato
+
+        let selectedGenresCinema = []; // Array dei generi TMDB attivi nel filtro avanzato Cinema
         
         let targetEditTitleAnime = null;
         let targetEditTitleManga = null;
@@ -2496,15 +2519,26 @@
             document.getElementById('dropdownGenresAnime').classList.remove('active');
             document.getElementById('dropdownGenresManga').classList.toggle('active');
         };
+        const btnToggleGenresCinemaEl = document.getElementById('btnToggleGenresCinema');
+        if (btnToggleGenresCinemaEl) {
+            btnToggleGenresCinemaEl.onclick = function(e) {
+                e.stopPropagation();
+                document.getElementById('dropdownGenresCinema').classList.toggle('active');
+            };
+        }
         // Chiusura automatica dei popup cliccando all'esterno delle finestre fluttuanti
         window.addEventListener('click', function(e) {
             const dropAnime = document.getElementById('dropdownGenresAnime');
             const dropManga = document.getElementById('dropdownGenresManga');
+            const dropCinema = document.getElementById('dropdownGenresCinema');
             if (dropAnime && !dropAnime.contains(e.target) && e.target.id !== 'btnToggleGenresAnime') {
                 dropAnime.classList.remove('active');
             }
             if (dropManga && !dropManga.contains(e.target) && e.target.id !== 'btnToggleGenresManga') {
                 dropManga.classList.remove('active');
+            }
+            if (dropCinema && !dropCinema.contains(e.target) && e.target.id !== 'btnToggleGenresCinema') {
+                dropCinema.classList.remove('active');
             }
         });
 
@@ -2519,6 +2553,14 @@
             document.getElementById('badgeGenresMangaCount').innerText = selectedGenresManga.length;
             renderListManga();
         });
+        const dropdownGenresCinemaEl = document.getElementById('dropdownGenresCinema');
+        if (dropdownGenresCinemaEl) {
+            dropdownGenresCinemaEl.addEventListener('change', function() {
+                selectedGenresCinema = Array.from(document.querySelectorAll('.cinema-filter-genre-cb:checked')).map(cb => cb.value);
+                document.getElementById('badgeGenresCinemaCount').innerText = selectedGenresCinema.length;
+                renderListCinema();
+            });
+        }
 
         // SPA View Switcher Modificato per accendere i bottoni corretti in navbar
         function switchView(viewName) {
@@ -2531,6 +2573,8 @@
             // Chiudi eventuali filtri fluttuanti aperti cambiando pagina
             document.getElementById('dropdownGenresAnime').classList.remove('active');
             document.getElementById('dropdownGenresManga').classList.remove('active');
+            const dropCinemaSwitch = document.getElementById('dropdownGenresCinema');
+            if (dropCinemaSwitch) dropCinemaSwitch.classList.remove('active');
             
             // Togli illuminazione da tutti i bottoni navbar
             document.querySelectorAll('.navbar .btn-nav').forEach(btn => btn.classList.remove('active-view'));
@@ -4576,7 +4620,17 @@ function apriLightbox(url) {
             tbodyVisti.innerHTML = '';
 
             const termineRicerca = (currentSearchCinema || '').toLowerCase();
-            const filtered = cinemaList.filter(item => item && (item.titolo || '').toLowerCase().includes(termineRicerca));
+            let filtered = cinemaList.filter(item => item && (item.titolo || '').toLowerCase().includes(termineRicerca));
+
+            // Filtro generi: un film passa se ha ALMENO UNO dei generi selezionati
+            // (il campo "generi" è una stringa tipo "Azione, Fantascienza").
+            if (selectedGenresCinema.length > 0) {
+                filtered = filtered.filter(item => {
+                    if (!item.generi) return false;
+                    const generiFilm = item.generi.split(',').map(g => g.trim());
+                    return selectedGenresCinema.some(g => generiFilm.includes(g));
+                });
+            }
 
             // I film in streaming non vengono mai archiviati: stanno solo tra i "Da Vedere"
             const daVedereTutti = filtered.filter(item => item.visione !== 'Sì');
@@ -4853,11 +4907,14 @@ function apriLightbox(url) {
             if (riRenderizza !== false) renderListCinema();
         }
 
-        // ↺ Reset filtri: torna alla lista classica dei film al cinema
         function resetFiltriCinema() {
             currentSearchCinema = '';
             const searchEl = document.getElementById('searchInpCinema');
             if (searchEl) searchEl.value = '';
+            selectedGenresCinema = [];
+            document.querySelectorAll('.cinema-filter-genre-cb:checked').forEach(cb => cb.checked = false);
+            const badgeCinemaGeneri = document.getElementById('badgeGenresCinemaCount');
+            if (badgeCinemaGeneri) badgeCinemaGeneri.innerText = '0';
             impostaModalitaCinema_('cinema');
             showToast('Filtri Cinema azzerati', 'success');
         }
