@@ -565,6 +565,22 @@
         .episodi-btn-edit { background: none; border: none; color: var(--text-muted); font-size: 13px; cursor: pointer; padding: 4px; border-radius: 4px; }
         .episodi-btn-edit:hover { background: var(--surface-hover); color: var(--primary); }
 
+        /* --- Copertina di fianco all'elenco negli overlay di avanzamento --------
+           Usata dagli overlay aperti dal widget "In Corso" della Home (stagioni
+           per gli anime, volumi per i manga): qui l'immagine si vede INTERA
+           (object-fit: contain, niente ritaglio come nella card del widget) e in
+           formato ridotto. Per vederla grande resta il lightbox, come cliccando
+           l'avatar nelle rispettive viste. */
+        .overlay-con-copertina { display: flex; align-items: flex-start; gap: 16px; }
+        .overlay-con-copertina .overlay-lista { flex: 1; min-width: 0; }
+        .overlay-copertina { flex: 0 0 160px; width: 160px; }
+        .overlay-copertina-img { width: 100%; max-height: 260px; object-fit: contain; display: block; border-radius: 10px; border: 1px solid var(--border-color); background: #10111d; cursor: zoom-in; }
+        @media (max-width: 560px) {
+            .overlay-con-copertina { flex-direction: column; align-items: center; }
+            .overlay-copertina { flex: 0 0 auto; width: 140px; }
+            .overlay-con-copertina .overlay-lista { width: 100%; }
+        }
+
         /* Interfaccia Modali Evoluta */
         .modal-overlay { position: fixed; top:0; left:0; width:100%; height:100%; background:rgba(6,6,12,0.85); backdrop-filter: blur(6px); display:none; justify-content:center; align-items:center; z-index:1000; transition: all 0.3s; }
         .modal-overlay.active { display:flex; }
@@ -2433,7 +2449,13 @@
                 <h2 id="episodiModalTitle" style="font-size:18px;">📺 Episodi</h2>
                 <button class="close-modal" onclick="chiudiModaleEpisodi()">&times;</button>
             </div>
-            <div id="episodiListContainer" style="max-height: 60vh; overflow-y: auto; padding-right: 4px;"></div>
+            <!-- Copertina (a sinistra) + elenco stagioni/film (a destra). La
+                 copertina è popolata solo quando l'overlay è aperto dal widget
+                 "In Corso" della Home, altrimenti resta nascosta. -->
+            <div class="overlay-con-copertina">
+                <div id="episodiCopertina" class="overlay-copertina" style="display:none;"></div>
+                <div id="episodiListContainer" class="overlay-lista" style="max-height: 60vh; overflow-y: auto; padding-right: 4px;"></div>
+            </div>
         </div>
     </div>
 
@@ -2443,12 +2465,16 @@
          avanzare/arretrare i volumi letti senza uscire dalla schermata.
          ================================================================ -->
     <div class="modal-overlay" id="modalOverlayVolumiManga">
-        <div class="modal" style="max-width: 380px;">
+        <div class="modal" style="max-width: 520px;">
             <div class="modal-header">
                 <h2 id="volumiMangaModalTitle" style="font-size:18px;">📖 Volumi Letti</h2>
                 <button class="close-modal" onclick="chiudiModaleVolumiManga()">&times;</button>
             </div>
-            <div id="volumiMangaContainer"></div>
+            <!-- Copertina (a sinistra) + avanzamento volumi (a destra) -->
+            <div class="overlay-con-copertina">
+                <div id="volumiMangaCopertina" class="overlay-copertina" style="display:none;"></div>
+                <div id="volumiMangaContainer" class="overlay-lista"></div>
+            </div>
         </div>
     </div>
 
@@ -3638,9 +3664,27 @@ document.getElementById('btnRandomAnime').onclick = function() {
         // ==========================================
         let episodiOverlayTitoloCorrente = null;
 
-        window.apriGestioneEpisodi = function(titolo) {
+        // Il secondo parametro (facoltativo) viene passato solo dalle card del
+        // widget "In Corso" della Home: in quel caso di fianco all'elenco delle
+        // stagioni si vede la copertina dell'opera e l'overlay si allarga un po'.
+        // Aperto dall'icona 📺 della vista Anime resta identico a prima.
+        window.apriGestioneEpisodi = function(titolo, mostraCopertina) {
             episodiOverlayTitoloCorrente = titolo;
             document.getElementById('episodiModalTitle').innerText = '📺 Episodi — ' + titolo;
+
+            let conCopertina = false;
+            if (mostraCopertina) {
+                const anime = (animeList || []).find(x => (x.titolo || '').trim() === String(titolo).trim());
+                conCopertina = renderCopertinaOverlay('episodiCopertina', anime);
+            } else {
+                nascondiCopertinaOverlay('episodiCopertina');
+            }
+
+            // L'overlay si allarga solo se la copertina c'è davvero: senza
+            // immagine resta della larghezza di sempre.
+            const modaleEl = document.querySelector('#modalOverlayEpisodi .modal');
+            if (modaleEl) modaleEl.style.maxWidth = conCopertina ? '640px' : '560px';
+
             renderEpisodiOverlay();
             document.getElementById('modalOverlayEpisodi').classList.add('active');
         };
@@ -5811,10 +5855,50 @@ function modificaVolumiLettiManga(titolo, delta) {
 // ==========================================================
 let volumiOverlayTitoloCorrente = null;
 
+// ----------------------------------------------------------
+// 🖼️ Copertina mostrata di fianco all'elenco negli overlay di avanzamento
+// aperti dal widget "In Corso" della Home (stagioni per gli anime, volumi
+// per i manga). Rispetto alla card del widget qui l'immagine non viene
+// ritagliata: si vede intera, in formato ridotto. Cliccandola si apre il
+// lightbox a schermo intero, come per gli avatar nelle rispettive viste.
+// Restituisce true se la copertina è stata effettivamente disegnata, così
+// chi chiama sa se allargare l'overlay o lasciarlo della misura di sempre.
+// ----------------------------------------------------------
+window.renderCopertinaOverlay = function(idContenitore, item) {
+    const box = document.getElementById(idContenitore);
+    if (!box) return false;
+
+    const url = (item && item.immagine) ? String(item.immagine).trim() : '';
+    if (url === '') {
+        // Senza immagine non occupiamo spazio: l'elenco resta a tutta larghezza
+        nascondiCopertinaOverlay(idContenitore);
+        return false;
+    }
+
+    const safeImgUrl = url.replace(/'/g, "\\'");
+    box.style.display = 'block';
+    box.innerHTML = `<img class="overlay-copertina-img" src="${safeImgUrl}" alt="Copertina" title="Clicca per ingrandire" onclick="apriLightbox('${safeImgUrl}')" onerror="this.parentNode.style.display='none';">`;
+    return true;
+};
+
+window.nascondiCopertinaOverlay = function(idContenitore) {
+    const box = document.getElementById(idContenitore);
+    if (!box) return;
+    box.style.display = 'none';
+    box.innerHTML = '';
+};
+
 window.apriAvanzamentoVolumiManga = function(titolo) {
     volumiOverlayTitoloCorrente = titolo;
     const titleEl = document.getElementById('volumiMangaModalTitle');
     if (titleEl) titleEl.innerText = '📖 Volumi Letti — ' + titolo;
+    // La copertina si disegna una volta sola all'apertura: renderVolumiOverlay()
+    // viene richiamata a ogni +/- e ricaricare l'immagine la farebbe lampeggiare.
+    const item = (mangaList || []).find(x => (x.titolo || '').trim() === String(titolo).trim());
+    const conCopertina = renderCopertinaOverlay('volumiMangaCopertina', item);
+    // Senza copertina l'overlay torna stretto come prima
+    const modaleEl = document.querySelector('#modalOverlayVolumiManga .modal');
+    if (modaleEl) modaleEl.style.maxWidth = conCopertina ? '520px' : '380px';
     renderVolumiOverlay();
     document.getElementById('modalOverlayVolumiManga').classList.add('active');
 };
@@ -7274,7 +7358,7 @@ function creaProgressCard(tipo, item, idx) {
     // Click sulla card: apre l'overlay di avanzamento corretto in base al tipo
     card.onclick = function() {
         if (isAnime) {
-            apriGestioneEpisodi(item.titolo); // Stesso overlay aperto dall'icona 📺 nella vista Anime
+            apriGestioneEpisodi(item.titolo, true); // Stesso overlay aperto dall'icona 📺 nella vista Anime, qui con la copertina di fianco
         } else {
             apriAvanzamentoVolumiManga(item.titolo); // Nuovo overlay compatto per i volumi letti
         }
