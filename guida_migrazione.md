@@ -1170,8 +1170,43 @@ avranno trama/generi (colonne vuote) finché non vengono ri-aggiunti — non è
 possibile recuperarli retroattivamente senza ripetere la ricerca TMDB per
 ciascuno. Non è un problema per i nuovi film aggiunti da ora in poi.
 
----
-*Ultimo aggiornamento: Parte 3 avviata — ordinamento streaming per data e trama/generi TMDB.*
+**Bonus:** aggiunto anche uno script "usa e getta" da Console per fare il
+backfill di trama/generi sui film già presenti in lista (non fa parte del
+codice del sito, lanciato una tantum).
+
+## Richiesta 3 — Stagioni/film collegati via grafo relazioni AniList
+
+**Problema di partenza:** AniList non ha un concetto di "franchise": ogni
+stagione, film, OAV è un `Media` indipendente. I collegamenti esistono solo
+come relazioni tipizzate (`PREQUEL`, `SEQUEL`, `SIDE_STORY`, `ALTERNATIVE`,
+`SUMMARY`...) tra un `Media` e l'altro — un grafo, non una lista ordinata.
+
+**Design scelto (automatizza ma lascia sempre l'ultima parola a te):**
+- Nuovo pulsante **"🔗 Cerca stagioni/film collegati"** nell'overlay AniList
+  (solo lato Anime), facoltativo — nulla parte in automatico.
+- `getRelazioniAniList_(id)`: legge le `relations` di un singolo titolo.
+- `costruisciGrafoStagioniAniList_(nodoIniziale)`: cammina lungo la catena
+  `PREQUEL`/`SEQUEL` di formato `TV` per ricostruire tutte le stagioni; per
+  ciascuna stagione trovata guarda anche i suoi `SIDE_STORY`/`ALTERNATIVE`
+  di formato `MOVIE` come film candidati. I `SUMMARY` (ricap) sono sempre
+  scartati. Tetto di sicurezza a 20 nodi contro grafi anomali.
+- Checklist di conferma: **stagioni TV pre-spuntate** (relazione affidabile),
+  **film/side story NON pre-spuntati** (relazione più ambigua, verifica
+  manuale prima di confermare).
+- Alla conferma: scrive direttamente `stagioniTotali`/`filmTotali` nella
+  scheda Anime (già aperta dietro l'overlay) e prepara una mappa
+  `numero_stagione → episodi_totali` (dato reale, noto da AniList).
+- **Bonus:** `aggiungiRigheEpisodiSB_` ora accetta questa mappa opzionale:
+  le righe di `episodi_anime` nascono già con il totale episodi corretto
+  per stagione, invece del placeholder `0` da correggere poi a mano con la
+  matita ✏️. Funziona sia in creazione (`addAnimeSB_`) sia in modifica
+  (`updateAnimeSB_`, quando si aumentano le stagioni totali).
+
+**Limiti espliciti:** OAV/Special non hanno una casella dedicata nello
+schema attuale (solo Stagione/Film) — al momento vengono semplicemente
+ignorati nella ricerca. Su titoli di nicchia la checklist potrebbe uscire
+corta o vuota se la community AniList non ha compilato bene le relazioni:
+resta comunque disponibile l'inserimento manuale come fallback, come oggi.
 
 ---
-*Ultimo aggiornamento: Fase 11 chiusa al 100% (tutti i gruppi, incluso TMDB) — Fase 12 completata. Fasi 13/14 risolte in itinere. Resta solo la Fase 15 (collaudo finale + spegnimento Apps Script).*
+*Ultimo aggiornamento: Parte 3 — Richieste 1, 2 e 3 completate (ordinamento streaming, trama/generi TMDB, stagioni/film collegati via AniList).*
