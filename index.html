@@ -2896,12 +2896,13 @@
             }
         }
 
-        async function aggiungiRigheEpisodiSB_(titolo, tipo, daNumero, aNumero) {
+        async function aggiungiRigheEpisodiSB_(titolo, tipo, daNumero, aNumero, mappaTotaliEpisodi) {
             if (daNumero > aNumero) return;
             const titoloTrim = String(titolo).trim();
             const nuoveRighe = [];
             for (let n = daNumero; n <= aNumero; n++) {
-                nuoveRighe.push({ anime_titolo: titoloTrim, tipo: tipo, numero: n, episodi_totali: 0, episodi_visti: 0 });
+                const totaleNoto = (mappaTotaliEpisodi && mappaTotaliEpisodi[n] !== undefined) ? (parseInt(mappaTotaliEpisodi[n]) || 0) : 0;
+                nuoveRighe.push({ anime_titolo: titoloTrim, tipo: tipo, numero: n, episodi_totali: totaleNoto, episodi_visti: 0 });
             }
             if (nuoveRighe.length === 0) return;
             const { error } = await supabaseClient.from('episodi_anime').insert(nuoveRighe);
@@ -3011,7 +3012,7 @@
             try {
                 const stagioniTotaliNuove = parseInt(dati.stagioniTotali) || 0;
                 const filmTotaliNuovi = parseInt(dati.filmTotali) || 0;
-                if (stagioniTotaliNuove > 0) await aggiungiRigheEpisodiSB_(dati.titolo, 'Stagione', 1, stagioniTotaliNuove);
+                if (stagioniTotaliNuove > 0) await aggiungiRigheEpisodiSB_(dati.titolo, 'Stagione', 1, stagioniTotaliNuove, dati.episodiPerStagione);
                 if (filmTotaliNuovi > 0) await aggiungiRigheEpisodiSB_(dati.titolo, 'Film', 1, filmTotaliNuovi);
             } catch (epErr) {
                 console.error("Errore durante la creazione delle righe episodi per '" + dati.titolo + "': " + epErr);
@@ -3048,7 +3049,7 @@
                 const nuoviFilmTotaliEp = parseInt(dati.filmTotali) || 0;
 
                 if (nuoveStagioniTotaliEp > vecchieStagioniTotaliLog) {
-                    await aggiungiRigheEpisodiSB_(nuovoTitoloEffettivo, 'Stagione', vecchieStagioniTotaliLog + 1, nuoveStagioniTotaliEp);
+                    await aggiungiRigheEpisodiSB_(nuovoTitoloEffettivo, 'Stagione', vecchieStagioniTotaliLog + 1, nuoveStagioniTotaliEp, dati.episodiPerStagione);
                 } else if (nuoveStagioniTotaliEp < vecchieStagioniTotaliLog) {
                     const avevaProgresso = await rimuoviRigheEpisodiEccedentiSB_(nuovoTitoloEffettivo, 'Stagione', nuoveStagioniTotaliEp + 1);
                     if (avevaProgresso) console.warn("Rimosse righe stagioni con episodi già visti per '" + nuovoTitoloEffettivo + "'.");
@@ -3472,6 +3473,7 @@ document.getElementById('btnRandomAnime').onclick = function() {
         document.getElementById('btnNuovoAnime').onclick = function() {
             targetEditTitleAnime = null;
             sinossiPendenteAnime = null; // <--- NUOVO: azzera eventuale sinossi AniList in sospeso
+            episodiPerStagionePendenteAnime = null;
             document.getElementById('modalTitleAnime').innerText = "Nuovo Anime";
             document.getElementById('animeForm').reset();
             document.getElementById('inpStagioniTotaliAnime').value = 0;
@@ -3490,6 +3492,7 @@ document.getElementById('btnRandomAnime').onclick = function() {
             
             targetEditTitleAnime = titolo;
             sinossiPendenteAnime = null; // <--- NUOVO: azzera eventuale sinossi AniList in sospeso
+            episodiPerStagionePendenteAnime = null;
             document.getElementById('modalTitleAnime').innerText = "Modifica Anime";
             document.getElementById('inpTitoloAnime').value = item.titolo || '';
             document.getElementById('inpStatoAnime').value = item.stato || '';
@@ -3570,7 +3573,7 @@ document.getElementById('btnRandomAnime').onclick = function() {
 			
 			}
 
-            const dati = {
+                        const dati = {
                 titolo: document.getElementById('inpTitoloAnime').value,
                 stato: stOriginale,
                 note: document.getElementById('inpNoteAnime').value,
@@ -3581,11 +3584,13 @@ document.getElementById('btnRandomAnime').onclick = function() {
                 filmVisti: fVis,
                 coloreVisione: colVisione,
                 generi: selectedGenres,
-                immagine: document.getElementById('inpImmagineAnime').value // <--- NUOVO: Salva l'URL dell'immagine nel foglio
+                immagine: document.getElementById('inpImmagineAnime').value, // <--- NUOVO: Salva l'URL dell'immagine nel foglio
+                episodiPerStagione: episodiPerStagionePendenteAnime
             };
             const isEditAnime = !!targetEditTitleAnime;
             const cb = function(data) {
                 animeList = data || [];
+                episodiPerStagionePendenteAnime = null;
                 // Se in questa sessione del modale è stata scelta una sinossi da AniList,
                 // la scriviamo ora sul foglio satellite: a questo punto la riga in SinossiAnime
                 // esiste di sicuro (creata da addAnime, o già presente in caso di modifica).
@@ -6169,6 +6174,7 @@ function chiudiSinossi() {
 let sinossiPendenteAnime = null;
 let sinossiPendenteManga = null;
 let ultimoDettaglioAniList = null; // { immagine, sinossi } del candidato attualmente in anteprima
+let episodiPerStagionePendenteAnime = null; // { 1: episodi, 2: episodi, ... } da "Cerca stagioni/film collegati"
 
 function creaOverlayAniListSeAssente_() {
     let overlay = document.getElementById('anilistOverlay');
@@ -6330,11 +6336,15 @@ async function getDettaglioTraduzioneAniListSB_(id) {
     const gqlQuery = `
         query ($id: Int) {
             Media(id: $id) {
+                id
                 title { romaji english }
                 description(asHtml: false)
                 coverImage { extraLarge large }
                 genres
                 tags { name }
+                format
+                episodes
+                seasonYear
             }
         }
     `;
@@ -6358,15 +6368,115 @@ async function getDettaglioTraduzioneAniListSB_(id) {
         const sinossiTradotta = descrizione ? await tradurreTestoGoogleFree_(descrizione, 'en', 'it') : descrizione;
 
         return {
+            id: media.id,
             titolo: (media.title && (media.title.english || media.title.romaji)) || '',
             sinossi: sinossiTradotta || 'Nessuna sinossi disponibile per questa opera.',
             immagine: immagine,
-            generiSuggeriti: (media.genres || []).concat((media.tags || []).map(function(t) { return t.name; }))
+            generiSuggeriti: (media.genres || []).concat((media.tags || []).map(function(t) { return t.name; })),
+            formato: media.format || '',
+            episodi: media.episodes || 0,
+            anno: media.seasonYear || ''
         };
     } catch (err) {
         console.error('Errore dettaglio AniList: ' + err);
         throw err;
     }
+}
+
+// ==========================================
+//   Stagioni/film collegati (grafo relazioni AniList)
+// ==========================================
+
+async function getRelazioniAniList_(id) {
+    const gqlQuery = `
+        query ($id: Int) {
+            Media(id: $id) {
+                id
+                relations {
+                    edges {
+                        relationType(version: 2)
+                        node {
+                            id
+                            format
+                            episodes
+                            seasonYear
+                            title { romaji english }
+                            coverImage { medium }
+                        }
+                    }
+                }
+            }
+        }
+    `;
+    const json = await eseguireRichiestaAniList_(gqlQuery, { id: parseInt(id) });
+    if (!json.data || !json.data.Media || !json.data.Media.relations) return [];
+    return json.data.Media.relations.edges || [];
+}
+
+// Parte dal titolo scelto e segue a catena i legami PREQUEL/SEQUEL (in
+// entrambe le direzioni) per ricostruire tutta la sequenza di stagioni TV;
+// per ogni stagione trovata guarda anche i suoi SIDE_STORY/ALTERNATIVE di
+// formato MOVIE come candidati film. Scarta sempre i SUMMARY (ricap).
+async function costruisciGrafoStagioniAniList_(nodoIniziale) {
+    const MAX_NODI = 20; // tetto di sicurezza contro cicli/grafi anomali
+    const stagioniTv = new Map();
+    const filmCandidati = new Map();
+    const visitati = new Set();
+    const daVisitare = [nodoIniziale.id];
+
+    // Il titolo di partenza è sempre incluso come una delle stagioni.
+    stagioniTv.set(nodoIniziale.id, {
+        id: nodoIniziale.id, titolo: nodoIniziale.titolo, anno: nodoIniziale.anno,
+        episodi: nodoIniziale.episodi, immagine: nodoIniziale.immagine
+    });
+
+    while (daVisitare.length > 0 && visitati.size < MAX_NODI) {
+        const idCorrente = daVisitare.shift();
+        if (visitati.has(idCorrente)) continue;
+        visitati.add(idCorrente);
+
+        let edges;
+        try {
+            edges = await getRelazioniAniList_(idCorrente);
+        } catch (err) {
+            console.error('Errore relazioni AniList per id ' + idCorrente + ': ' + err);
+            continue;
+        }
+
+        edges.forEach(function(edge) {
+            const tipo = edge.relationType;
+            const nodo = edge.node;
+            if (!nodo || tipo === 'SUMMARY') return; // scarta i ricap/riassunti
+
+            const titoloNodo = (nodo.title && (nodo.title.english || nodo.title.romaji)) || 'Senza titolo';
+            const immagineNodo = (nodo.coverImage && nodo.coverImage.medium) || '';
+
+            if ((tipo === 'PREQUEL' || tipo === 'SEQUEL') && nodo.format === 'TV') {
+                if (!stagioniTv.has(nodo.id)) {
+                    stagioniTv.set(nodo.id, {
+                        id: nodo.id, titolo: titoloNodo, anno: nodo.seasonYear || '',
+                        episodi: nodo.episodes || 0, immagine: immagineNodo
+                    });
+                    daVisitare.push(nodo.id);
+                }
+            } else if ((tipo === 'SIDE_STORY' || tipo === 'ALTERNATIVE') && nodo.format === 'MOVIE') {
+                if (!filmCandidati.has(nodo.id)) {
+                    filmCandidati.set(nodo.id, {
+                        id: nodo.id, titolo: titoloNodo, anno: nodo.seasonYear || '', immagine: immagineNodo
+                    });
+                }
+            }
+        });
+    }
+
+    const stagioniOrdinate = Array.from(stagioniTv.values()).sort(function(a, b) {
+        const annoA = parseInt(a.anno) || 9999;
+        const annoB = parseInt(b.anno) || 9999;
+        if (annoA !== annoB) return annoA - annoB;
+        return a.id - b.id;
+    });
+
+    return { stagioni: stagioniOrdinate, film: Array.from(filmCandidati.values()) };
 }
 		
 function chiudiOverlayAniList() {
@@ -6508,6 +6618,20 @@ function renderDettaglioAniList_(tipo, dettaglio) {
     }
     body.appendChild(genreSection);
 
+    if (tipo === 'anime') {
+        const relSection = document.createElement('div');
+        relSection.id = 'anilistRelazioniSection';
+        relSection.style = 'margin-top:16px; border-top:1px solid var(--border-color, #262a42); padding-top:14px;';
+        relSection.innerHTML = `
+            <button type="button" class="btn btn-nav" id="anilistCercaRelazioniBtn" style="border:1px solid var(--border-color, #262a42);">
+                🔗 Cerca stagioni/film collegati
+            </button>
+            <div id="anilistRelazioniRisultato" style="margin-top:12px;"></div>
+        `;
+        body.appendChild(relSection);
+        document.getElementById('anilistCercaRelazioniBtn').onclick = function() { avviaRicercaRelazioniAniList_(dettaglio); };
+    }
+
     const footer = document.createElement('div');
     footer.style = 'display:flex; justify-content:flex-end; gap:8px; margin-top:16px; border-top:1px solid var(--border-color, #262a42); padding-top:14px;';
     footer.innerHTML = `
@@ -6550,6 +6674,90 @@ function confermaDatiAniList_(tipo) {
 
     chiudiOverlayAniList();
     showToast('Titolo, copertina, sinossi e generi applicati: premi "Salva" per confermare definitivamente', 'success');
+}
+
+// Avvia la ricostruzione del franchise (stagioni + film collegati) a partire
+// dal titolo attualmente in anteprima nell'overlay AniList.
+function avviaRicercaRelazioniAniList_(dettaglio) {
+    const risultatoEl = document.getElementById('anilistRelazioniRisultato');
+    const btn = document.getElementById('anilistCercaRelazioniBtn');
+    btn.disabled = true;
+    risultatoEl.innerHTML = `<span style="color: var(--primary, #7c6cff); font-size:13px; display:inline-block; animation: pulse 1.5s infinite;">⏳ Ricostruzione del franchise in corso (può richiedere qualche secondo su serie lunghe)...</span>`;
+
+    const nodoIniziale = {
+        id: dettaglio.id, titolo: dettaglio.titolo, episodi: dettaglio.episodi,
+        anno: dettaglio.anno, immagine: dettaglio.immagine
+    };
+
+    costruisciGrafoStagioniAniList_(nodoIniziale)
+        .then(function(risultato) { renderRelazioniAniList_(risultato); })
+        .catch(function(err) {
+            console.error('Errore ricostruzione franchise AniList: ', err);
+            risultatoEl.innerHTML = `<p style="color: var(--danger, #ff5d6c); font-size:13px;">❌ Errore durante il recupero delle relazioni. Riprova.</p>`;
+            btn.disabled = false;
+        });
+}
+
+// Mostra la checklist di conferma: stagioni TV pre-spuntate (relazione
+// affidabile), film/side story NON pre-spuntati (relazione più ambigua,
+// vanno verificati uno per uno prima di confermare).
+function renderRelazioniAniList_(risultato) {
+    const risultatoEl = document.getElementById('anilistRelazioniRisultato');
+    const btn = document.getElementById('anilistCercaRelazioniBtn');
+    btn.disabled = false;
+
+    if (risultato.stagioni.length <= 1 && risultato.film.length === 0) {
+        risultatoEl.innerHTML = `<p style="color: var(--text-muted); font-size:13px;">Nessuna stagione o film collegato trovato su AniList per questa opera.</p>`;
+        return;
+    }
+
+    function rigaCheckbox(item, gruppo, checkedDiDefault) {
+        const sub = (gruppo === 'stagione') ? (item.episodi ? (item.episodi + ' episodi') : 'episodi non noti') : 'film';
+        const titoloSicuro = (item.titolo || '').replace(/"/g, '&quot;');
+        return `
+            <label style="display:flex; align-items:center; gap:8px; padding:6px 0; border-bottom:1px solid rgba(255,255,255,0.05); font-size:13px;">
+                <input type="checkbox" class="anilist-rel-cb" data-gruppo="${gruppo}" data-id="${item.id}" data-episodi="${item.episodi || 0}" ${checkedDiDefault ? 'checked' : ''}>
+                <img src="${item.immagine || ''}" style="width:28px; height:40px; object-fit:cover; border-radius:3px; background:#222; flex-shrink:0;">
+                <span style="flex:1;">${titoloSicuro}${item.anno ? ' (' + item.anno + ')' : ''}</span>
+                <span style="color: var(--text-muted); font-size:11px;">${sub}</span>
+            </label>
+        `;
+    }
+
+    let html = '';
+    if (risultato.stagioni.length > 0) {
+        html += `<div style="font-weight:600; font-size:12px; color: var(--text-muted, #8890ab); margin-bottom:6px;">📺 Stagioni TV trovate (${risultato.stagioni.length})</div>`;
+        html += risultato.stagioni.map(function(s) { return rigaCheckbox(s, 'stagione', true); }).join('');
+    }
+    if (risultato.film.length > 0) {
+        html += `<div style="font-weight:600; font-size:12px; color: var(--text-muted, #8890ab); margin:12px 0 6px;">🎬 Film/side story collegati — verifica prima di confermare (potrebbero includere ricap)</div>`;
+        html += risultato.film.map(function(f) { return rigaCheckbox(f, 'film', false); }).join('');
+    }
+    html += `<button type="button" class="btn btn-anime" id="anilistApplicaRelazioniBtn" style="margin-top:14px; width:100%;">✅ Applica stagioni e film spuntati</button>`;
+
+    risultatoEl.innerHTML = html;
+    document.getElementById('anilistApplicaRelazioniBtn').onclick = applicaRelazioniAniList_;
+}
+
+// Scrive direttamente nei campi "Stagioni Totali"/"Film Totali" della scheda
+// Anime (già aperta dietro l'overlay AniList) e prepara la mappa
+// numero-stagione -> episodi, usata da addAnimeSB_/updateAnimeSB_ per
+// creare le righe di episodi_anime già con il totale corretto.
+function applicaRelazioniAniList_() {
+    const spuntati = Array.from(document.querySelectorAll('.anilist-rel-cb:checked'));
+    const stagioniSpuntate = spuntati.filter(function(cb) { return cb.getAttribute('data-gruppo') === 'stagione'; });
+    const filmSpuntati = spuntati.filter(function(cb) { return cb.getAttribute('data-gruppo') === 'film'; });
+
+    document.getElementById('inpStagioniTotaliAnime').value = stagioniSpuntate.length;
+    document.getElementById('inpFilmTotaliAnime').value = filmSpuntati.length;
+
+    episodiPerStagionePendenteAnime = {};
+    stagioniSpuntate.forEach(function(cb, idx) {
+        episodiPerStagionePendenteAnime[idx + 1] = parseInt(cb.getAttribute('data-episodi')) || 0;
+    });
+
+    showToast('Applicate ' + stagioniSpuntate.length + ' stagioni e ' + filmSpuntati.length + ' film: ricontrolla e premi "Salva"', 'success');
+    chiudiOverlayAniList();
 }
 
 function renderErroreAniList_(err) {
