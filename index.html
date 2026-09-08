@@ -6425,11 +6425,22 @@ async function costruisciGrafoStagioniAniList_(nodoIniziale) {
     const visitati = new Set();
     const daVisitare = [nodoIniziale.id];
 
-    // Il titolo di partenza è sempre incluso come una delle stagioni.
-    stagioniTv.set(nodoIniziale.id, {
-        id: nodoIniziale.id, titolo: nodoIniziale.titolo, anno: nodoIniziale.anno,
-        episodi: nodoIniziale.episodi, immagine: nodoIniziale.immagine
-    });
+    // Il titolo di partenza è SEMPRE incluso nel risultato, anche quando non
+    // ha alcuna relazione (opera monostagione): finisce tra le stagioni se è
+    // una serie, tra i film se il formato AniList è MOVIE. In entrambi i casi
+    // è marcato "preselezionato" perché è il titolo che hai scelto tu.
+    const formatoIniziale = String(nodoIniziale.formato || '').toUpperCase();
+    if (formatoIniziale === 'MOVIE') {
+        filmCandidati.set(nodoIniziale.id, {
+            id: nodoIniziale.id, titolo: nodoIniziale.titolo, anno: nodoIniziale.anno,
+            immagine: nodoIniziale.immagine, preselezionato: true
+        });
+    } else {
+        stagioniTv.set(nodoIniziale.id, {
+            id: nodoIniziale.id, titolo: nodoIniziale.titolo, anno: nodoIniziale.anno,
+            episodi: nodoIniziale.episodi, immagine: nodoIniziale.immagine, preselezionato: true
+        });
+    }
 
     while (daVisitare.length > 0 && visitati.size < MAX_NODI) {
         const idCorrente = daVisitare.shift();
@@ -6691,7 +6702,7 @@ function avviaRicercaRelazioniAniList_(dettaglio) {
 
     const nodoIniziale = {
         id: dettaglio.id, titolo: dettaglio.titolo, episodi: dettaglio.episodi,
-        anno: dettaglio.anno, immagine: dettaglio.immagine
+        anno: dettaglio.anno, immagine: dettaglio.immagine, formato: dettaglio.formato
     };
 
     costruisciGrafoStagioniAniList_(nodoIniziale)
@@ -6705,13 +6716,16 @@ function avviaRicercaRelazioniAniList_(dettaglio) {
 
 // Mostra la checklist di conferma: stagioni TV pre-spuntate (relazione
 // affidabile), film/side story NON pre-spuntati (relazione più ambigua,
-// vanno verificati uno per uno prima di confermare).
+// vanno verificati uno per uno prima di confermare). Il titolo di partenza
+// è sempre pre-spuntato, anche quando è l'unica voce (opera monostagione).
 function renderRelazioniAniList_(risultato) {
     const risultatoEl = document.getElementById('anilistRelazioniRisultato');
     const btn = document.getElementById('anilistCercaRelazioniBtn');
     btn.disabled = false;
 
-    if (risultato.stagioni.length <= 1 && risultato.film.length === 0) {
+    // Caso limite: nemmeno il titolo di partenza (non dovrebbe capitare, ma
+    // evita di mostrare una checklist vuota con il pulsante di conferma).
+    if (risultato.stagioni.length === 0 && risultato.film.length === 0) {
         risultatoEl.innerHTML = `<p style="color: var(--text-muted); font-size:13px;">Nessuna stagione o film collegato trovato su AniList per questa opera.</p>`;
         return;
     }
@@ -6719,9 +6733,10 @@ function renderRelazioniAniList_(risultato) {
     function rigaCheckbox(item, gruppo, checkedDiDefault) {
         const sub = (gruppo === 'stagione') ? (item.episodi ? (item.episodi + ' episodi') : 'episodi non noti') : 'film';
         const titoloSicuro = (item.titolo || '').replace(/"/g, '&quot;');
+        const checked = (item.preselezionato === true) ? true : checkedDiDefault;
         return `
             <label style="display:flex; align-items:center; gap:8px; padding:6px 0; border-bottom:1px solid rgba(255,255,255,0.05); font-size:13px;">
-                <input type="checkbox" class="anilist-rel-cb" data-gruppo="${gruppo}" data-id="${item.id}" data-episodi="${item.episodi || 0}" ${checkedDiDefault ? 'checked' : ''}>
+                <input type="checkbox" class="anilist-rel-cb" data-gruppo="${gruppo}" data-id="${item.id}" data-episodi="${item.episodi || 0}" ${checked ? 'checked' : ''}>
                 <img src="${item.immagine || ''}" style="width:28px; height:40px; object-fit:cover; border-radius:3px; background:#222; flex-shrink:0;">
                 <span style="flex:1;">${titoloSicuro}${item.anno ? ' (' + item.anno + ')' : ''}</span>
                 <span style="color: var(--text-muted); font-size:11px;">${sub}</span>
@@ -6730,6 +6745,14 @@ function renderRelazioniAniList_(risultato) {
     }
 
     let html = '';
+
+    // Nota esplicativa quando il franchise è composto dalla sola opera scelta:
+    // prima qui si usciva con "nessun risultato" e non c'era modo di importare
+    // stagione ed episodi dei titoli monostagione.
+    if (risultato.stagioni.length + risultato.film.length === 1) {
+        html += `<p style="color: var(--text-muted); font-size:12px; margin:0 0 8px;">Nessuna stagione aggiuntiva o film collegato trovato su AniList: l'opera risulta a stagione unica. Puoi comunque applicarla qui sotto per importare stagione e numero di episodi.</p>`;
+    }
+
     if (risultato.stagioni.length > 0) {
         html += `<div style="font-weight:600; font-size:12px; color: var(--text-muted, #8890ab); margin-bottom:6px;">📺 Stagioni TV trovate (${risultato.stagioni.length})</div>`;
         html += risultato.stagioni.map(function(s) { return rigaCheckbox(s, 'stagione', true); }).join('');
