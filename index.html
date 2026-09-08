@@ -2900,8 +2900,9 @@
             if (daNumero > aNumero) return;
             const titoloTrim = String(titolo).trim();
             const nuoveRighe = [];
+            const defaultTotale = (tipo === 'Film') ? 1 : 0;
             for (let n = daNumero; n <= aNumero; n++) {
-                const totaleNoto = (mappaTotaliEpisodi && mappaTotaliEpisodi[n] !== undefined) ? (parseInt(mappaTotaliEpisodi[n]) || 0) : 0;
+                const totaleNoto = (mappaTotaliEpisodi && mappaTotaliEpisodi[n] !== undefined) ? (parseInt(mappaTotaliEpisodi[n]) || 0) : defaultTotale;
                 nuoveRighe.push({ anime_titolo: titoloTrim, tipo: tipo, numero: n, episodi_totali: totaleNoto, episodi_visti: 0 });
             }
             if (nuoveRighe.length === 0) return;
