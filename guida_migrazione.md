@@ -1255,5 +1255,63 @@ di rete o di API: era solo la soglia sbagliata.
 importare solo titolo/sinossi/generi/copertina — la ricerca stagioni resta
 un passaggio facoltativo e separato, come da design della Richiesta 3.
 
+
+## Richiesta 5 — Copertina dell'opera negli overlay aperti dal widget "In Corso"
+
+**Problema riscontrato:** le card del widget "In Corso" della Home mostrano
+l'immagine dell'opera in un banner alto 88px con `object-fit: cover`, quindi
+tagliata e ingrandita (sgranata). Cliccando la card si apre l'overlay di
+avanzamento (stagioni/film per gli anime, volumi per i manga), dove
+l'immagine non compariva affatto.
+
+**Soluzione:** negli overlay aperti *dal widget* la copertina si vede di
+fianco all'elenco, intera (`object-fit: contain`, niente ritaglio) e in
+formato ridotto (colonna da 160px, altezza massima 260px): abbastanza
+grande da essere leggibile, ma senza far diventare enorme l'overlay. Per
+vederla a schermo intero si clicca l'immagine e si apre il lightbox già
+esistente (`apriLightbox()`), lo stesso degli avatar nelle viste Anime e
+Manga.
+
+**Modifiche (solo `index.html`, nessuna modifica a database o Edge Function):**
+- **CSS** (subito sotto le regole `.episodi-*`): nuove classi
+  `.overlay-con-copertina` (riga flex copertina + elenco),
+  `.overlay-lista` (`flex: 1; min-width: 0`), `.overlay-copertina`
+  (colonna fissa da 160px) e `.overlay-copertina-img`
+  (`object-fit: contain`, `max-height: 260px`, bordo e `cursor: zoom-in`
+  come le altre immagini cliccabili). Media query sotto i 560px: la
+  copertina va sopra l'elenco, incolonnata e a 140px.
+- **Markup** dei due overlay: dentro `#modalOverlayEpisodi` e
+  `#modalOverlayVolumiManga` il contenitore dell'elenco è ora avvolto in un
+  `div.overlay-con-copertina` insieme al nuovo box della copertina
+  (`#episodiCopertina` e `#volumiMangaCopertina`, `display:none` di
+  partenza). Gli `id` dei contenitori esistenti (`episodiListContainer`,
+  `volumiMangaContainer`) NON sono cambiati, quindi tutte le funzioni di
+  render restano valide.
+- **`renderCopertinaOverlay(idContenitore, item)` / `nascondiCopertinaOverlay(idContenitore)`**
+  (nuove, vicino all'overlay volumi): disegnano o nascondono la copertina
+  a partire dal campo `immagine` dell'opera. Riusano lo stesso schema di
+  escape degli avatar della lista (`replace(/'/g, "\\'")`) e hanno
+  `onerror` che nasconde il box se l'URL è rotto.
+  `renderCopertinaOverlay` restituisce `true` solo se la copertina è stata
+  davvero disegnata.
+- **`apriGestioneEpisodi(titolo, mostraCopertina)`**: nuovo secondo
+  parametro *facoltativo*. Passato `true` solo dal widget "In Corso";
+  l'icona 📺 della vista Anime continua a chiamarla con il solo titolo e
+  l'overlay resta identico a prima (copertina nascosta, `max-width` 560px).
+  Con la copertina l'overlay passa a 640px.
+- **`apriAvanzamentoVolumiManga(titolo)`**: mostra sempre la copertina
+  (questo overlay è aperto solo dal widget). `max-width` 520px con
+  copertina, 380px senza. La copertina viene disegnata una sola volta
+  all'apertura e non dentro `renderVolumiOverlay()`, che viene richiamata a
+  ogni +/-: ricaricare l'immagine a ogni click la farebbe lampeggiare.
+- **`creaProgressCard()`**: la card anime ora chiama
+  `apriGestioneEpisodi(item.titolo, true)`.
+
+**Comportamento invariato:** il banner ritagliato dentro la card del widget
+resta com'era (lì serve il ritaglio per tenere le card tutte uguali); la
+vista Anime, la vista Manga e il lightbox non sono stati toccati. Se
+l'opera non ha immagine, o l'URL non carica, il box sparisce e l'elenco
+torna a tutta larghezza come prima.
+
 ---
-*Ultimo aggiornamento: Parte 3 — Richieste 1, 2, 3 e 4 completate (ordinamento streaming, trama/generi TMDB, stagioni/film collegati via AniList, fix anime monostagione).*
+*Ultimo aggiornamento: Parte 3 — Richieste 1, 2, 3, 4 e 5 completate (ordinamento streaming, trama/generi TMDB, stagioni/film collegati via AniList, fix anime monostagione, copertina negli overlay del widget "In Corso").*
