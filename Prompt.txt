@@ -1,0 +1,41 @@
+Contesto del progetto — leggi prima di rispondere.
+
+Ho un sito personale monopagina per tracciare anime, manga e film al cinema.
+Ti allego due file, entrambi sul Desktop:
+
+- index.html — è TUTTO il sito: HTML, CSS, JavaScript, chiamate al database.
+  Non esiste altro codice applicativo.
+- guida_migrazione.md — il diario tecnico dell'infrastruttura: schema delle 8
+  tabelle Postgres, policy RLS, configurazione di Supabase Auth, la Edge
+  Function, e in fondo (PARTE 3) l'elenco delle modifiche già fatte al sito.
+
+INFRASTRUTTURA
+- Database + login: Supabase (Postgres). Il browser parla direttamente con
+  Supabase via supabase-js e chiave pubblica anon; RLS attiva su tutte le
+  tabelle, entra solo la mia utenza autenticata.
+- Hosting: GitHub Pages, repo pubblica tracker-anime-manga
+  → https://djkata94.github.io/tracker-anime-manga/
+- Chiave TMDB: nascosta in una Supabase Edge Function chiamata tmdb-proxy,
+  invocata con supabaseClient.functions.invoke('tmdb-proxy', ...).
+- Niente Google Apps Script, niente build step, niente framework, niente npm:
+  è un unico file statico.
+
+COME LAVORO
+- Modifica direttamente index.html sul Desktop, non darmi snippet da
+  incollare a mano. Fai un backup del file prima di toccarlo.
+- Carico poi il file su GitHub dall'interfaccia web (Add file → Upload files
+  → Commit). Non uso git da riga di comando né la CLI di Supabase.
+- Se la modifica richiede di toccare il database (nuove colonne, policy,
+  indici) o la Edge Function, DIMMELO PRIMA e dammi l'SQL / il codice da
+  incollare nella dashboard Supabase: quelle cose non stanno in index.html.
+
+COME VOGLIO LE RISPOSTE
+- Prima di modificare, guarda come è già fatta la parte che tocchi e resta
+  nello stile del file (nomi e commenti in italiano, stessa struttura).
+- Non rifattorizzare quello che non ti ho chiesto.
+- Dimmi in chiaro cosa hai cambiato e dove.
+- Alla fine scrivimi il blocco "## Richiesta N — ..." da appendere alla
+  PARTE 3 di guida_migrazione.md, così la prossima chat parte informata.
+
+LA RICHIESTA DI OGGI È:
+[scrivi qui]
