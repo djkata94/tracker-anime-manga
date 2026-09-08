@@ -1208,5 +1208,52 @@ ignorati nella ricerca. Su titoli di nicchia la checklist potrebbe uscire
 corta o vuota se la community AniList non ha compilato bene le relazioni:
 resta comunque disponibile l'inserimento manuale come fallback, come oggi.
 
+## Richiesta 4 — Anime monostagione: importare comunque stagione ed episodi
+
+**Problema riscontrato (segue la Richiesta 3):** su un anime che esiste in
+una sola stagione (es. *INUYASHIKI LAST HERO*, *LAZARUS*, *takt op.Destiny*)
+il pulsante "🔗 Cerca stagioni/film collegati" rispondeva sempre
+"Nessuna stagione o film collegato trovato". L'unica strada rimasta era
+"✅ Usa questi dati", che però importa solo titolo, sinossi, generi e
+copertina: Stagioni Totali e numero episodi restavano da mettere a mano.
+
+**Causa:** in `renderRelazioniAniList_()` la condizione di uscita era
+`stagioni.length <= 1 && film.length === 0`. Il titolo di partenza viene
+sempre inserito nel grafo, quindi su un monostagione il risultato è
+esattamente 1 stagione e 0 film → la funzione usciva subito con il messaggio
+di "nessun risultato", senza mai disegnare la checklist né il pulsante di
+conferma. Verificato interrogando AniList: quei titoli non hanno alcuna
+relazione `PREQUEL`/`SEQUEL` di formato `TV` (solo `SOURCE`/`ADAPTATION`
+verso il manga), mentre *My Dress-Up Darling* ha un `SEQUEL:TV` — ecco
+perché i multi-stagione funzionavano e i monostagione no. Nessun problema
+di rete o di API: era solo la soglia sbagliata.
+
+**Modifiche (solo `index.html`, nessuna modifica a database o Edge Function):**
+- `renderRelazioniAniList_()`: la condizione di uscita diventa
+  `stagioni.length === 0 && film.length === 0` (caso limite che in pratica
+  non si verifica mai). Con una sola voce la checklist viene comunque
+  disegnata, pre-spuntata, con il numero di episodi reale e il pulsante
+  "✅ Applica stagioni e film spuntati" → Stagioni Totali = 1 ed
+  `episodiPerStagionePendenteAnime = { 1: episodi }`.
+- Aggiunta una riga informativa sopra la checklist quando il franchise è
+  composto dalla sola opera scelta ("l'opera risulta a stagione unica…"),
+  così resta chiaro che non è un errore di ricerca.
+- `costruisciGrafoStagioniAniList_()`: il nodo iniziale non finisce più
+  d'ufficio tra le stagioni TV. Se il suo `format` AniList è `MOVIE` viene
+  messo tra i film, altrimenti tra le stagioni. In entrambi i casi è marcato
+  `preselezionato: true`. Serviva perché ora la checklist si mostra sempre:
+  senza questa distinzione un film cercato come Anime sarebbe comparso come
+  "1 stagione TV".
+- `rigaCheckbox()`: rispetta il flag `preselezionato` (il titolo scelto è
+  sempre spuntato, anche quando finisce nel gruppo film, che di default è
+  non spuntato).
+- `avviaRicercaRelazioniAniList_()`: passa `formato: dettaglio.formato` nel
+  nodo iniziale (il campo `format` era già letto da
+  `getDettaglioTraduzioneAniListSB_`, semplicemente non veniva propagato).
+
+**Comportamento invariato:** il pulsante "✅ Usa questi dati" continua a
+importare solo titolo/sinossi/generi/copertina — la ricerca stagioni resta
+un passaggio facoltativo e separato, come da design della Richiesta 3.
+
 ---
-*Ultimo aggiornamento: Parte 3 — Richieste 1, 2 e 3 completate (ordinamento streaming, trama/generi TMDB, stagioni/film collegati via AniList).*
+*Ultimo aggiornamento: Parte 3 — Richieste 1, 2, 3 e 4 completate (ordinamento streaming, trama/generi TMDB, stagioni/film collegati via AniList, fix anime monostagione).*
