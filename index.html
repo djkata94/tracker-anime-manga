@@ -6644,8 +6644,8 @@ function renderDettaglioAniList_(tipo, dettaglio) {
     document.getElementById('anilistConfermaBtn').onclick = function() { confermaDatiAniList_(tipo); };
 }
 
-function confermaDatiAniList_(tipo) {
-    if (!ultimoDettaglioAniList) return;
+function applicaDatiPrincipaliAniList_(tipo) {
+    if (!ultimoDettaglioAniList) return false;
 
     const titoloInput = document.getElementById('anilistTitoloInput');
     const titoloFinale = titoloInput ? titoloInput.value.trim() : ultimoDettaglioAniList.titolo;
@@ -6671,7 +6671,11 @@ function confermaDatiAniList_(tipo) {
             if (generiDaAggiungere.indexOf(cb.value) !== -1) cb.checked = true;
         });
     }
+    return true;
+}
 
+function confermaDatiAniList_(tipo) {
+    if (!applicaDatiPrincipaliAniList_(tipo)) return;
     chiudiOverlayAniList();
     showToast('Titolo, copertina, sinossi e generi applicati: premi "Salva" per confermare definitivamente', 'success');
 }
@@ -6756,7 +6760,11 @@ function applicaRelazioniAniList_() {
         episodiPerStagionePendenteAnime[idx + 1] = parseInt(cb.getAttribute('data-episodi')) || 0;
     });
 
-    showToast('Applicate ' + stagioniSpuntate.length + ' stagioni e ' + filmSpuntati.length + ' film: ricontrolla e premi "Salva"', 'success');
+    // Applica in un colpo solo anche titolo/sinossi/generi/immagine: non
+    // serve più cliccare separatamente "Usa questi dati" dopo.
+    applicaDatiPrincipaliAniList_('anime');
+
+    showToast('Applicati titolo, sinossi, generi, ' + stagioniSpuntate.length + ' stagioni e ' + filmSpuntati.length + ' film: ricontrolla e premi "Salva"', 'success');
     chiudiOverlayAniList();
 }
 
