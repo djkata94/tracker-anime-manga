@@ -1315,3 +1315,93 @@ torna a tutta larghezza come prima.
 
 ---
 *Ultimo aggiornamento: Parte 3 — Richieste 1, 2, 3, 4 e 5 completate (ordinamento streaming, trama/generi TMDB, stagioni/film collegati via AniList, fix anime monostagione, copertina negli overlay del widget "In Corso").*
+
+---
+
+# 👥 PARTE 4 — Multi-utente
+
+Obiettivo: condividere il sito con una seconda persona (login separato),
+mantenendo i dati delle due utenze completamente separati — stessa
+interfaccia, stesso codice, dati isolati per proprietario.
+
+## ⏳ FASE 17 — Multi-utente: isolamento dati per proprietario
+
+*(in corso — pianificazione)*
+
+### Il piano in breve
+
+1. **Aggiungere una colonna `user_id`** a tutte le 8 tabelle, valorizzata in
+   automatico con `auth.uid()` (l'utente che sta scrivendo) — il sito non
+   deve specificarla mai a mano.
+2. **Aggiornare le relazioni tra tabelle** che oggi si collegano tramite
+   titolo (`episodi_anime`/`sinossi_anime` → `anime`, `sinossi_manga` →
+   `manga`): il titolo da solo non basta più a identificare una riga in modo
+   univoco (tu e il tuo amico potreste avere entrambi "Naruto"), quindi
+   diventa **titolo + proprietario insieme**. `log_attivita`/`log_episodi`
+   non hanno vincoli di questo tipo (sono testo libero), gli basta il nuovo
+   `user_id` per essere filtrati correttamente.
+3. **Riscrivere le regole RLS**: da "chiunque sia loggato vede tutto" a
+   "vedi solo le righe con il tuo `user_id`".
+4. **Creare la seconda utenza** Supabase Auth per il tuo amico.
+5. **Adattare le funzioni di scrittura in `index.html`** che oggi
+   identificano una riga solo con il titolo, per usarne due (titolo +
+   proprietario) dove serve — non tutte le funzioni, solo quelle di
+   Anime/Manga che toccano le tabelle collegate.
+
+### ⚠️ Prima di iniziare: backup
+
+Questa fase modifica la struttura delle tabelle con dati reali dentro. Prima
+di procedere:
+1. Vai su **Table Editor** (o **Database → Backups** se sul piano Free è
+   disponibile) e **esporta ogni tabella in CSV** (pulsante di export in
+   alto a destra nel Table Editor), oppure
+2. **SQL Editor → nuova query**: `SELECT * FROM anime;` (e così per le
+   altre 7 tabelle), poi copia i risultati da qualche parte al sicuro.
+
+Meglio pochi minuti spesi ora che un imprevisto senza rete di sicurezza.
+
+Fammi sapere quando hai fatto il backup, poi partiamo dal primo passo vero:
+recuperare il tuo `user_id` attuale (serve per "assegnarti" retroattivamente
+tutti i dati già esistenti, prima di attivare le nuove regole).
+
+## ✅ FASE 17 — Completata
+
+**Schema:** aggiunta colonna `user_id` (UUID, `DEFAULT auth.uid()`, `NOT
+NULL`) a tutte le 8 tabelle, dati esistenti assegnati retroattivamente al
+tuo utente. Le relazioni per titolo sono diventate composite
+(`titolo`/`anime_titolo`/`manga_titolo` + `user_id`):
+- `anime`/`manga`: vincolo univoco `(titolo, user_id)`
+- `episodi_anime`: vincolo univoco `(anime_titolo, tipo, numero, user_id)`,
+  foreign key composita verso `anime (titolo, user_id)`
+- `sinossi_anime`/`sinossi_manga`: chiave primaria diventata
+  `(anime_titolo/manga_titolo, user_id)`, foreign key composita
+- Tutte le FK con `ON UPDATE CASCADE ON DELETE CASCADE` preservato
+
+**Intoppo incontrato e risolto:** il primo tentativo ha provato a eliminare
+i vecchi vincoli univoci (`anime_titolo_key`, `manga_titolo_key`) prima
+delle foreign key che ne dipendevano ancora → errore Postgres `2BP01`.
+Nessun danno (era dentro una transazione, rollback automatico) — corretto
+semplicemente l'ordine delle operazioni: prima le foreign key dipendenti,
+poi i vincoli che sostituiscono.
+
+**RLS riscritta:** da `USING (true)` (chiunque loggato vede tutto) a
+`USING (user_id = auth.uid())` (ognuno vede solo le proprie righe), su
+tutte le 8 tabelle.
+
+**Nessuna modifica al codice del sito.** Le query in `index.html` restano
+identiche a prima (`select('*')`, `.eq('titolo', ...)`): è la RLS a
+filtrare in automatico, in modo trasparente, senza che il JavaScript debba
+sapere nulla dell'esistenza di altri utenti.
+
+**Testato dal vivo:** creata la seconda utenza per l'amico (stessa
+procedura della Fase 9), login effettuato → sito correttamente vuoto,
+pronto per i suoi dati, senza vedere nulla di quanto già inserito.
+
+**Cosa NON ha richiesto modifiche** (già multi-utente "per natura"):
+Edge Function `tmdb-proxy` (controlla solo "sei autenticato", non importa
+chi), chiamate AniList e traduzione (pubbliche, senza distinzione di
+utente), chiavi/URL Supabase (stesso progetto per entrambi, cambia solo
+l'account di login).
+
+---
+*Ultimo aggiornamento: Fase 17 completata e testata — sito multi-utente, dati isolati per proprietario via RLS, nessuna modifica al codice frontend necessaria.*
