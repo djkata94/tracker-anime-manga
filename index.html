@@ -1632,7 +1632,8 @@
         <button id="nav-manga" class="btn btn-nav" onclick="switchView('manga')">📚 Manga</button>
         <button id="nav-cinema" class="btn btn-nav" onclick="switchView('cinema')">🎬 Cinema</button>
         <button id="nav-stats" class="btn btn-nav" onclick="switchView('stats')">📊 Stats</button>
-        <button id="btnLogout" class="btn btn-nav" style="margin-left:auto;" onclick="handleLogout()" title="Esci">⏻ Esci</button>
+        <span id="loggedUserEmail" style="margin-left:auto; color: var(--text-muted); font-size:13px; display:flex; align-items:center; gap:6px;"></span>
+        <button id="btnLogout" class="btn btn-nav" onclick="handleLogout()" title="Esci">⏻ Esci</button>
     </div>
 
     <div id="homeView" class="view-container home-dashboard">
@@ -2593,14 +2594,21 @@
         const loginErrorEl = document.getElementById('loginError');
         const loginSubmitBtnEl = document.getElementById('loginSubmitBtn');
 
-        function mostraApp_() {
+        function mostraApp_(session) {
             loginOverlayEl.style.display = 'none';
             appRootEl.style.display = '';
+            const emailEl = document.getElementById('loggedUserEmail');
+            if (emailEl) {
+                const email = (session && session.user && session.user.email) || '';
+                emailEl.innerText = email ? ('👤 ' + email) : '';
+            }
         }
 
         function mostraLogin_() {
             appRootEl.style.display = 'none';
             loginOverlayEl.style.display = 'flex';
+            const emailEl = document.getElementById('loggedUserEmail');
+            if (emailEl) emailEl.innerText = '';
         }
 
         // Al caricamento della pagina: c'è già una sessione valida (es. non
@@ -2608,7 +2616,7 @@
         supabaseClient.auth.getSession().then(function(result) {
             const session = result.data.session;
             if (session) {
-                mostraApp_();
+                mostraApp_(session);
             } else {
                 mostraLogin_();
             }
@@ -2639,7 +2647,7 @@
                         loginErrorEl.textContent = '❌ Email o password non corrette.';
                         return;
                     }
-                    mostraApp_();
+                    mostraApp_(result.data.session);
                 });
         });
 
