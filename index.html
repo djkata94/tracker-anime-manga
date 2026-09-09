@@ -33,6 +33,12 @@
 
         html {
             scroll-behavior: smooth !important;
+            /* Safari/iOS ingrandisce da solo il testo di alcuni blocchi ("text
+               autosizing"): senza questa riga i generi sotto al titolo, nelle
+               liste Anime e Manga, uscivano più grandi degli 11px previsti solo
+               su iPhone/iPad. Con 100% la dimensione resta quella del CSS. */
+            -webkit-text-size-adjust: 100%;
+            text-size-adjust: 100%;
         }
 
         * { box-sizing: border-box; }
@@ -2533,6 +2539,18 @@
                     <div class="genres-grid-container" id="mangaGenresGrid"></div>
                 </div>
 
+                <div class="form-group">
+                    <label style="display:flex; align-items:center; gap:8px; cursor:pointer; font-weight:600;">
+                        <input type="checkbox" id="inpGiaLettoManga" style="width:auto; margin:0;">
+                        <span>📗 Opera già letta per intero</span>
+                    </label>
+                    <small style="color: var(--text-muted); display:block; margin-top:4px;">
+                        Utile per le opere recuperate anni fa: al salvataggio i volumi letti vengono
+                        portati in automatico al numero di volumi totali, senza doverli contare uno a
+                        uno con il ➕ dalla lista. Togliere la spunta non azzera i volumi già letti.
+                    </small>
+                </div>
+
                 <div class="form-group"><label>Note</label><textarea id="inpNoteManga" rows="2"></textarea></div>
                 <div class="form-group"><label>URL Immagine / Avatar</label><input type="url" id="inpImmagineManga" placeholder="Inserisci il link dell'immagine (es. https://...)"></div>
                 
@@ -4248,11 +4266,15 @@ document.getElementById('btnRandomAnime').onclick = function() {
 
         async function addMangaSB_(dati) {
             const acquistatoBool = (dati.acquistato === 'Sì');
+            const volumiTotaliNuovaOpera = parseInt(dati.volumi) || 0;
+            // Flag "opera già letta per intero" spuntato nel modale: l'opera nasce
+            // direttamente completata invece di partire da 0 volumi letti.
+            const volumiLettiIniziali = (dati.segnaComeLetto && volumiTotaliNuovaOpera > 0) ? volumiTotaliNuovaOpera : 0;
             const { error: errIns } = await supabaseClient.from('manga').insert([{
-                titolo: dati.titolo || '', tipologia: dati.tipologia || 'Manga', volumi: parseInt(dati.volumi) || 0,
+                titolo: dati.titolo || '', tipologia: dati.tipologia || 'Manga', volumi: volumiTotaliNuovaOpera,
                 stato: dati.stato || 'In corso', acquistato: acquistatoBool, note: dati.note || '',
                 generi: dati.generi || '', preferito: false, immagine: dati.immagine || '',
-                volumi_letti: 0, priorita: false
+                volumi_letti: volumiLettiIniziali, priorita: false
             }]);
             if (errIns) throw errIns;
 
@@ -4279,6 +4301,12 @@ document.getElementById('btnRandomAnime').onclick = function() {
             if (volumiTotaliNuovi > 0 && volumiLettiEsistenti > volumiTotaliNuovi) {
                 volumiLettiEsistenti = volumiTotaliNuovi;
             }
+            // Flag "opera già letta per intero" spuntato nel modale: porta i volumi
+            // letti al totale. Il valore precedente serve dopo per il log AVANZAMENTO.
+            const volumiLettiPrimaModifica = vecchiaRiga.volumi_letti || 0;
+            if (dati.segnaComeLetto && volumiTotaliNuovi > 0) {
+                volumiLettiEsistenti = volumiTotaliNuovi;
+            }
 
             const acquistatoNuovo = dati.acquistato || 'No';
 
@@ -4302,6 +4330,16 @@ document.getElementById('btnRandomAnime').onclick = function() {
                 }
                 if (String(acquistatoNuovo).trim() !== String(vecchioAcquistatoLogManga).trim() && acquistatoNuovo === 'Sì') {
                     await registraLogSB_(titoloLogManga, 'MANGA', 'ACQUISTO', vecchioAcquistatoLogManga, acquistatoNuovo);
+                }
+                // Avanzamento dovuto al flag "opera già letta per intero": stessi eventi
+                // che registrerebbe il ➕ dalla lista (vedi updateMangaVolumiLettiSB_).
+                if (dati.segnaComeLetto && volumiLettiEsistenti !== volumiLettiPrimaModifica) {
+                    await registraLogSB_(titoloLogManga, 'MANGA', 'AVANZAMENTO', volumiLettiPrimaModifica, volumiLettiEsistenti);
+                    const coloreDopoModifica = calcolaColoreLetturaManga_(volumiTotaliNuovi, volumiLettiEsistenti, statoNuovo);
+                    if (coloreDopoModifica === 'verde' && volumiTotaliNuovi > 0 && volumiLettiPrimaModifica < volumiTotaliNuovi) {
+                        await registraLogSB_(titoloLogManga, 'MANGA', 'COMPLETAMENTO',
+                            volumiLettiPrimaModifica + '/' + volumiTotaliNuovi, volumiLettiEsistenti + '/' + volumiTotaliNuovi);
+                    }
                 }
             } catch (logErr) {
                 console.error("Errore durante la valutazione degli eventi di log per updateManga: " + logErr);
@@ -4606,6 +4644,7 @@ function apriLightbox(url) {
             document.getElementById('modalTitleManga').innerText = "Aggiungi Nuovo Manga/LN";
             document.getElementById('mangaForm').reset();
             document.getElementById('inpImmagineManga').value = ''; // <--- NUOVO: Svuota campo immagine
+            document.getElementById('inpGiaLettoManga').checked = false; // Flag "già letta per intero": sempre spento su una nuova opera
             // Uncheck tutti i checkbox generi manga
             document.querySelectorAll('input[name="manga_genres_cb"]').forEach(cb => cb.checked = false);
             document.getElementById('modalOverlayManga').classList.add('active');
@@ -4626,7 +4665,12 @@ function apriLightbox(url) {
             document.getElementById('inpNoteManga').value = item.note || '';
             document.getElementById('inpLetturaManga').value = item.coloreLettura || 'bianco';
             document.getElementById('inpImmagineManga').value = item.immagine || ''; // <--- NUOVO: Carica l'immagine esistente
-            
+            // Flag "già letta per intero": nasce spuntato se l'opera è di fatto già finita
+            // (volumi letti = volumi totali), così riflette la situazione reale.
+            const volumiTotaliItem = parseInt(item.volumi) || 0;
+            const volumiLettiItem = parseInt(item.volumiLetti) || 0;
+            document.getElementById('inpGiaLettoManga').checked = (volumiTotaliItem > 0 && volumiLettiItem >= volumiTotaliItem);
+
             // Ripristina la selezione dei checkbox generi manga
             document.querySelectorAll('input[name="manga_genres_cb"]').forEach(cb => {
                 cb.checked = false;
@@ -4641,8 +4685,44 @@ function apriLightbox(url) {
 
         document.getElementById('mangaForm').onsubmit = function(e) {
             e.preventDefault();
+
+            // --- Flag "opera già letta per intero" (vedi checkbox sopra le Note) ---
+            // Va valutato PRIMA di mettere il pulsante in "Salvataggio...", perché può
+            // interrompere il salvataggio (volumi mancanti o conferma annullata).
+            const giaLettoManga = document.getElementById('inpGiaLettoManga').checked;
+            const volumiTotaliForm = parseInt(document.getElementById('inpVolumiManga').value) || 0;
+            const titoloFormManga = document.getElementById('inpTitoloManga').value;
+
+            if (giaLettoManga && volumiTotaliForm <= 0) {
+                showToast('Per segnare l\'opera come già letta indica prima il Numero Volumi.', 'error');
+                return;
+            }
+
+            // In modifica, se l'opera risulta già completata non c'è nulla da cambiare:
+            // niente richiesta di conferma a ogni salvataggio.
+            let cambiaVolumiLettiManga = giaLettoManga;
+            if (giaLettoManga && targetEditTitleManga) {
+                const itemCorrenteManga = mangaList.find(m => m.titolo === targetEditTitleManga);
+                if (itemCorrenteManga && (parseInt(itemCorrenteManga.volumiLetti) || 0) >= volumiTotaliForm) {
+                    cambiaVolumiLettiManga = false;
+                }
+            }
+
+            if (cambiaVolumiLettiManga) {
+                const coloreRisultanteManga = calcolaColoreLetturaManga_(
+                    volumiTotaliForm, volumiTotaliForm, document.getElementById('inpStatoManga').value);
+                const messaggioConfermaManga =
+                    'L\'opera "' + titoloFormManga + '" è segnata come già letta per intero.\n\n' +
+                    'Al salvataggio i volumi letti verranno impostati a ' + volumiTotaliForm + '/' + volumiTotaliForm +
+                    (coloreRisultanteManga === 'verde'
+                        ? ' e lo stato di lettura diventerà "Letto completamente" (quadratino verde).'
+                        : ' e lo stato di lettura resterà "In lettura" (quadratino giallo), perché l\'opera è ancora in corso di pubblicazione.') +
+                    '\n\nConfermi?';
+                if (!confirm(messaggioConfermaManga)) return;
+            }
+
             document.getElementById('btnSalvaManga').innerText = "Salvataggio...";
-            
+
             // Raccoglie i generi spuntati
             const selectedGenres = Array.from(document.querySelectorAll('input[name="manga_genres_cb"]:checked'))
                                         .map(cb => cb.value)
@@ -4657,7 +4737,8 @@ function apriLightbox(url) {
                 note: document.getElementById('inpNoteManga').value,
                 coloreLettura: document.getElementById('inpLetturaManga').value,
                 generi: selectedGenres,
-                immagine: document.getElementById('inpImmagineManga').value // <--- NUOVO: Salva l'URL dell'immagine nel foglio
+                immagine: document.getElementById('inpImmagineManga').value, // <--- NUOVO: Salva l'URL dell'immagine nel foglio
+                segnaComeLetto: cambiaVolumiLettiManga // Se true: volumi letti = volumi totali (vedi addMangaSB_/updateMangaSB_)
             };
             const isEditManga = !!targetEditTitleManga;
             const cb = function(data) {
