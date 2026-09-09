@@ -1313,10 +1313,67 @@ vista Anime, la vista Manga e il lightbox non sono stati toccati. Se
 l'opera non ha immagine, o l'URL non carica, il box sparisce e l'elenco
 torna a tutta larghezza come prima.
 
----
-*Ultimo aggiornamento: Parte 3 — Richieste 1, 2, 3, 4 e 5 completate (ordinamento streaming, trama/generi TMDB, stagioni/film collegati via AniList, fix anime monostagione, copertina negli overlay del widget "In Corso").*
 
----
+## Richiesta 6 — Flag "opera già letta per intero" nel modale Manga + fix generi su iOS
+
+**Problemi riscontrati (emersi con il secondo utente che sta ripopolando il
+suo archivio da zero):**
+1. Inserendo un manga vecchio, già finito di leggere anni fa, non c'era modo
+   di dichiararlo letto in fase di creazione: l'unica strada era salvare e poi
+   cliccare ➕ dalla riga della lista una volta per ogni volume.
+2. Da iPhone i generi sotto al titolo (`.genre-tags-list`, 11px) uscivano più
+   grandi del titolo stesso. Su Android non succedeva.
+
+**Modifiche (solo `index.html`, nessuna modifica a database o Edge Function —
+la colonna `volumi_letti` esiste già dalla migrazione).**
+
+### Flag "📗 Opera già letta per intero"
+
+- **Markup**: nuovo `form-group` dentro `#modalOverlayManga`, fra "Generi
+  Associa" e "Note", con checkbox `inpGiaLettoManga` e spiegazione in
+  `<small>`. Stesso schema del flag "📺 Da vedere in streaming" del modale
+  Cinema (checkbox dentro la `<label>`, testo esplicativo sotto).
+- **`btnNuovoManga.onclick`**: flag sempre spento sulle nuove opere.
+- **`apriModificaManga()`**: in modifica il flag nasce spuntato se l'opera è
+  già completata (`volumiLetti >= volumi`), così riflette la situazione reale.
+- **`mangaForm.onsubmit`**: il flag viene valutato *prima* di mettere il
+  pulsante in "Salvataggio...", perché può interrompere il salvataggio.
+  - Flag spuntato ma Numero Volumi = 0 → toast di errore, non salva.
+  - Flag spuntato su un'opera già completata (modifica) → nessuna conferma,
+    non c'è nulla da cambiare: evita il popup a ogni salvataggio.
+  - Altrimenti → `confirm()` che annuncia volumi letti = volumi totali e lo
+    stato di lettura risultante. Se si annulla, non viene salvato nulla.
+  - Il risultato finisce in `dati.segnaComeLetto`.
+- **`addMangaSB_()`**: `volumi_letti` non è più fisso a `0`; con il flag
+  l'opera nasce già completata.
+- **`updateMangaSB_()`**: con il flag porta `volumi_letti` al totale e
+  registra nel Log gli stessi eventi del ➕ dalla lista (`AVANZAMENTO`, più
+  `COMPLETAMENTO` se l'opera diventa verde), riusando lo schema di
+  `updateMangaVolumiLettiSB_()`.
+
+**Scelte di design da ricordare:**
+- **Togliere la spunta non azzera i volumi letti** (scritto anche nella
+  spiegazione sotto al flag): un reset silenzioso di dati reali sarebbe
+  pericoloso. Il flag è un'azione "porta a fine lettura", non un interruttore
+  a due vie.
+- **Il flag non tocca lo Stato Editoriale.** Su un'opera ancora "In corso" il
+  quadratino resta giallo anche a volumi in pari — è la regola già esistente
+  in `calcolaColoreLetturaManga_()`. Il messaggio di conferma si adatta e lo
+  dice esplicitamente, invece di promettere un verde che non arriverebbe.
+
+### Fix generi di dimensione diversa su iPhone
+
+**Causa:** il *text autosizing* di Safari/iOS. Su una tabella più larga del
+viewport Safari ingrandisce di sua iniziativa i blocchi che considera
+contenuto principale, ignorando gli `11px` di `.genre-tags-list`. Chrome su
+Android usa un algoritmo diverso e non lo faceva: non era un problema del
+sito né dei dati.
+
+**Modifica:** aggiunte `-webkit-text-size-adjust: 100%` e
+`text-size-adjust: 100%` alla regola `html { }` in cima al CSS. Vale per
+entrambe le liste (Anime e Manga) e per qualsiasi altro testo che Safari
+stesse gonfiando. Sui dispositivi che avevano già visitato il sito serve un
+ricaricamento forzato per superare la cache di GitHub Pages.
 
 # 👥 PARTE 4 — Multi-utente
 
