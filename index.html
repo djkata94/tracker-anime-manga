@@ -1649,7 +1649,7 @@
                  direttamente l'app Google Fogli (se installata). L'href viene
                  valorizzato via JS all'avvio con getSpreadsheetUrl().
                  ============================================================ -->
-            <a id="driveShortcutBtn" href="#" target="_blank" rel="noopener noreferrer" class="drive-shortcut-btn is-loading" title="Apri il Google Sheet collegato">
+            <a id="driveShortcutBtn" href="#" target="_blank" rel="noopener noreferrer" class="drive-shortcut-btn is-loading" title="Apri il Google Sheet collegato" style="display:none;">
                 <svg width="18" height="18" viewBox="0 0 24 24">
                     <polygon points="12,3.5 3.5,19 9.17,19" fill="#FBBC05"></polygon>
                     <polygon points="12,3.5 9.17,19 14.83,19" fill="#4285F4"></polygon>
@@ -2586,6 +2586,11 @@
         const SUPABASE_URL = 'https://jcclzcyezqbhmxptlnoo.supabase.co';
         const SUPABASE_ANON_KEY = 'sb_publishable_YsZNPRv7TVA39DoOi1P5cg_VJds36b5';
 
+        // Il tuo user_id (Supabase Auth): usato solo per decidere se mostrare
+        // il pulsante "Apri Database" — nessuna implicazione di sicurezza,
+        // la vera protezione dei dati resta la RLS, questo è solo estetico.
+        const OWNER_USER_ID = 'c2fcedfa-a2ff-4112-a0e1-7ed9f2053e34';
+
         const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
         const loginOverlayEl = document.getElementById('loginOverlay');
@@ -2602,8 +2607,13 @@
                 const email = (session && session.user && session.user.email) || '';
                 emailEl.innerText = email ? ('👤 ' + email) : '';
             }
+            const driveBtnEl = document.getElementById('driveShortcutBtn');
+            if (driveBtnEl) {
+                const isOwner = !!(session && session.user && session.user.id === OWNER_USER_ID);
+                driveBtnEl.style.display = isOwner ? '' : 'none';
+            }
         }
-
+		
         function mostraLogin_() {
             appRootEl.style.display = 'none';
             loginOverlayEl.style.display = 'flex';
