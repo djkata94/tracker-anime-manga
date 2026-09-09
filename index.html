@@ -2609,7 +2609,45 @@
         // la vera protezione dei dati resta la RLS, questo è solo estetico.
         const OWNER_USER_ID = 'c2fcedfa-a2ff-4112-a0e1-7ed9f2053e34';
 
-        const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        // --- Ritentativo automatico delle chiamate di rete -------------------
+        // Su iPhone/iPad Safari chiude senza preavviso le connessioni che tiene
+        // aperte verso Supabase (pagina rimasta in background, schermo spento,
+        // passaggio Wi-Fi ↔ rete dati). La prima chiamata successiva muore sul
+        // nascere con "TypeError: Load failed" — il messaggio Safari per "la
+        // richiesta non è nemmeno partita" — mentre la seconda va a buon fine:
+        // è il motivo per cui ricliccando subito "Salva" funzionava.
+        // Qui la ripetiamo da soli, così l'errore non arriva più all'utente.
+        const TENTATIVI_RETE = 3; // 1 tentativo + 2 ritentativi
+        const ATTESE_RITENTATIVO_MS = [400, 1200];
+
+        function attendi_(ms) {
+            return new Promise(function(resolve) { setTimeout(resolve, ms); });
+        }
+
+        // Ritenta SOLO gli errori di rete veri e propri: `fetch` fallisce con un
+        // TypeError quando la richiesta non arriva a destinazione. Se invece il
+        // server ha risposto — anche con un errore — la risposta viene restituita
+        // così com'è e la chiamata non viene ripetuta (potrebbe aver già scritto).
+        async function fetchConRitentativi_(input, init) {
+            let ultimoErrore;
+            for (let tentativo = 0; tentativo < TENTATIVI_RETE; tentativo++) {
+                try {
+                    return await fetch(input, init);
+                } catch (err) {
+                    if (!(err instanceof TypeError)) throw err; // es. richiesta annullata: non si ritenta
+                    ultimoErrore = err;
+                    const attesa = ATTESE_RITENTATIVO_MS[tentativo];
+                    if (attesa === undefined) break; // tentativi finiti
+                    console.warn('Chiamata a Supabase fallita (' + err.message + '): ritento fra ' + attesa + ' ms');
+                    await attendi_(attesa);
+                }
+            }
+            throw ultimoErrore;
+        }
+
+        const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+            global: { fetch: fetchConRitentativi_ }
+        });
 
         const loginOverlayEl = document.getElementById('loginOverlay');
         const appRootEl = document.getElementById('appRoot');
