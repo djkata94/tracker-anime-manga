@@ -1375,6 +1375,52 @@ entrambe le liste (Anime e Manga) e per qualsiasi altro testo che Safari
 stesse gonfiando. Sui dispositivi che avevano già visitato il sito serve un
 ricaricamento forzato per superare la cache di GitHub Pages.
 
+## Richiesta 7 — "TypeError: Load failed" in salvataggio su iPhone
+
+**Problema riscontrato:** salvando un nuovo manga da iPhone compariva ogni
+tanto "❌ Errore durante il salvataggio: TypeError: Load failed". Ricliccando
+subito "Salva" il salvataggio andava a buon fine. Solo su iOS, mai su Android.
+
+**Causa:** `TypeError: Load failed` è il messaggio con cui Safari segnala che
+la richiesta non è nemmeno partita — non è un errore di Supabase (quelli
+arrivano come testo: *duplicate key*, *row-level security*, ecc.), non c'entra
+il multi-utente. Safari tiene aperte le connessioni verso Supabase e le chiude
+senza preavviso quando la pagina resta in background, lo schermo si spegne o
+il telefono passa da Wi-Fi a rete dati; il browser prova comunque a riusarle e
+la prima chiamata muore sul nascere, mentre la seconda ne apre una nuova e
+funziona. Da qui il "Salva → errore → Salva → ok".
+Il salvataggio di un manga è particolarmente esposto perché non è una sola
+chiamata ma quattro/cinque in fila (insert `manga` → insert `sinossi_manga` →
+log CREAZIONE → eventuale log ACQUISTO → rilettura lista con
+`getMangaDataSB_()`): basta che una qualsiasi becchi la connessione morta.
+
+**Modifiche (solo `index.html`, nessuna modifica a database o Edge Function):**
+- Nuova `fetchConRitentativi_(input, init)` subito sopra `createClient`, con
+  le costanti `TENTATIVI_RETE` (3) e `ATTESE_RITENTATIVO_MS` ([400, 1200]) e
+  la funzione di supporto `attendi_(ms)`.
+- `createClient(...)` ora riceve `{ global: { fetch: fetchConRitentativi_ } }`:
+  `supabase-js` accetta una fetch personalizzata, così la correzione sta in un
+  punto solo invece che nelle decine di chiamate sparse nel file.
+- Ogni ritentativo scrive un `console.warn`, utile se il problema si ripresenta.
+
+**Regola importante del ritentativo:** si ripete **solo** quando `fetch`
+fallisce con un `TypeError`, cioè quando la richiesta non è arrivata a
+destinazione. Se il server ha risposto — anche con un errore — la risposta
+viene restituita così com'è e non si ritenta nulla: una chiamata che potrebbe
+aver già scritto sul database non va ripetuta alla cieca.
+
+**Copertura:** valendo sul client Supabase, il ritentativo protegge tutte le
+operazioni (anime, manga, cinema, log, statistiche, login e refresh sessione)
+e anche la Edge Function `tmdb-proxy`, che passa da `functions.invoke`.
+Restano fuori le due `fetch` dirette verso AniList e l'API di traduzione: sono
+sole letture, se falliscono non si perde nulla e basta ripremere 🔎.
+
+**Caso limite noto:** se la richiesta fosse arrivata al server e si fosse persa
+solo la risposta, il ritentativo di un inserimento verrebbe respinto dal
+vincolo di unicità `(titolo, user_id)` con il messaggio Postgres
+`duplicate key…`. Non è un rischio introdotto ora (succedeva già ricliccando
+"Salva" a mano) e il dato resta corretto: nessun doppione a database.
+
 # 👥 PARTE 4 — Multi-utente
 
 Obiettivo: condividere il sito con una seconda persona (login separato),
