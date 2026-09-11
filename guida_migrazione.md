@@ -1493,6 +1493,31 @@ vincolo di unicità `(titolo, user_id)` con il messaggio Postgres
 
 Nuovo bottone "🔄 Aggiorna tutte" in testata vista (`btnAggiornaTutteSerieTv`) + overlay `modalOverlayBulkSerieTv` con checkbox per serie/stagione/episodi, selettori Tutte/Nessuna e riepilogo scansione (novità / già aggiornate / senza link TMDB / errori). `aggiornaTutteSerieTvDaTMDB_` interroga `tv_detail` solo per serie non concluse con `tmdbId` (una chiamata alla volta, avanzamento visibile); mostra solo stagioni con numero maggiore del massimo salvato. `salvaBulkSerieTvTMDB_` aggiunge le sole righe mancanti (controllo anti-duplicato per numero), aggiorna `stagioni_totali`, ricalcola colore e logga AVANZAMENTO per serie. Nuove stagioni a zero visti. Solo `index.html` (backup `index_backup_pre_bulk.html`), nessun cambio DB/Edge. Verifica: Chrome headless, zero `Uncaught`.
 
+## Richiesta 10 — Anno stagione nelle Serie TV + inversione pulsanti testata
+
+**Verifica preliminare:** l'anno per stagione arrivava già da TMDB (`tv_detail → stagioni[].anno`, mostrato nella checklist di caricamento) ma non veniva salvato: `episodi_serie_tv` non aveva nessuna colonna dedicata.
+
+**Prerequisito fuori da `index.html` (eseguire PRIMA di caricare il nuovo file):**
+```sql
+ALTER TABLE episodi_serie_tv ADD COLUMN anno INTEGER;
+```
+Colonna nullable: le righe esistenti restano valide con anno vuoto. Nessuna policy RLS né Edge Function da toccare.
+
+**Frontend (solo `index.html`, backup `index_backup_pre_anno_stagione.html`):**
+- Testata `serietvView`: ordine pulsanti invertito → prima `🔄 Aggiorna tutte`, poi `+ Nuova Serie TV`.
+- `aggiungiRigheStagioniSerieTvSB_` accetta `mappaAnni` opzionale e scrive `anno` sulle righe nuove (NULL se ignoto); `getTuttiEpisodiSerieTvSB_` legge `anno` in `episodiSerieTvList`.
+- Nuova `anniPerStagionePendenteSerieTv` (reset in nuova/modifica/post-salvataggio, passata via `dati.anniPerStagione` in `add/updateSerieTvSB_`).
+- Checklist TMDB, 🔄 di riga e bulk `Aggiorna tutte` propagano `data-anno`/mappa anni e li mostrano nelle label.
+- Overlay stagioni (`renderStagioniSerieTvOverlay`): `🎞️ Stagione X (anno)`; senza anno, nessuna parentesi.
+
+**Limite noto:** le stagioni salvate prima di questa modifica hanno anno vuoto e gli aggiornamenti TMDB datano solo le stagioni nuove, mai le esistenti (nessuna sovrascrittura, come da design Richiesta 8).
+
+## Richiesta 11 — Backfill anni stagioni esistenti via Console
+
+**Problema:** le stagioni salvate prima della Richiesta 10 hanno `anno` vuoto, e gli aggiornamenti TMDB datano solo le stagioni nuove. Serviva un riempimento una tantum dello storico.
+
+**Soluzione (nessuna modifica a `index.html`):** script usa-e-getta da Console del browser (F12), appoggiato al `supabaseClient` globale già presente nel sito. Per ogni titolo con `tmdb_id` chiama `tmdb-proxy` (`tv_detail`), costruisce la mappa `numero → anno` e fa `UPDATE episodi_serie_tv SET anno` solo sulle righe con `anno IS NULL` (mai sovrascritture). Gira prima in simulazione (`SIMULA = true`), poi in scrittura (`false`). Chiamate sequenziali con 350 ms di pausa. Serie senza link TMDB e stagioni senza anno su TMDB elencate nel riepilogo e lasciate vuote. Con RLS ognuno sistema solo le proprie righe. Testato dal vivo: funzionante.
+
 # 👥 PARTE 4 — Multi-utente
 
 Obiettivo: condividere il sito con una seconda persona (login separato),
