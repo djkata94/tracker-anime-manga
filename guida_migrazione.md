@@ -1421,6 +1421,9 @@ vincolo di unicità `(titolo, user_id)` con il messaggio Postgres
 `duplicate key…`. Non è un rischio introdotto ora (succedeva già ricliccando
 "Salva" a mano) e il dato resta corretto: nessun doppione a database.
 
+Richiesta 8 — Rimozione Stats/Consigliami + sezione Serie TV
+Rimozioni (solo index.html): eliminati bottone/menu/vista/JS Stats + CDN Chart.js (tenuti toggleStatsWidget, COLORE_VISIONE_LABELS, cssVar riusati da Cinema/ricerca; ripulito il riferimento a statsCharts nel toggle) e bottone/handler "Consigliami cosa guardare". CSS widget lasciato (riusato dal Cinema). DB già pronto da utente: tabelle serie_tv/episodi_serie_tv/sinossi_serie_tv (con user_id, RLS) + tmdb-proxy estesa (tv_search, tv_detail, niente Season 0, mappa stati). DB richiesto: ALTER TABLE log_attivita per ammettere SERIE_TV (vedi SQL sopra). Scelte: log_episodi condiviso senza colonna media (collisioni solo a parità titolo, accettato), generi sola-lettura da TMDB con lista fissa 16 voci TV, contatori Iniziate/Stagioni/Episodi/Completate, overlay dedicato, niente voto/priorità, icona 📡. Frontend (index.html): nuova vista/modali/overlay/log come da spec punti 1–12; file e funzioni con suffisso SerieTv/serietv; sinossi/ricerca/widget/log estesi a tipo serietv/SERIE_TV; nuova TMDB_TV_GENRES_LIST e CSS btn-serietv/log-badge-serietv/tipo-serietv.
+
 # 👥 PARTE 4 — Multi-utente
 
 Obiettivo: condividere il sito con una seconda persona (login separato),
