@@ -1485,7 +1485,14 @@ vincolo di unicità `(titolo, user_id)` con il messaggio Postgres
 - **CSS nuovi**: `btn-serietv`, `log-badge-serietv`, `tipo-serietv` (label/placeholder
   ricerca).
 
+**Fix log episodi Serie TV (mostrava gli anime):** `log_episodi` condiviso senza distinzione di media. Aggiunta colonna `tipo_media` (SQL sotto), scritta da `registraLogEpisodioSB_` (nuovo parametro, default `ANIME`) e filtrata da `ottieniLogEpisodiSB_` (nuovo parametro: `ANIME` nella vista Anime, `SERIE_TV` in quella Serie TV). Le righe storiche nascono `ANIME` di default; quelle delle serie già scritte vengono riclassificate dai titoli in `serie_tv`.
+
 **Fix post-deploy (home bianca / bottoni morti):** la rimozione del ramo `stats` in `switchView` aveva portato via anche la `}` di chiusura del blocco Cinema → `SyntaxError: Unexpected end of input`, l intero script non girava. Ripristinata la chiusura; sistemati anche `getIndiceRicercaSB_` (mancava `getSerieTvDataSB_` nel `Promise.all`, push serie annidato nel forEach cinema) e rimossa una riga spuria finita dopo `</html>`. Verifica: pagina aperta in Chrome headless, zero `Uncaught` in console.
+
+## Richiesta 9 — Aggiornamento TMDB massivo Serie TV
+
+Nuovo bottone "🔄 Aggiorna tutte" in testata vista (`btnAggiornaTutteSerieTv`) + overlay `modalOverlayBulkSerieTv` con checkbox per serie/stagione/episodi, selettori Tutte/Nessuna e riepilogo scansione (novità / già aggiornate / senza link TMDB / errori). `aggiornaTutteSerieTvDaTMDB_` interroga `tv_detail` solo per serie non concluse con `tmdbId` (una chiamata alla volta, avanzamento visibile); mostra solo stagioni con numero maggiore del massimo salvato. `salvaBulkSerieTvTMDB_` aggiunge le sole righe mancanti (controllo anti-duplicato per numero), aggiorna `stagioni_totali`, ricalcola colore e logga AVANZAMENTO per serie. Nuove stagioni a zero visti. Solo `index.html` (backup `index_backup_pre_bulk.html`), nessun cambio DB/Edge. Verifica: Chrome headless, zero `Uncaught`.
+
 # 👥 PARTE 4 — Multi-utente
 
 Obiettivo: condividere il sito con una seconda persona (login separato),
