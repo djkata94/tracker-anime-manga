@@ -1938,8 +1938,8 @@
     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 10px;">
         <h2 style="margin:0; font-size:24px; font-weight:700;">Catalogo Serie TV</h2>
         <div style="display: flex; gap: 10px;">
-            <button id="btnNuovaSerieTv" class="btn btn-serietv">+ Nuova Serie TV</button>
             <button id="btnAggiornaTutteSerieTv" class="btn btn-serietv" onclick="aggiornaTutteSerieTvDaTMDB()" title="Cerca nuove stagioni su TMDB per tutte le serie non concluse">🔄 Aggiorna tutte</button>
+            <button id="btnNuovaSerieTv" class="btn btn-serietv">+ Nuova Serie TV</button>
         </div>
     </div>
 
@@ -4271,6 +4271,7 @@
         let targetEditTitleSerieTv = null;
         let sinossiPendenteSerieTv = null; // trama TMDB in sospeso, scritta su sinossi_serie_tv al salvataggio
         let episodiPerStagionePendenteSerieTv = null; // { 1: episodi, ... } dal picker stagioni TMDB
+        let anniPerStagionePendenteSerieTv = null; // { 1: anno, ... } dal picker stagioni TMDB (solo anni noti)
         let generiSelezionatiSerieTv = ''; // generi TMDB in sospeso, scritti su serie_tv al salvataggio
         let tmdbIdSelezionatoSerieTv = null; // id TMDB in sospeso, scritto su serie_tv al salvataggio
 
@@ -4327,20 +4328,22 @@
         async function getTuttiEpisodiSerieTvSB_() {
             const { data, error } = await supabaseClient
                 .from('episodi_serie_tv')
-                .select('serie_titolo,numero,episodi_totali,episodi_visti');
+                .select('serie_titolo,numero,episodi_totali,episodi_visti,anno');
             if (error) throw error;
             return (data || []).map(function(r) {
-                return { titolo: r.serie_titolo, numero: r.numero, episodiTotali: r.episodi_totali, episodiVisti: r.episodi_visti };
+                return { titolo: r.serie_titolo, numero: r.numero, episodiTotali: r.episodi_totali, episodiVisti: r.episodi_visti,
+                         anno: (r.anno !== undefined && r.anno !== null && r.anno !== '') ? r.anno : null };
             });
         }
 
-        async function aggiungiRigheStagioniSerieTvSB_(titolo, daNumero, aNumero, mappaTotaliEpisodi) {
+        async function aggiungiRigheStagioniSerieTvSB_(titolo, daNumero, aNumero, mappaTotaliEpisodi, mappaAnni) {
             if (daNumero > aNumero) return;
             const titoloTrim = String(titolo).trim();
             const nuoveRighe = [];
             for (let n = daNumero; n <= aNumero; n++) {
                 const totaleNoto = (mappaTotaliEpisodi && mappaTotaliEpisodi[n] !== undefined) ? (parseInt(mappaTotaliEpisodi[n]) || 0) : 0;
-                nuoveRighe.push({ serie_titolo: titoloTrim, numero: n, episodi_totali: totaleNoto, episodi_visti: 0 });
+                const annoGrezzo = (mappaAnni && mappaAnni[n] !== undefined && mappaAnni[n] !== null && mappaAnni[n] !== '') ? (parseInt(mappaAnni[n]) || null) : null;
+                nuoveRighe.push({ serie_titolo: titoloTrim, numero: n, episodi_totali: totaleNoto, episodi_visti: 0, anno: annoGrezzo });
             }
             if (nuoveRighe.length === 0) return;
             const { error } = await supabaseClient.from('episodi_serie_tv').insert(nuoveRighe);
@@ -4456,7 +4459,7 @@
 
             try {
                 const stagioniTotaliNuove = parseInt(dati.stagioniTotali) || 0;
-                if (stagioniTotaliNuove > 0) await aggiungiRigheStagioniSerieTvSB_(dati.titolo, 1, stagioniTotaliNuove, dati.episodiPerStagione);
+                if (stagioniTotaliNuove > 0) await aggiungiRigheStagioniSerieTvSB_(dati.titolo, 1, stagioniTotaliNuove, dati.episodiPerStagione, dati.anniPerStagione);
                 if (dati.segnaComeVista) {
                     await segnaStagioniComeVisteSerieTvSB_(dati.titolo);
                     await ricalcolaSincronizzaELoggaSerieTvSB_(dati.titolo);
@@ -4492,7 +4495,7 @@
                 const nuoveStagioniTotaliEp = parseInt(dati.stagioniTotali) || 0;
 
                 if (nuoveStagioniTotaliEp > vecchieStagioniTotaliLog) {
-                    await aggiungiRigheStagioniSerieTvSB_(nuovoTitoloEffettivo, vecchieStagioniTotaliLog + 1, nuoveStagioniTotaliEp, dati.episodiPerStagione);
+                    await aggiungiRigheStagioniSerieTvSB_(nuovoTitoloEffettivo, vecchieStagioniTotaliLog + 1, nuoveStagioniTotaliEp, dati.episodiPerStagione, dati.anniPerStagione);
                 } else if (nuoveStagioniTotaliEp < vecchieStagioniTotaliLog) {
                     const avevaProgresso = await rimuoviRigheStagioniEccedentiSerieTvSB_(nuovoTitoloEffettivo, nuoveStagioniTotaliEp + 1);
                     if (avevaProgresso) console.warn("Rimosse righe stagioni con episodi già visti per '" + nuovoTitoloEffettivo + "'.");
@@ -4757,6 +4760,7 @@
             targetEditTitleSerieTv = null;
             sinossiPendenteSerieTv = null;
             episodiPerStagionePendenteSerieTv = null;
+            anniPerStagionePendenteSerieTv = null;
             generiSelezionatiSerieTv = '';
             tmdbIdSelezionatoSerieTv = null;
             document.getElementById('modalTitleSerieTv').innerText = "Nuova Serie TV";
@@ -4778,6 +4782,7 @@
             targetEditTitleSerieTv = titolo;
             sinossiPendenteSerieTv = null;
             episodiPerStagionePendenteSerieTv = null;
+            anniPerStagionePendenteSerieTv = null;
             generiSelezionatiSerieTv = item.generi || '';
             tmdbIdSelezionatoSerieTv = item.tmdbId || null;
             document.getElementById('modalTitleSerieTv').innerText = "Modifica Serie TV";
@@ -4843,11 +4848,13 @@
                 immagine: document.getElementById('inpImmagineSerieTv').value,
                 tmdbId: tmdbIdSelezionatoSerieTv || null,
                 episodiPerStagione: episodiPerStagionePendenteSerieTv,
+                anniPerStagione: anniPerStagionePendenteSerieTv,
                 segnaComeVista: segnaComeVista
             };
             const cb = function(data) {
                 serieTvList = data || [];
                 episodiPerStagionePendenteSerieTv = null;
+                anniPerStagionePendenteSerieTv = null;
                 generiSelezionatiSerieTv = '';
                 tmdbIdSelezionatoSerieTv = null;
                 // Trama TMDB scelta in sessione: la scriviamo ora, la riga in
@@ -4972,7 +4979,7 @@
                 html += `
                     <div class="episodi-row ${bloccata ? 'locked' : ''}">
                         <div class="episodi-row-info">
-                            <div class="episodi-row-title">🎞️ Stagione ${ep.numero} ${completa ? '✅' : (bloccata ? '🔒' : '')}
+                            <div class="episodi-row-title">🎞️ Stagione ${ep.numero}${ep.anno ? ' (' + ep.anno + ')' : ''} ${completa ? '✅' : (bloccata ? '🔒' : '')}
                                 <button class="episodi-btn-edit" onclick="modificaTotaleStagioneSerieTv('${safeTitle}', ${ep.numero}, ${totali})" title="Modifica episodi totali">✏️</button>
                             </div>
                             <div class="episodi-row-count">${visti} / ${totali} episodi</div>
@@ -5361,7 +5368,7 @@
                 + '<div style="font-weight:700; font-size:13px; margin-bottom:6px;">📡 Stagioni trovate su TMDB (spunta quelle da caricare)</div>';
             stagioni.forEach(function(s) {
                 checkHtml += `<label style="display:flex; align-items:center; gap:8px; font-size:13px; padding:3px 0;">`
-                    + `<input type="checkbox" class="serietv-tmdb-stagione-cb" data-numero="${s.numero}" data-episodi="${s.episodi || 0}" checked>`
+                    + `<input type="checkbox" class="serietv-tmdb-stagione-cb" data-numero="${s.numero}" data-episodi="${s.episodi || 0}" data-anno="${s.anno || ''}" checked>`
                     + `<span>Stagione ${s.numero} — ${s.episodi || 0} episodi${s.anno ? ' (' + s.anno + ')' : ''}</span>`
                     + `</label>`;
             });
@@ -5397,10 +5404,15 @@
                 return;
             }
             const mappa = {};
+            const mappaAnni = {};
             checked.forEach(function(cb) {
-                mappa[parseInt(cb.getAttribute('data-numero')) || 0] = parseInt(cb.getAttribute('data-episodi')) || 0;
+                const numStagione = parseInt(cb.getAttribute('data-numero')) || 0;
+                mappa[numStagione] = parseInt(cb.getAttribute('data-episodi')) || 0;
+                const annoStagione = parseInt(cb.getAttribute('data-anno')) || 0;
+                if (annoStagione > 0) mappaAnni[numStagione] = annoStagione;
             });
             episodiPerStagionePendenteSerieTv = mappa;
+            anniPerStagionePendenteSerieTv = mappaAnni;
             document.getElementById('inpStagioniTotaliSerieTv').value = checked.length;
             showToast(checked.length + ' stagioni pronte al salvataggio', 'success');
         }
@@ -5431,14 +5443,20 @@
                         return;
                     }
                     const mappa = {};
-                    nuove.forEach(s => { mappa[parseInt(s.numero) || 0] = parseInt(s.episodi) || 0; });
+                    const mappaAnni = {};
+                    nuove.forEach(function(s) {
+                        const numStagione = parseInt(s.numero) || 0;
+                        mappa[numStagione] = parseInt(s.episodi) || 0;
+                        const annoStagione = parseInt(s.anno) || 0;
+                        if (annoStagione > 0) mappaAnni[numStagione] = annoStagione;
+                    });
                     const maxNuovo = Math.max.apply(null, stagioniTMDB.map(s => parseInt(s.numero) || 0));
 
                     const dati = {
                         titolo: item.titolo, stato: item.stato, note: (item.note || '').replace(/<[^>]*>/g, ''),
                         stagioniTotali: Math.max(maxSalvata, maxNuovo),
                         generi: item.generi || '', immagine: item.immagine || '',
-                        tmdbId: item.tmdbId, episodiPerStagione: mappa, segnaComeVista: false
+                        tmdbId: item.tmdbId, episodiPerStagione: mappa, anniPerStagione: mappaAnni, segnaComeVista: false
                     };
                     return updateSerieTvSB_(item.titolo, dati).then(function(data) {
                         serieTvList = data || [];
@@ -5576,7 +5594,7 @@
                     const maxSalvata = parseInt(item.stagioniTotali) || 0;
                     const nuove = (dettaglio.stagioni || [])
                         .filter(function(s) { return (parseInt(s.numero) || 0) > maxSalvata; })
-                        .map(function(s) { return { numero: parseInt(s.numero) || 0, episodi: parseInt(s.episodi) || 0 }; });
+                        .map(function(s) { return { numero: parseInt(s.numero) || 0, episodi: parseInt(s.episodi) || 0, anno: parseInt(s.anno) || null }; });
                     if (nuove.length > 0) {
                         bulkSerieTvRisultati.push({ titolo: item.titolo, nuove: nuove });
                     } else {
@@ -5612,8 +5630,8 @@
                 html += `<div style="margin:12px 0 4px 0; font-weight:700; font-size:14px;">📡 ${r.titolo}</div>`;
                 r.nuove.forEach(function(s) {
                     html += `<label style="display:flex; align-items:center; gap:8px; font-size:13px; padding:3px 0 3px 12px;">`
-                        + `<input type="checkbox" class="bulk-serietv-stagione-cb" data-titolo="${safeTitle}" data-numero="${s.numero}" data-episodi="${s.episodi}" checked>`
-                        + `<span>Stagione ${s.numero} — ${s.episodi} episodi</span>`
+                        + `<input type="checkbox" class="bulk-serietv-stagione-cb" data-titolo="${safeTitle}" data-numero="${s.numero}" data-episodi="${s.episodi}" data-anno="${s.anno || ''}" checked>`
+                        + `<span>Stagione ${s.numero} — ${s.episodi} episodi${s.anno ? ' (' + s.anno + ')' : ''}</span>`
                         + `</label>`;
                 });
             });
@@ -5634,10 +5652,14 @@
 
             // Raggruppa le spunte per serie
             const perSerie = {};
+            const perSerieAnni = {};
             checked.forEach(function(cb) {
                 const t = cb.getAttribute('data-titolo');
-                if (!perSerie[t]) perSerie[t] = {};
-                perSerie[t][parseInt(cb.getAttribute('data-numero')) || 0] = parseInt(cb.getAttribute('data-episodi')) || 0;
+                if (!perSerie[t]) { perSerie[t] = {}; perSerieAnni[t] = {}; }
+                const numStagione = parseInt(cb.getAttribute('data-numero')) || 0;
+                perSerie[t][numStagione] = parseInt(cb.getAttribute('data-episodi')) || 0;
+                const annoStagione = parseInt(cb.getAttribute('data-anno')) || 0;
+                if (annoStagione > 0) perSerieAnni[t][numStagione] = annoStagione;
             });
 
             let serieAggiornate = 0;
@@ -5659,7 +5681,7 @@
                     for (const n of daAggiungere) {
                         const m = {};
                         m[n] = mappa[n];
-                        await aggiungiRigheStagioniSerieTvSB_(titoloTrim, n, n, m);
+                        await aggiungiRigheStagioniSerieTvSB_(titoloTrim, n, n, m, perSerieAnni[titolo] || null);
                     }
 
                     const item = (serieTvList || []).find(function(s) { return (s.titolo || '').trim() === titoloTrim; });
