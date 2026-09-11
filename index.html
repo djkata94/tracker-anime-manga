@@ -1939,6 +1939,7 @@
         <h2 style="margin:0; font-size:24px; font-weight:700;">Catalogo Serie TV</h2>
         <div style="display: flex; gap: 10px;">
             <button id="btnNuovaSerieTv" class="btn btn-serietv">+ Nuova Serie TV</button>
+            <button id="btnAggiornaTutteSerieTv" class="btn btn-serietv" onclick="aggiornaTutteSerieTvDaTMDB()" title="Cerca nuove stagioni su TMDB per tutte le serie non concluse">🔄 Aggiorna tutte</button>
         </div>
     </div>
 
@@ -2353,6 +2354,25 @@
             </form>
         </div>
     </div>
+
+    <div class="modal-overlay" id="modalOverlayBulkSerieTv">
+        <div class="modal" style="max-width: 620px;">
+            <div class="modal-header">
+                <h2 id="bulkSerieTvModalTitle" style="font-size:18px;">🔄 Nuove stagioni da TMDB</h2>
+                <button class="close-modal" onclick="chiudiModaleBulkSerieTv()">&times;</button>
+            </div>
+            <div id="bulkSerieTvListContainer" class="overlay-lista" style="max-height: 60vh; overflow-y: auto; padding-right: 4px;"></div>
+            <div class="modal-footer" style="align-items:center;">
+                <div style="display:flex; gap:8px; margin-right:auto;">
+                    <button type="button" class="btn btn-nav" onclick="bulkSerieTvSelezionaTutto(true)">Tutte</button>
+                    <button type="button" class="btn btn-nav" onclick="bulkSerieTvSelezionaTutto(false)">Nessuna</button>
+                </div>
+                <button type="button" class="btn btn-danger" onclick="chiudiModaleBulkSerieTv()">Annulla</button>
+                <button type="button" class="btn btn-serietv" id="btnSalvaBulkSerieTv" onclick="salvaBulkSerieTvTMDB_()">✅ Aggiungi selezionate</button>
+            </div>
+        </div>
+    </div>
+
 
     <div class="modal-overlay" id="modalOverlayStagioniSerieTv">
         <div class="modal" style="max-width: 560px;">
@@ -5509,6 +5529,163 @@
                 renderListSerieTv();
             });
         }
+
+        // ==========================================
+        //   BULK: nuove stagioni da TMDB per tutte le serie non concluse
+        //   Equivale a premere il 🔄 di riga su ogni serie, ma con un unico
+        //   overlay di conferma: mostra titolo/stagione/episodi trovati, fa
+        //   spuntare cosa aggiungere e salva solo le stagioni selezionate.
+        // ==========================================
+        let bulkSerieTvRisultati = []; // [{ titolo, nuove: [{ numero, episodi }] }]
+
+        window.chiudiModaleBulkSerieTv = function() {
+            document.getElementById('modalOverlayBulkSerieTv').classList.remove('active');
+        };
+
+        window.bulkSerieTvSelezionaTutto = function(seleziona) {
+            document.querySelectorAll('.bulk-serietv-stagione-cb').forEach(function(cb) { cb.checked = !!seleziona; });
+        };
+
+        window.aggiornaTutteSerieTvDaTMDB = async function() {
+            if (!serieTvList || serieTvList.length === 0) {
+                showToast('Nessuna serie TV in lista.', 'error');
+                return;
+            }
+
+            const candidate = serieTvList.filter(function(s) {
+                if (!s || !s.tmdbId) return false;
+                return String(s.stato || '').trim().toLowerCase() !== 'concluso';
+            });
+            const senzaLink = serieTvList.filter(function(s) { return !s || !s.tmdbId; }).length;
+
+            const container = document.getElementById('bulkSerieTvListContainer');
+            const btnSalva = document.getElementById('btnSalvaBulkSerieTv');
+            container.innerHTML = `<p style="color: var(--warning); font-weight:600;">⏳ Avvio scansione TMDB...</p>`;
+            btnSalva.disabled = true;
+            document.getElementById('modalOverlayBulkSerieTv').classList.add('active');
+
+            bulkSerieTvRisultati = [];
+            let giaAggiornate = 0;
+            let errori = 0;
+
+            for (let i = 0; i < candidate.length; i++) {
+                const item = candidate[i];
+                container.innerHTML = `<p style="color: var(--warning); font-weight:600;">⏳ Leggo "${item.titolo}" da TMDB... (${i + 1}/${candidate.length})</p>`;
+                try {
+                    const dettaglio = await getDettaglioSerieTvTMDBSB_(item.tmdbId);
+                    const maxSalvata = parseInt(item.stagioniTotali) || 0;
+                    const nuove = (dettaglio.stagioni || [])
+                        .filter(function(s) { return (parseInt(s.numero) || 0) > maxSalvata; })
+                        .map(function(s) { return { numero: parseInt(s.numero) || 0, episodi: parseInt(s.episodi) || 0 }; });
+                    if (nuove.length > 0) {
+                        bulkSerieTvRisultati.push({ titolo: item.titolo, nuove: nuove });
+                    } else {
+                        giaAggiornate++;
+                    }
+                } catch (err) {
+                    console.error("Errore lettura TMDB per '" + item.titolo + "': " + err);
+                    errori++;
+                }
+            }
+
+            renderBulkSerieTvOverlay_(giaAggiornate, senzaLink, errori);
+            btnSalva.disabled = bulkSerieTvRisultati.length === 0;
+        };
+
+        function renderBulkSerieTvOverlay_(giaAggiornate, senzaLink, errori) {
+            const container = document.getElementById('bulkSerieTvListContainer');
+            if (!container) return;
+
+            let html = `<p style="color:var(--text-muted); font-size:13px;">Scansione completata: `
+                + `${bulkSerieTvRisultati.length} serie con novità, ${giaAggiornate} già aggiornate`
+                + `${senzaLink > 0 ? `, ${senzaLink} senza collegamento TMDB (ignorate)` : ''}`
+                + `${errori > 0 ? `, ${errori} errori di lettura` : ''}.</p>`;
+
+            if (bulkSerieTvRisultati.length === 0) {
+                html += `<p style="color:var(--text-muted); padding:12px 0;">Nessuna nuova stagione trovata su TMDB. 🎉</p>`;
+                container.innerHTML = html;
+                return;
+            }
+
+            bulkSerieTvRisultati.forEach(function(r) {
+                const safeTitle = String(r.titolo || '').replace(/'/g, "\\'").replace(/"/g, '\\"');
+                html += `<div style="margin:12px 0 4px 0; font-weight:700; font-size:14px;">📡 ${r.titolo}</div>`;
+                r.nuove.forEach(function(s) {
+                    html += `<label style="display:flex; align-items:center; gap:8px; font-size:13px; padding:3px 0 3px 12px;">`
+                        + `<input type="checkbox" class="bulk-serietv-stagione-cb" data-titolo="${safeTitle}" data-numero="${s.numero}" data-episodi="${s.episodi}" checked>`
+                        + `<span>Stagione ${s.numero} — ${s.episodi} episodi</span>`
+                        + `</label>`;
+                });
+            });
+
+            container.innerHTML = html;
+        }
+
+        window.salvaBulkSerieTvTMDB_ = async function() {
+            const checked = Array.from(document.querySelectorAll('.bulk-serietv-stagione-cb:checked'));
+            if (checked.length === 0) {
+                showToast('❌ Spunta almeno una stagione da aggiungere.', 'error');
+                return;
+            }
+
+            const btnSalva = document.getElementById('btnSalvaBulkSerieTv');
+            btnSalva.disabled = true;
+            btnSalva.innerText = 'Salvataggio...';
+
+            // Raggruppa le spunte per serie
+            const perSerie = {};
+            checked.forEach(function(cb) {
+                const t = cb.getAttribute('data-titolo');
+                if (!perSerie[t]) perSerie[t] = {};
+                perSerie[t][parseInt(cb.getAttribute('data-numero')) || 0] = parseInt(cb.getAttribute('data-episodi')) || 0;
+            });
+
+            let serieAggiornate = 0;
+            let stagioniAggiunte = 0;
+            try {
+                for (const titolo of Object.keys(perSerie)) {
+                    const titoloTrim = String(titolo).trim();
+                    const mappa = perSerie[titolo];
+                    const numeriSpuntati = Object.keys(mappa).map(Number);
+
+                    // Rilegge le righe esistenti: aggiunge solo i numeri mancanti
+                    const { data: righeEsistenti, error: errSel } = await supabaseClient
+                        .from('episodi_serie_tv').select('numero').eq('serie_titolo', titoloTrim);
+                    if (errSel) throw errSel;
+                    const esistenti = new Set((righeEsistenti || []).map(function(r) { return r.numero; }));
+                    const daAggiungere = numeriSpuntati.filter(function(n) { return !esistenti.has(n); });
+                    if (daAggiungere.length === 0) continue;
+
+                    for (const n of daAggiungere) {
+                        const m = {};
+                        m[n] = mappa[n];
+                        await aggiungiRigheStagioniSerieTvSB_(titoloTrim, n, n, m);
+                    }
+
+                    const item = (serieTvList || []).find(function(s) { return (s.titolo || '').trim() === titoloTrim; });
+                    const nuovoTot = Math.max.apply(null, [parseInt(item ? item.stagioniTotali : 0) || 0].concat(daAggiungere));
+                    await supabaseClient.from('serie_tv').update({ stagioni_totali: nuovoTot }).eq('titolo', titoloTrim);
+                    await ricalcolaSincronizzaELoggaSerieTvSB_(titoloTrim);
+                    await registraLogSB_(titoloTrim, 'SERIE_TV', 'AVANZAMENTO', 'N/D', 'Nuove stagioni da TMDB: ' + daAggiungere.sort(function(a, b) { return a - b; }).join(', '));
+
+                    serieAggiornate++;
+                    stagioniAggiunte += daAggiungere.length;
+                }
+
+                serieTvList = await getSerieTvDataSB_();
+                episodiSerieTvList = await getTuttiEpisodiSerieTvSB_();
+                renderListSerieTv();
+                chiudiModaleBulkSerieTv();
+                showToast(`📡 Aggiunte ${stagioniAggiunte} stagioni su ${serieAggiornate} serie`, 'success');
+            } catch (err) {
+                console.error('Errore salvataggio bulk serie TV:', err);
+                showToast('❌ Errore durante il salvataggio: ' + (err && err.message ? err.message : err), 'error');
+            } finally {
+                btnSalva.disabled = false;
+                btnSalva.innerText = '✅ Aggiungi selezionate';
+            }
+        };
+
 
         // ---- FINE SERIE TV ----
 
