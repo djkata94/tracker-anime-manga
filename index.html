@@ -236,6 +236,8 @@
 
         .btn-anime { background: linear-gradient(135deg, #2f6fed, #38bdf8); color: white; box-shadow: 0 4px 14px rgba(47, 111, 237, 0.3); }
         .btn-anime:hover { filter: brightness(1.08); transform: translateY(-2px); box-shadow: 0 8px 20px rgba(47, 111, 237, 0.4); }
+        .btn-serietv { background: linear-gradient(135deg, #7c3aed, #38bdf8); color: white; box-shadow: 0 4px 14px rgba(124, 58, 237, 0.3); }
+        .btn-serietv:hover { filter: brightness(1.08); transform: translateY(-2px); box-shadow: 0 8px 20px rgba(124, 58, 237, 0.4); }
         
         .btn-manga { background: linear-gradient(135deg, #f97316, #fb923c); color: white; box-shadow: 0 4px 14px rgba(249, 115, 22, 0.3); }
         .btn-manga:hover { filter: brightness(1.08); transform: translateY(-2px); box-shadow: 0 8px 20px rgba(249, 115, 22, 0.4); }
@@ -1168,6 +1170,13 @@
     box-shadow: 0 0 8px rgba(220, 38, 38, 0.15);
 }
 
+.log-badge-serietv {
+    background: rgba(56, 189, 248, 0.15);
+    color: #7dd3fc;
+    border: 1px solid rgba(56, 189, 248, 0.4);
+    box-shadow: 0 0 8px rgba(56, 189, 248, 0.15);
+}
+
 .log-content {
     display: flex;
     flex-direction: column;
@@ -1293,6 +1302,7 @@
 .global-search-group-label.tipo-anime { color: #38bdf8; }
 .global-search-group-label.tipo-manga { color: #fb923c; }
 .global-search-group-label.tipo-cinema { color: #f59e0b; }
+            .global-search-group-label.tipo-serietv { color: #38bdf8; }
 
 .global-search-group + .global-search-group .global-search-group-label {
     border-top: 1px solid var(--border-color);
@@ -1337,6 +1347,7 @@
 .global-search-thumb-placeholder.tipo-anime { background: linear-gradient(135deg, #2f6fed, #38bdf8); }
 .global-search-thumb-placeholder.tipo-manga { background: linear-gradient(135deg, #f97316, #fb923c); }
 .global-search-thumb-placeholder.tipo-cinema { background: linear-gradient(135deg, #dc2626, #f59e0b); }
+            .global-search-thumb-placeholder.tipo-serietv { background: linear-gradient(135deg, #7c3aed, #38bdf8); }
 
 .global-search-row-info {
     flex: 1;
@@ -1635,9 +1646,9 @@
         <span style="font-weight: 800; color: var(--primary); margin-right: 20px; font-family: monospace; letter-spacing: 1px;">🎮 NERD.TRACKER</span>
         <button id="nav-home" class="btn btn-nav active-view" onclick="switchView('home')">🏠 Home</button>
         <button id="nav-anime" class="btn btn-nav" onclick="switchView('anime')">📺 Anime</button>
+        <button id="nav-serietv" class="btn btn-nav" onclick="switchView('serietv')">📡 Serie TV</button>
         <button id="nav-manga" class="btn btn-nav" onclick="switchView('manga')">📚 Manga</button>
         <button id="nav-cinema" class="btn btn-nav" onclick="switchView('cinema')">🎬 Cinema</button>
-        <button id="nav-stats" class="btn btn-nav" onclick="switchView('stats')">📊 Stats</button>
         <span id="loggedUserEmail" style="margin-left:auto; color: var(--text-muted); font-size:13px; display:flex; align-items:center; gap:6px;"></span>
         <button id="btnLogout" class="btn btn-nav" onclick="handleLogout()" title="Esci">⏻ Esci</button>
     </div>
@@ -1676,7 +1687,7 @@
         <div class="global-search-wrap" id="globalSearchWrap">
             <div class="global-search-box" id="globalSearchBox">
                 <span class="global-search-icon">🔍</span>
-                <input type="search" id="globalSearchInput" class="global-search-input" placeholder="Cerca un titolo tra anime, manga e cinema..." autocomplete="off">
+                <input type="search" id="globalSearchInput" class="global-search-input" placeholder="Cerca un titolo tra anime, serie TV, manga e cinema..." autocomplete="off">
                 <span class="global-search-hint" id="globalSearchHint">esc</span>
             </div>
             <div class="global-search-results" id="globalSearchResults" style="display:none;"></div>
@@ -1684,6 +1695,7 @@
 
         <div class="menu-grid">
             <button class="btn btn-anime" style="height:100px; font-size:16px; border-radius: 12px;" onclick="switchView('anime')">📺 Catalogo Anime</button>
+            <button class="btn btn-serietv" style="height:100px; font-size:16px; border-radius: 12px;" onclick="switchView('serietv')">📡 Catalogo Serie TV</button>
             <button class="btn btn-manga" style="height:100px; font-size:16px; border-radius: 12px;" onclick="switchView('manga')">📚 Archivio Manga / LN</button>
             <button class="btn btn-cinema" style="height:100px; font-size:16px; border-radius: 12px;" onclick="switchView('cinema')">🎬 Film al Cinema</button>
         </div>
@@ -1698,7 +1710,7 @@
              ================================================================ -->
         <div class="home-progress-widget" id="homeProgressWidget">
             <div class="home-progress-header" id="homeProgressHeader">
-                <span class="home-progress-title">🎬 IN CORSO — Anime in Visione &amp; Manga in Lettura</span>
+                <span class="home-progress-title">🎬 IN CORSO — Anime e Serie TV in Visione &amp; Manga in Lettura</span>
                 <div class="home-progress-header-right">
                     <span class="home-progress-count" id="homeProgressCount"></span>
                     <span class="system-log-toggle-icon home-progress-toggle-icon" id="homeProgressToggleIcon">▾</span>
@@ -1749,6 +1761,7 @@
                             <option value="ANIME">📺 Anime</option>
                             <option value="MANGA">📚 Manga</option>
                             <option value="CINEMA">🎬 Cinema</option>
+                            <option value="SERIE_TV">📡 Serie TV</option>
                         </select>
                         <select id="filterLogEvento" class="log-filter-select" title="Filtra per azione">
                             <option value="all">Tutte le azioni</option>
@@ -1781,9 +1794,6 @@
     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 10px;">
         <h2 style="margin:0; font-size:24px; font-weight:700;">Catalogo Anime</h2>
         <div style="display: flex; gap: 10px;">
-            <button id="btnRandomAnime" class="btn" style="background: linear-gradient(135deg, var(--warning), var(--accent)); color: white; box-shadow: 0 4px 14px rgba(251, 191, 36, 0.25);">
-                🎲 Consigliami cosa guardare
-            </button>
             <button id="btnNuovoAnime" class="btn btn-anime">+ Nuovo Anime</button>
         </div>
     </div>
@@ -1917,6 +1927,138 @@
                 </table>
             </div>
             <div id="episodiLogEmpty" class="system-log-empty" style="display:none; text-align:left; padding:16px 4px;">Nessun episodio registrato finora. 📺</div>
+
+            <div class="episodi-log-footer">
+                <span>◁ Mostrate al massimo le ultime 100 voci</span>
+            </div>
+        </div>
+    </div>
+
+		<div id="serietvView" class="view-container" style="display: none;">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 10px;">
+        <h2 style="margin:0; font-size:24px; font-weight:700;">Catalogo Serie TV</h2>
+        <div style="display: flex; gap: 10px;">
+            <button id="btnNuovaSerieTv" class="btn btn-serietv">+ Nuova Serie TV</button>
+        </div>
+    </div>
+
+        <div class="stat-banner">
+            <div class="stat-block"><span class="stat-label">Serie Iniziate</span><span class="stat-value" id="statSerieTvIniziate">-</span></div>
+            <div style="width:1px; background:var(--border-color);"></div>
+            <div class="stat-block"><span class="stat-label">Stagioni Viste</span><span class="stat-value" id="statSerieTvStagioniViste">-</span></div>
+            <div style="width:1px; background:var(--border-color);"></div>
+            <div class="stat-block"><span class="stat-label">📡 Episodi Visti</span><span class="stat-value" id="statSerieTvEpisodiVisti">-</span></div>
+            <div style="width:1px; background:var(--border-color);"></div>
+            <div class="stat-block"><span class="stat-label">Serie Completate</span><span class="stat-value" id="statSerieTvCompletate">-</span></div>
+        </div>
+
+        <!-- ================================================================
+             📡 LINGUETTE: LISTA SERIE TV <-> LOG EPISODI
+             Stesso meccanismo della vista Anime: switch tra la tabella e il
+             log storico dei singoli episodi segnati/tolti (ultimi 100), senza
+             toccare il widget "Log di Sistema" della Home.
+             ================================================================ -->
+        <div class="subview-tabs">
+            <button type="button" class="subview-tab active" id="tabSerieTvLista" data-subview="lista" onclick="switchSerieTvSubview('lista')">📋 Lista Serie TV</button>
+            <button type="button" class="subview-tab" id="tabSerieTvLog" data-subview="log" onclick="switchSerieTvSubview('log')">🕘 Log Episodi</button>
+        </div>
+
+        <div id="serietvPaneLista">
+        <div class="filter-bar">
+            <input type="search" id="searchInpSerieTv" placeholder="Cerca titolo...">
+
+			<div class="filter-group" id="filterGroupPreferitiSerieTv">
+			<button class="filter-btn active" data-fav="all">Tutti</button>
+			<button class="filter-btn" data-fav="yes">⭐ Preferiti</button>
+			</div>
+
+            <!-- FINESTRA FLUTTUANTE FILTRO GENERI SERIE TV (lista fissa TMDB, come Cinema) -->
+            <div class="dropdown-container">
+                <button id="btnToggleGenresSerieTv" class="btn btn-nav" style="border: 1px solid var(--border-color);">🎭 Filtra Generi (<span id="badgeGenresSerieTvCount">0</span>)</button>
+                <div id="dropdownGenresSerieTv" class="dropdown-genres"></div>
+            </div>
+
+            <select id="sortSelSerieTv">
+                <option value="title-asc">Titolo A-Z</option>
+                <option value="title-desc">Titolo Z-A</option>
+            </select>
+
+            <div class="filter-group" id="filterGroupStatoSerieTv">
+                <button class="filter-btn active" data-status="all">Tutti Stati</button>
+                <button class="filter-btn" data-status="In corso">In corso</button>
+                <button class="filter-btn" data-status="Concluso">Concluso</button>
+                <button class="filter-btn" data-status="Altro">Altro</button>
+            </div>
+
+            <div class="filter-group" id="filterGroupVisioneSerieTv">
+				<button class="filter-btn active" data-vision="all">Tutte Visioni</button>
+				<button class="filter-btn" data-vision="bianco">Da Iniziare</button>
+				<button class="filter-btn" data-vision="celeste">In Visione</button>
+				<button class="filter-btn" data-vision="giallo">In Pari</button>
+				<button class="filter-btn" data-vision="verde">Completato</button>
+			</div>
+
+            <button type="button" id="btnResetFiltriSerieTv" class="btn-reset-filters">↺ Reset Filtri</button>
+            <span id="countSerieTv" class="filter-count"></span>
+        </div>
+
+        <div id="loadingSerieTv" style="color:var(--warning); padding:20px; font-weight:600;">Caricamento dati dal server...</div>
+
+        <div class="table-container">
+            <table id="serietvTable" style="display:none;">
+                <thead>
+                    <tr>
+                        <th>Titolo Informazioni</th>
+                        <th>Stato Prod.</th>
+                        <th>Note Personali</th>
+                        <th style="text-align:center;">Visione</th>
+                        <th style="text-align:center;">Azioni</th>
+                    </tr>
+                </thead>
+                <tbody id="serietvTableBody"></tbody>
+            </table>
+        </div>
+        </div>
+        <!-- fine #serietvPaneLista -->
+
+        <!-- ================================================================
+             🕘 LOG EPISODI SERIE TV (stessa tabella log_episodi degli anime:
+             solo righe di tipo 'Stagione', quindi niente filtro per tipo).
+             ================================================================ -->
+        <div id="serietvPaneLog" style="display:none;">
+            <div class="filter-bar" id="stagioniLogFilters">
+                <input type="text" id="filterStagioniLogTitolo" placeholder="🔍 Cerca titolo..." autocomplete="off">
+                <select id="filterStagioniLogAzione" title="Filtra per azione">
+                    <option value="all">Tutte le azioni</option>
+                    <option value="VISTO">✅ Visto</option>
+                    <option value="RIMOSSO">↩️ Rimosso</option>
+                </select>
+                <input type="date" id="filterStagioniLogDal" title="Dal">
+                <input type="date" id="filterStagioniLogAl" title="Al">
+
+                <button type="button" id="btnToggleStagioniLogOrdine" class="log-icon-btn" title="Inverti ordinamento (dal più vecchio)" data-asc="false" style="width:auto; padding:8px 12px;">⬇️ Recenti</button>
+                <button type="button" id="btnResetStagioniLogFiltri" class="btn-reset-filters">↺ Reset Filtri</button>
+                <button type="button" id="btnRefreshStagioniLog" class="log-icon-btn" title="Aggiorna log" style="width:34px; height:34px;">🔄</button>
+                <span id="countStagioniLog" class="filter-count"></span>
+            </div>
+
+            <div id="loadingStagioniLog" style="color:var(--warning); padding:20px; font-weight:600;">⏳ Caricamento log episodi...</div>
+
+            <div class="table-container">
+                <table id="stagioniLogTable" style="display:none;">
+                    <thead>
+                        <tr>
+                            <th>Data / Ora</th>
+                            <th>Titolo</th>
+                            <th>Stagione</th>
+                            <th style="text-align:center;">Episodio</th>
+                            <th style="text-align:center;">Azione</th>
+                        </tr>
+                    </thead>
+                    <tbody id="stagioniLogTableBody"></tbody>
+                </table>
+            </div>
+            <div id="stagioniLogEmpty" class="system-log-empty" style="display:none; text-align:left; padding:16px 4px;">Nessun episodio registrato finora. 📡</div>
 
             <div class="episodi-log-footer">
                 <span>◁ Mostrate al massimo le ultime 100 voci</span>
@@ -2163,247 +2305,71 @@
         </div>
     </div>
 
-    <div id="statsView" class="view-container" style="display: none;">
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 20px;">
-            <div>
-                <h1 style="margin:0 0 6px 0; color:#fff; font-size: 24px; font-weight: 700;">📊 Statistiche</h1>
-                <p style="color:var(--text-muted); margin:0; font-size: 14px;">Uno sguardo d'insieme sulle tue abitudini di visione e lettura.</p>
+
+    <div class="modal-overlay" id="modalOverlaySerieTv">
+        <div class="modal">
+            <div class="modal-header">
+                <h2 id="modalTitleSerieTv">Nuova Serie TV</h2>
+                <button class="close-modal" onclick="chiudiModale('SerieTv')">&times;</button>
             </div>
-            <button type="button" class="log-icon-btn" title="Aggiorna statistiche" onclick="caricaDatiStats()">🔄</button>
-        </div>
-
-        <div id="loadingStats" style="color:var(--warning); padding:20px; font-weight:600;">Caricamento statistiche dal server...</div>
-
-        <div id="statsContent" style="display:none;">
-
-            <!-- ============================ ANIME ============================ -->
-            <div class="stats-widget collapsed" id="statsWidgetAnime">
-                <div class="stats-widget-header" onclick="toggleStatsWidget('statsWidgetAnime')">
-                    <div class="stats-widget-title-wrap">
-                        <span class="stats-widget-title">📺 Anime</span>
-                        <span class="stats-widget-subtitle">Distribuzione, voti e generi del tuo catalogo anime.</span>
-                    </div>
-                    <span class="stats-widget-toggle-icon">▾</span>
-                </div>
-                <div class="stats-widget-body">
-                    <div class="stats-widget-body-inner">
-
-                        <div class="kpi-row">
-                            <div class="kpi-card">
-                                <div class="kpi-value" id="statAnimeVotoMedio">–</div>
-                                <div class="kpi-label" id="statAnimeVotoMedioLabel">Voto medio</div>
-                            </div>
-                            <div class="kpi-card">
-                                <div class="kpi-value" id="statAnimePreferitiCount">–</div>
-                                <div class="kpi-label">⭐ Preferiti</div>
-                            </div>
-                            <div class="kpi-card">
-                                <div class="kpi-value" id="statAnimePrioritaCount">–</div>
-                                <div class="kpi-label">📌 In priorità</div>
-                            </div>
-                        </div>
-
-                        <div class="stats-grid" style="margin-bottom: 18px;">
-                            <div class="chart-card">
-                                <h3>Distribuzione per stato</h3>
-                                <div class="chart-canvas-wrap"><canvas id="chartAnimeStati"></canvas></div>
-                            </div>
-                            <div class="chart-card">
-                                <h3>Distribuzione "colore visione"</h3>
-                                <div class="chart-canvas-wrap"><canvas id="chartAnimeColore"></canvas></div>
-                            </div>
-                            <div class="chart-card">
-                                <h3>Distribuzione voti</h3>
-                                <div class="chart-canvas-wrap"><canvas id="chartAnimeVoti"></canvas></div>
-                            </div>
-                        </div>
-
-                        <div class="stats-grid wide" style="margin-bottom: 18px;">
-                            <div class="chart-card">
-                                <h3>Top generi più presenti</h3>
-                                <div class="chart-canvas-wrap"><canvas id="chartAnimeTopGeneri"></canvas></div>
-                            </div>
-                            <div class="chart-card">
-                                <h3>Voto medio per genere</h3>
-                                <div class="chart-canvas-wrap"><canvas id="chartAnimeVotoGenere"></canvas></div>
-                                <div class="chart-note">Solo generi con almeno un'opera votata.</div>
-                            </div>
-                        </div>
-
-                        <div class="stats-grid narrow">
-                            <div class="chart-card">
-                                <h3>Completamento stagioni</h3>
-                                <div class="chart-canvas-wrap small"><canvas id="chartAnimeGaugeStagioni"></canvas></div>
-                            </div>
-                            <div class="chart-card">
-                                <h3>Completamento film</h3>
-                                <div class="chart-canvas-wrap small"><canvas id="chartAnimeGaugeFilm"></canvas></div>
-                            </div>
-                            <div class="chart-card">
-                                <h3>Completamento complessivo</h3>
-                                <div class="chart-canvas-wrap small"><canvas id="chartAnimeGaugeTotale"></canvas></div>
-                            </div>
-                        </div>
-
+            <form id="serietvForm">
+                <div class="form-group">
+                    <label>Titolo *</label>
+                    <div style="display:flex; gap:6px;">
+                        <input type="search" id="inpTitoloSerieTv" required style="flex:1;">
+                        <button type="button" class="btn" style="padding:0 12px; white-space:nowrap;" onclick="cercaSerieTvTMDB()" title="Cerca titolo, copertina e stagioni su TMDB">🔎 TMDB</button>
                     </div>
                 </div>
-            </div>
-
-            <!-- ============================ MANGA ============================ -->
-            <div class="stats-widget collapsed" id="statsWidgetManga">
-                <div class="stats-widget-header" onclick="toggleStatsWidget('statsWidgetManga')">
-                    <div class="stats-widget-title-wrap">
-                        <span class="stats-widget-title">📚 Manga</span>
-                        <span class="stats-widget-subtitle">Distribuzione, avanzamento di lettura e generi.</span>
-                    </div>
-                    <span class="stats-widget-toggle-icon">▾</span>
+                <div id="serieTvCandidatiWrapper"></div>
+                <div id="serieTvStagioniWrapper"></div>
+                <div class="form-group">
+                    <label>Stato Produzione</label>
+                    <select id="inpStatoSerieTv">
+                        <option value="In corso">In corso</option>
+                        <option value="Concluso">Concluso</option>
+                        <option value="In arrivo">In arrivo</option>
+                    </select>
                 </div>
-                <div class="stats-widget-body">
-                    <div class="stats-widget-body-inner">
-
-                        <div class="kpi-row">
-                            <div class="kpi-card">
-                                <div class="kpi-value" id="statMangaVolumiPosseduti">–</div>
-                                <div class="kpi-label">Volumi posseduti (stima)</div>
-                            </div>
-                            <div class="kpi-card">
-                                <div class="kpi-value" id="statMangaPreferitiCount">–</div>
-                                <div class="kpi-label">⭐ Preferiti</div>
-                            </div>
-                            <div class="kpi-card">
-                                <div class="kpi-value" id="statMangaPrioritaCount">–</div>
-                                <div class="kpi-label">📌 In priorità</div>
-                            </div>
-                        </div>
-
-                        <div class="stats-grid" style="margin-bottom: 18px;">
-                            <div class="chart-card">
-                                <h3>Distribuzione per stato</h3>
-                                <div class="chart-canvas-wrap"><canvas id="chartMangaStati"></canvas></div>
-                            </div>
-                            <div class="chart-card">
-                                <h3>Acquistato vs non acquistato</h3>
-                                <div class="chart-canvas-wrap"><canvas id="chartMangaAcquistato"></canvas></div>
-                            </div>
-                            <div class="chart-card">
-                                <h3>% lettura complessiva</h3>
-                                <div class="chart-canvas-wrap"><canvas id="chartMangaGaugeLettura"></canvas></div>
-                            </div>
-                        </div>
-
-                        <div class="stats-grid wide">
-                            <div class="chart-card">
-                                <h3>Top generi più presenti</h3>
-                                <div class="chart-canvas-wrap"><canvas id="chartMangaTopGeneri"></canvas></div>
-                            </div>
-                        </div>
-
-                    </div>
+                <div class="form-group"><label>Stagioni Totali</label><input type="number" id="inpStagioniTotaliSerieTv" min="0"></div>
+                <div class="form-group"><label>Stagioni Viste <span style="font-weight:normal; color:var(--text-muted); font-size:11px;">(calcolate automaticamente dagli episodi 📡)</span></label><input type="number" id="inpStagioniVisteSerieTv" min="0" readonly disabled style="opacity:0.6; cursor:not-allowed;"></div>
+                <div class="form-group">
+                    <label>Generi (da TMDB)</label>
+                    <input type="text" id="inpGeneriSerieTv" readonly disabled style="opacity:0.7; cursor:not-allowed;" placeholder="Compilati in automatico scegliendo un titolo da TMDB">
                 </div>
-            </div>
-
-            <!-- ============================ CINEMA ============================ -->
-            <div class="stats-widget collapsed" id="statsWidgetCinema">
-                <div class="stats-widget-header" onclick="toggleStatsWidget('statsWidgetCinema')">
-                    <div class="stats-widget-title-wrap">
-                        <span class="stats-widget-title">🎬 Cinema</span>
-                        <span class="stats-widget-subtitle">Quanto sei puntuale al cinema e il tuo ritmo di visione.</span>
-                    </div>
-                    <span class="stats-widget-toggle-icon">▾</span>
+                <div class="form-group">
+                    <label style="display:flex; align-items:center; gap:8px; cursor:pointer;">
+                        <input type="checkbox" id="inpGiaVistaSerieTv" style="width:16px; height:16px;">
+                        <span>📡 Serie già vista per intero</span>
+                    </label>
+                    <small style="color:var(--text-muted);">Se spuntato, al salvataggio chiede conferma e segna come visti tutti gli episodi delle stagioni inserite. Togliere la spunta non azzera gli episodi già visti.</small>
                 </div>
-                <div class="stats-widget-body">
-                    <div class="stats-widget-body-inner">
+                <div class="form-group"><label>Note</label><textarea id="inpNoteSerieTv" rows="2"></textarea></div>
+                <div class="form-group"><label>URL Immagine / Avatar</label><input type="url" id="inpImmagineSerieTv" placeholder="Inserisci il link dell'immagine (es. https://...)"></div>
 
-                        <div class="kpi-row">
-                            <div class="kpi-card">
-                                <div class="kpi-value" id="statCinemaTempoMedio">–</div>
-                                <div class="kpi-label">Giorni medi uscita → visione (sala)</div>
-                            </div>
-                        </div>
-
-                        <div class="stats-grid" style="margin-bottom: 18px;">
-                            <div class="chart-card">
-                                <h3>Visti vs da vedere</h3>
-                                <div class="chart-canvas-wrap"><canvas id="chartCinemaVisti"></canvas></div>
-                            </div>
-                            <div class="chart-card">
-                                <h3>Streaming vs sala</h3>
-                                <div class="chart-canvas-wrap"><canvas id="chartCinemaStreaming"></canvas></div>
-                            </div>
-                        </div>
-
-                        <div class="stats-grid wide">
-                            <div class="chart-card">
-                                <h3>Film per mese di uscita</h3>
-                                <div class="chart-canvas-wrap"><canvas id="chartCinemaMeseUscita"></canvas></div>
-                            </div>
-                            <div class="chart-card">
-                                <h3>Film visti per mese</h3>
-                                <div class="chart-canvas-wrap"><canvas id="chartCinemaMeseVisti"></canvas></div>
-                                <div class="chart-note">I film in streaming non compaiono: vengono rimossi dalla lista alla conferma di visione.</div>
-                            </div>
-                        </div>
-
-                    </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-danger" onclick="chiudiModale('SerieTv')">Annulla</button>
+                    <button type="submit" class="btn btn-serietv" id="btnSalvaSerieTv">Salva</button>
                 </div>
-            </div>
-
-            <!-- ============================ CROSS-MEDIA ============================ -->
-            <div class="stats-widget collapsed" id="statsWidgetCross">
-                <div class="stats-widget-header" onclick="toggleStatsWidget('statsWidgetCross')">
-                    <div class="stats-widget-title-wrap">
-                        <span class="stats-widget-title">🌐 Cross-media</span>
-                        <span class="stats-widget-subtitle">Il quadro d'insieme su tutte e tre le categorie, basato sul Log Storico.</span>
-                    </div>
-                    <span class="stats-widget-toggle-icon">▾</span>
-                </div>
-                <div class="stats-widget-body">
-                    <div class="stats-widget-body-inner">
-
-                        <div class="kpi-row">
-                            <div class="kpi-card">
-                                <div class="kpi-value" id="statCrossTempoAnime">–</div>
-                                <div class="kpi-label">📺 Giorni medi creazione → completamento</div>
-                            </div>
-                            <div class="kpi-card">
-                                <div class="kpi-value" id="statCrossTempoManga">–</div>
-                                <div class="kpi-label">📚 Giorni medi creazione → completamento</div>
-                            </div>
-                            <div class="kpi-card">
-                                <div class="kpi-value" id="statCrossTempoCinema">–</div>
-                                <div class="kpi-label">🎬 Giorni medi creazione → completamento</div>
-                            </div>
-                        </div>
-
-                        <div class="stats-grid wide" style="margin-bottom: 18px;">
-                            <div class="chart-card">
-                                <h3>Attività nel tempo (completamenti/mese, ultimi 12 mesi)</h3>
-                                <div class="chart-canvas-wrap tall"><canvas id="chartCrossAttivita"></canvas></div>
-                            </div>
-                            <div class="chart-card">
-                                <h3>Opere tracciate per categoria</h3>
-                                <div class="chart-canvas-wrap tall"><canvas id="chartCrossTotali"></canvas></div>
-                            </div>
-                        </div>
-
-                        <div class="stats-grid wide">
-                            <div class="chart-card">
-                                <h3>Calendario attività (ultimo anno)</h3>
-                                <div class="heatmap-scroll"><div class="heatmap-grid" id="heatmapCrossContainer"></div></div>
-                                <div class="chart-note">Ogni casella è un giorno: più intenso il colore, più eventi registrati nel Log Storico.</div>
-                            </div>
-                            <div class="chart-card">
-                                <h3>Preferenze di genere: Anime vs Manga</h3>
-                                <div class="chart-canvas-wrap tall"><canvas id="chartCrossRadar"></canvas></div>
-                            </div>
-                        </div>
-
-                    </div>
-                </div>
-            </div>
-
+            </form>
         </div>
     </div>
+
+    <div class="modal-overlay" id="modalOverlayStagioniSerieTv">
+        <div class="modal" style="max-width: 560px;">
+            <div class="modal-header">
+                <h2 id="stagioniSerieTvModalTitle" style="font-size:18px;">📡 Stagioni</h2>
+                <button class="close-modal" onclick="chiudiModaleStagioniSerieTv()">&times;</button>
+            </div>
+            <!-- Copertina (a sinistra) + elenco stagioni (a destra). La
+                 copertina è popolata solo quando l'overlay è aperto dal widget
+                 "In Corso" della Home, altrimenti resta nascosta. -->
+            <div class="overlay-con-copertina">
+                <div id="stagioniSerieTvCopertina" class="overlay-copertina" style="display:none;"></div>
+                <div id="stagioniSerieTvListContainer" class="overlay-lista" style="max-height: 60vh; overflow-y: auto; padding-right: 4px;"></div>
+            </div>
+        </div>
+    </div>
+
 
     <div class="modal-overlay" id="modalOverlayAnime">
         <div class="modal">
@@ -2722,7 +2688,6 @@
         }
     </script>
 
-    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
     <script>
         // Lista Globale dei Generi unificata
         const MASTER_GENRES_LIST = [
@@ -2745,6 +2710,14 @@
             "Romantico", "Fantascienza", "Film TV", "Thriller", "Guerra", "Western"
         ];
 
+        // Stessa idea per le serie TV: i 16 generi ufficiali TMDB per il
+        // mezzo televisivo, nomi in italiano come restituiti con language=it-IT.
+        const TMDB_TV_GENRES_LIST = [
+            "Azione e Avventura", "Animazione", "Commedia", "Crime", "Documentario",
+            "Dramma", "Famiglia", "Kids", "Mistero", "News", "Reality",
+            "Fantascienza e Fantasy", "Soap", "Talk", "Guerra e Politica", "Western"
+        ];
+
         // Generazione automatica dei checkbox nelle modali e nei filtri avanzati fluttuanti all'avvio
         function buildGenresForms() {
             const animeGrid = document.getElementById('animeGenresGrid');
@@ -2752,6 +2725,7 @@
             const animeFilterDropdown = document.getElementById('dropdownGenresAnime');
             const mangaFilterDropdown = document.getElementById('dropdownGenresManga');
             const cinemaFilterDropdown = document.getElementById('dropdownGenresCinema');
+            const serieTvFilterDropdown = document.getElementById('dropdownGenresSerieTv');
             
             if (animeGrid) {
                 animeGrid.innerHTML = MASTER_GENRES_LIST.map(g => 
@@ -2778,6 +2752,11 @@
             if (cinemaFilterDropdown) {
                 cinemaFilterDropdown.innerHTML = TMDB_GENRES_LIST.map(g =>
                     `<label><input type="checkbox" class="cinema-filter-genre-cb" value="${g}"> ${g}</label>`
+                ).join('');
+            }
+            if (serieTvFilterDropdown) {
+                serieTvFilterDropdown.innerHTML = TMDB_TV_GENRES_LIST.map(g =>
+                    `<label><input type="checkbox" class="serietv-filter-genre-cb" value="${g}"> ${g}</label>`
                 ).join('');
             }
         }
@@ -2835,6 +2814,7 @@
             const dropAnime = document.getElementById('dropdownGenresAnime');
             const dropManga = document.getElementById('dropdownGenresManga');
             const dropCinema = document.getElementById('dropdownGenresCinema');
+            const dropSerieTv = document.getElementById('dropdownGenresSerieTv');
             if (dropAnime && !dropAnime.contains(e.target) && e.target.id !== 'btnToggleGenresAnime') {
                 dropAnime.classList.remove('active');
             }
@@ -2843,6 +2823,9 @@
             }
             if (dropCinema && !dropCinema.contains(e.target) && e.target.id !== 'btnToggleGenresCinema') {
                 dropCinema.classList.remove('active');
+            }
+            if (dropSerieTv && !dropSerieTv.contains(e.target) && e.target.id !== 'btnToggleGenresSerieTv') {
+                dropSerieTv.classList.remove('active');
             }
         });
 
@@ -2872,13 +2855,15 @@
             document.getElementById('animeView').style.display = 'none';
             document.getElementById('mangaView').style.display = 'none';
             document.getElementById('cinemaView').style.display = 'none';
-            document.getElementById('statsView').style.display = 'none';
+            document.getElementById('serietvView').style.display = 'none';
             
             // Chiudi eventuali filtri fluttuanti aperti cambiando pagina
             document.getElementById('dropdownGenresAnime').classList.remove('active');
             document.getElementById('dropdownGenresManga').classList.remove('active');
             const dropCinemaSwitch = document.getElementById('dropdownGenresCinema');
             if (dropCinemaSwitch) dropCinemaSwitch.classList.remove('active');
+            const dropSerieTvSwitch = document.getElementById('dropdownGenresSerieTv');
+            if (dropSerieTvSwitch) dropSerieTvSwitch.classList.remove('active');
             
             // Togli illuminazione da tutti i bottoni navbar
             document.querySelectorAll('.navbar .btn-nav').forEach(btn => btn.classList.remove('active-view'));
@@ -2891,6 +2876,10 @@
                 document.getElementById('animeView').style.display = 'block';
                 document.getElementById('nav-anime').classList.add('active-view');
                 caricaDatiAnime();
+            } else if (viewName === 'serietv') {
+                document.getElementById('serietvView').style.display = 'block';
+                document.getElementById('nav-serietv').classList.add('active-view');
+                caricaDatiSerieTv();
             } else if (viewName === 'manga') {
                 document.getElementById('mangaView').style.display = 'block';
                 document.getElementById('nav-manga').classList.add('active-view');
@@ -2899,11 +2888,6 @@
                 document.getElementById('cinemaView').style.display = 'block';
                 document.getElementById('nav-cinema').classList.add('active-view');
                 caricaDatiCinema();
-            } else if (viewName === 'stats') {
-                document.getElementById('statsView').style.display = 'block';
-                document.getElementById('nav-stats').classList.add('active-view');
-                caricaDatiStats();
-            }
         }
 
         // ==========================================
@@ -3533,44 +3517,6 @@
         }
 		
 		// Gestione del consiglio casuale (Dice Button)
-document.getElementById('btnRandomAnime').onclick = function() {
-    // Usiamo la variabile reale presente nel tuo IndexHTML.txt
-    if (!animeList || animeList.length === 0) {
-        alert("⚠️ Il catalogo è vuoto o i dati si stanno ancora caricando!");
-        return;
-    }
-
-    // Filtriamo gli anime in base alle stagioni da vedere o completare
-    const candidati = animeList.filter(item => {
-        if (!item) return false;
-        const totali = parseInt(item.stagioniTotali) || 0;
-        const viste = parseInt(item.stagioniViste) || 0;
-        
-        // Include gli anime non ancora iniziati (viste == 0) o in corso (viste < totali)
-        return viste === 0 || viste < totali;
-    });
-
-    // Se hai completato tutto il backlog
-    if (candidati.length === 0) {
-        alert("🏆 Complimenti! Hai completato o iniziato tutte le stagioni di tutti gli anime in lista. Non c'è nulla da consigliarti al momento!");
-        return;
-    }
-
-    // Estrazione casuale dell'anime tra i candidati
-    const indiceCasuale = Math.floor(Math.random() * candidati.length);
-    const animeScelto = candidati[indiceCasuale];
-
-    // Mostriamo il verdetto finale
-    alert(
-        `🎲 IL DADO HA DECISO!\n\n` +
-        `📺 Titolo: ${animeScelto.titolo || 'Senza Titolo'}\n` +
-        `🎬 Avanzamento: ${animeScelto.stagioniViste} / ${animeScelto.stagioniTotali} Stagioni\n` +
-        `🎭 Generi: ${animeScelto.generi || '-'}\n` +
-        `⭐ Valutazione: ${animeScelto.valutazione || '-'}\n\n` +
-        `Preparate i popcorn! 🍿`
-    );
-};
-
         document.getElementById('btnNuovoAnime').onclick = function() {
             targetEditTitleAnime = null;
             sinossiPendenteAnime = null; // <--- NUOVO: azzera eventuale sinossi AniList in sospeso
@@ -4274,6 +4220,1293 @@ document.getElementById('btnRandomAnime').onclick = function() {
         // ==========================================
         //                  LOGICA MANGA
         // ==========================================
+
+        // ==========================================
+        //   📡 TRACKER SERIE TV (view "Serie TV")
+        //   Stesso disegno della vista Anime (serie ad episodi), semplificato:
+        //   niente film collegati, niente voto, niente priorita. Generi e
+        //   stagioni arrivano da TMDB via Edge Function tmdb-proxy
+        //   (action tv_search / tv_detail), come il Gruppo Cinema.
+        // ==========================================
+        let serieTvList = [];
+        let episodiSerieTvList = []; // righe di episodi_serie_tv per TUTTI i titoli
+
+        // true se il titolo ha almeno un episodio segnato come visto, anche se
+        // nessuna stagione risulta ancora completata (colore "In Visione").
+        function haProgressoStagioniParzialeSerieTv(titolo) {
+            const titoloTrim = (titolo || '').trim();
+            return episodiSerieTvList.some(e => (e.titolo || '').trim() === titoloTrim && (parseInt(e.episodiVisti) || 0) > 0);
+        }
+
+        let currentFilterStatoSerieTv = 'all';
+        let currentFilterVisioneSerieTv = 'all';
+        let currentSearchSerieTv = '';
+        let currentFavFilterSerieTv = 'all';
+        let selectedGenresSerieTv = []; // generi TMDB attivi nel filtro avanzato Serie TV
+
+        let targetEditTitleSerieTv = null;
+        let sinossiPendenteSerieTv = null; // trama TMDB in sospeso, scritta su sinossi_serie_tv al salvataggio
+        let episodiPerStagionePendenteSerieTv = null; // { 1: episodi, ... } dal picker stagioni TMDB
+        let generiSelezionatiSerieTv = ''; // generi TMDB in sospeso, scritti su serie_tv al salvataggio
+        let tmdbIdSelezionatoSerieTv = null; // id TMDB in sospeso, scritto su serie_tv al salvataggio
+
+        // Stesso calcolo degli anime, senza la parte film: bianco = da iniziare,
+        // celeste = in visione, giallo = in pari (tutto visto ma opera non conclusa),
+        // verde = completato (tutto visto e opera conclusa).
+        function calcolaColoreVisioneSerieTv_(stagioniTotali, stagioniViste, stato, haProgressoParziale) {
+            const statoClean = String(stato || '').trim().toLowerCase();
+            const completato = (stagioniViste === stagioniTotali);
+            const iniziato = (stagioniViste > 0) || !!haProgressoParziale;
+            if (!iniziato) return 'bianco';
+            if (!completato) return 'celeste';
+            return (statoClean === 'concluso') ? 'verde' : 'giallo';
+        }
+
+        async function getSerieTvDataSB_() {
+            const [serieRes, episodiRes] = await Promise.all([
+                supabaseClient.from('serie_tv').select('*').order('titolo', { ascending: true }),
+                supabaseClient.from('episodi_serie_tv').select('serie_titolo,numero,episodi_totali,episodi_visti')
+            ]);
+            if (serieRes.error) throw serieRes.error;
+            if (episodiRes.error) throw episodiRes.error;
+
+            const serieRows = serieRes.data || [];
+            const episodiRows = episodiRes.data || [];
+
+            const titoliConProgressoParziale = new Set();
+            episodiRows.forEach(function(e) {
+                if ((parseInt(e.episodi_visti) || 0) > 0) {
+                    titoliConProgressoParziale.add(e.serie_titolo);
+                }
+            });
+
+            return serieRows.map(function(s) {
+                let notaTesto = s.note || '';
+                if (typeof notaTesto === 'string' && !notaTesto.includes('<a ') && notaTesto.match(/https?:\/\/[^\s]+/i)) {
+                    notaTesto = notaTesto.replace(/(https?:\/\/[^\s]+)/gi, '<a href="$1" target="_blank" style="color: #00ffcc; text-decoration: underline; font-weight: 500;">$1</a>');
+                }
+
+                const haProgressoParziale = titoliConProgressoParziale.has(s.titolo);
+                const coloreVisione = calcolaColoreVisioneSerieTv_(
+                    s.stagioni_totali, s.stagioni_viste, s.stato, haProgressoParziale
+                );
+
+                return {
+                    titolo: s.titolo, stato: s.stato || 'In corso', note: notaTesto,
+                    stagioniTotali: s.stagioni_totali || 0, stagioniViste: s.stagioni_viste || 0,
+                    coloreVisione: coloreVisione, generi: s.generi || '', preferito: !!s.preferito,
+                    immagine: s.immagine || '', tmdbId: s.tmdb_id || null
+                };
+            });
+        }
+
+        async function getTuttiEpisodiSerieTvSB_() {
+            const { data, error } = await supabaseClient
+                .from('episodi_serie_tv')
+                .select('serie_titolo,numero,episodi_totali,episodi_visti');
+            if (error) throw error;
+            return (data || []).map(function(r) {
+                return { titolo: r.serie_titolo, numero: r.numero, episodiTotali: r.episodi_totali, episodiVisti: r.episodi_visti };
+            });
+        }
+
+        async function aggiungiRigheStagioniSerieTvSB_(titolo, daNumero, aNumero, mappaTotaliEpisodi) {
+            if (daNumero > aNumero) return;
+            const titoloTrim = String(titolo).trim();
+            const nuoveRighe = [];
+            for (let n = daNumero; n <= aNumero; n++) {
+                const totaleNoto = (mappaTotaliEpisodi && mappaTotaliEpisodi[n] !== undefined) ? (parseInt(mappaTotaliEpisodi[n]) || 0) : 0;
+                nuoveRighe.push({ serie_titolo: titoloTrim, numero: n, episodi_totali: totaleNoto, episodi_visti: 0 });
+            }
+            if (nuoveRighe.length === 0) return;
+            const { error } = await supabaseClient.from('episodi_serie_tv').insert(nuoveRighe);
+            if (error) throw error;
+        }
+
+        async function rimuoviRigheStagioniEccedentiSerieTvSB_(titolo, numeroMinimoDaRimuovere) {
+            const titoloTrim = String(titolo).trim();
+            const { data, error: selErr } = await supabaseClient
+                .from('episodi_serie_tv').select('episodi_visti')
+                .eq('serie_titolo', titoloTrim).gte('numero', numeroMinimoDaRimuovere);
+            if (selErr) throw selErr;
+            const avevaProgresso = (data || []).some(function(r) { return (parseInt(r.episodi_visti) || 0) > 0; });
+            const { error: delErr } = await supabaseClient
+                .from('episodi_serie_tv').delete()
+                .eq('serie_titolo', titoloTrim).gte('numero', numeroMinimoDaRimuovere);
+            if (delErr) throw delErr;
+            return avevaProgresso;
+        }
+
+        async function calcolaProgressoSerieTvSB_(titolo) {
+            const titoloTrim = String(titolo).trim();
+            const { data: righeSerie, error: errSerie } = await supabaseClient
+                .from('serie_tv').select('stato,stagioni_totali').eq('titolo', titoloTrim);
+            if (errSerie) throw errSerie;
+            if (!righeSerie || righeSerie.length === 0) return null;
+
+            const { data: righeStagioni, error: errSt } = await supabaseClient
+                .from('episodi_serie_tv').select('numero,episodi_totali,episodi_visti').eq('serie_titolo', titoloTrim);
+            if (errSt) throw errSt;
+
+            const stato = righeSerie[0].stato || 'In corso';
+            const stagioniTotali = righeSerie[0].stagioni_totali || 0;
+            const stagioni = (righeStagioni || []).map(function(e) {
+                return { numero: e.numero, episodiTotali: e.episodi_totali, episodiVisti: e.episodi_visti };
+            });
+
+            let stagioniViste = 0;
+            for (let n = 1; n <= stagioni.length; n++) {
+                const riga = stagioni.find(function(r) { return r.numero === n; });
+                if (!riga || riga.episodiTotali <= 0 || riga.episodiVisti < riga.episodiTotali) break;
+                stagioniViste++;
+            }
+            const haProgressoParziale = stagioni.some(function(e) { return (parseInt(e.episodiVisti) || 0) > 0; });
+            const coloreVisione = calcolaColoreVisioneSerieTv_(stagioniTotali, stagioniViste, stato, haProgressoParziale);
+
+            return { stagioniViste: stagioniViste, coloreVisione: coloreVisione,
+                     stato: stato, stagioniTotali: stagioniTotali, eventoLoggato: null };
+        }
+
+        async function ricalcolaSincronizzaELoggaSerieTvSB_(titolo) {
+            const titoloTrim = String(titolo).trim();
+            const { data: righePrima, error: errPrima } = await supabaseClient
+                .from('serie_tv').select('stagioni_viste').eq('titolo', titoloTrim);
+            if (errPrima) throw errPrima;
+            if (!righePrima || righePrima.length === 0) return null;
+
+            const vecchieStagioniViste = righePrima[0].stagioni_viste || 0;
+
+            const risultato = await calcolaProgressoSerieTvSB_(titoloTrim);
+            if (!risultato) return null;
+
+            let eventoDaLoggare = null;
+            let valPrec = '', valNuovo = '';
+            if (risultato.stagioniViste !== vecchieStagioniViste) {
+                const tuttoVisto = (risultato.stagioniViste === risultato.stagioniTotali);
+                const statoConclusoOra = String(risultato.stato).trim().toLowerCase().includes('conclus');
+                valPrec = vecchieStagioniViste + ' stagioni';
+                valNuovo = risultato.stagioniViste + ' stagioni';
+                eventoDaLoggare = (tuttoVisto && statoConclusoOra) ? 'COMPLETAMENTO' : (tuttoVisto ? 'IN_PARI' : 'AVANZAMENTO');
+                risultato.eventoLoggato = eventoDaLoggare;
+            }
+
+            const scritture = [
+                supabaseClient.from('serie_tv').update({ stagioni_viste: risultato.stagioniViste }).eq('titolo', titoloTrim)
+            ];
+            if (eventoDaLoggare) scritture.push(registraLogSB_(titoloTrim, 'SERIE_TV', eventoDaLoggare, valPrec, valNuovo));
+            await Promise.all(scritture);
+
+            return risultato;
+        }
+
+        // Segna come visti tutti gli episodi con totale noto (usato dal flag
+        // "Serie già vista per intero"). Le stagioni a totale 0 restano a 0:
+        // vanno corrette a mano con la matita, come da accordi.
+        async function segnaStagioniComeVisteSerieTvSB_(titolo) {
+            const titoloTrim = String(titolo).trim();
+            const { data: righe, error: errSel } = await supabaseClient
+                .from('episodi_serie_tv').select('numero,episodi_totali').eq('serie_titolo', titoloTrim);
+            if (errSel) throw errSel;
+            const aggiornamenti = (righe || [])
+                .filter(function(r) { return (parseInt(r.episodi_totali) || 0) > 0; })
+                .map(function(r) {
+                    return supabaseClient.from('episodi_serie_tv')
+                        .update({ episodi_visti: parseInt(r.episodi_totali) || 0 })
+                        .eq('serie_titolo', titoloTrim).eq('numero', r.numero);
+                });
+            if (aggiornamenti.length > 0) await Promise.all(aggiornamenti);
+            return aggiornamenti.length;
+        }
+
+        async function addSerieTvSB_(dati) {
+            const { error: errIns } = await supabaseClient.from('serie_tv').insert([{
+                titolo: dati.titolo, stato: dati.stato || 'In corso', note: dati.note || '',
+                stagioni_totali: parseInt(dati.stagioniTotali) || 0, stagioni_viste: 0,
+                generi: dati.generi || '', preferito: false, immagine: dati.immagine || '',
+                tmdb_id: dati.tmdbId || null
+            }]);
+            if (errIns) throw errIns;
+
+            await supabaseClient.from('sinossi_serie_tv').insert([{ serie_titolo: dati.titolo, sinossi: '' }]);
+            await registraLogSB_(dati.titolo, 'SERIE_TV', 'CREAZIONE', 'N/D', dati.stato || 'In corso');
+
+            try {
+                const stagioniTotaliNuove = parseInt(dati.stagioniTotali) || 0;
+                if (stagioniTotaliNuove > 0) await aggiungiRigheStagioniSerieTvSB_(dati.titolo, 1, stagioniTotaliNuove, dati.episodiPerStagione);
+                if (dati.segnaComeVista) {
+                    await segnaStagioniComeVisteSerieTvSB_(dati.titolo);
+                    await ricalcolaSincronizzaELoggaSerieTvSB_(dati.titolo);
+                }
+            } catch (epErr) {
+                console.error("Errore durante la creazione delle righe stagioni per '" + dati.titolo + "': " + epErr);
+            }
+
+            return getSerieTvDataSB_();
+        }
+
+        async function updateSerieTvSB_(vecchioTitolo, dati) {
+            const vecchioTitoloTrim = String(vecchioTitolo).trim();
+            const { data: righeVecchie, error: errSel } = await supabaseClient.from('serie_tv').select('*').eq('titolo', vecchioTitoloTrim);
+            if (errSel) throw errSel;
+            if (!righeVecchie || righeVecchie.length === 0) return getSerieTvDataSB_();
+            const vecchiaRiga = righeVecchie[0];
+
+            const vecchioStatoLog = vecchiaRiga.stato || 'In corso';
+            const vecchieStagioniTotaliLog = vecchiaRiga.stagioni_totali || 0;
+
+            const { error: errUpd } = await supabaseClient.from('serie_tv').update({
+                titolo: dati.titolo, stato: dati.stato, note: dati.note,
+                stagioni_totali: parseInt(dati.stagioniTotali) || 0,
+                generi: dati.generi || '', immagine: dati.immagine || '',
+                tmdb_id: dati.tmdbId || null
+            }).eq('titolo', vecchioTitoloTrim);
+            if (errUpd) throw errUpd;
+
+            const nuovoTitoloEffettivo = dati.titolo || vecchioTitolo;
+            let risultatoProgresso = null;
+            try {
+                const nuoveStagioniTotaliEp = parseInt(dati.stagioniTotali) || 0;
+
+                if (nuoveStagioniTotaliEp > vecchieStagioniTotaliLog) {
+                    await aggiungiRigheStagioniSerieTvSB_(nuovoTitoloEffettivo, vecchieStagioniTotaliLog + 1, nuoveStagioniTotaliEp, dati.episodiPerStagione);
+                } else if (nuoveStagioniTotaliEp < vecchieStagioniTotaliLog) {
+                    const avevaProgresso = await rimuoviRigheStagioniEccedentiSerieTvSB_(nuovoTitoloEffettivo, nuoveStagioniTotaliEp + 1);
+                    if (avevaProgresso) console.warn("Rimosse righe stagioni con episodi già visti per '" + nuovoTitoloEffettivo + "'.");
+                }
+
+                if (dati.segnaComeVista) {
+                    await segnaStagioniComeVisteSerieTvSB_(nuovoTitoloEffettivo);
+                }
+                risultatoProgresso = await ricalcolaSincronizzaELoggaSerieTvSB_(nuovoTitoloEffettivo);
+            } catch (epErr) {
+                console.error("Errore durante la sincronizzazione stagioni per '" + nuovoTitoloEffettivo + "': " + epErr);
+            }
+
+            try {
+                const titoloLog = nuovoTitoloEffettivo;
+                const nuovoStato = dati.stato || 'In corso';
+                let completamentoGiaLoggato = !!(risultatoProgresso && risultatoProgresso.eventoLoggato === 'COMPLETAMENTO');
+
+                if (String(nuovoStato).trim() !== String(vecchioStatoLog).trim()) {
+                    const eraConcluso = String(vecchioStatoLog).trim().toLowerCase().includes('conclus');
+                    const oraConcluso = String(nuovoStato).trim().toLowerCase().includes('conclus');
+                    if (oraConcluso && !eraConcluso) {
+                        if (!completamentoGiaLoggato) await registraLogSB_(titoloLog, 'SERIE_TV', 'COMPLETAMENTO', vecchioStatoLog, nuovoStato);
+                    } else {
+                        await registraLogSB_(titoloLog, 'SERIE_TV', 'CAMBIO_STATO', vecchioStatoLog, nuovoStato);
+                    }
+                }
+            } catch (logErr) {
+                console.error("Errore durante la valutazione degli eventi di log per updateSerieTv: " + logErr);
+            }
+
+            return getSerieTvDataSB_();
+        }
+
+        async function deleteSerieTvSB_(titolo) {
+            const { error } = await supabaseClient.from('serie_tv').delete().eq('titolo', String(titolo).trim());
+            if (error) throw error;
+            return getSerieTvDataSB_();
+        }
+
+        async function toggleSerieTvPreferitoSB_(titolo, preferitoStato) {
+            const { error } = await supabaseClient.from('serie_tv').update({ preferito: !!preferitoStato }).eq('titolo', String(titolo).trim());
+            if (error) throw error;
+        }
+
+        // --- TMDB via Edge Function tmdb-proxy (stesso schema del Cinema) ---
+        async function cercaCandidatiSerieTvTMDBSB_(query) {
+            const { data, error } = await supabaseClient.functions.invoke('tmdb-proxy', {
+                body: { action: 'tv_search', query: query }
+            });
+            if (error) throw new Error('Impossibile contattare TMDB. Riprova più tardi.');
+            if (data && data.error) throw new Error(data.error);
+            return data || [];
+        }
+
+        async function getDettaglioSerieTvTMDBSB_(id) {
+            const { data, error } = await supabaseClient.functions.invoke('tmdb-proxy', {
+                body: { action: 'tv_detail', id: id }
+            });
+            if (error) throw new Error('Impossibile recuperare i dettagli da TMDB. Riprova più tardi.');
+            if (data && data.error) throw new Error(data.error);
+            return data;
+        }
+
+        function caricaDatiSerieTv() {
+            document.getElementById('loadingSerieTv').style.display = 'block';
+            document.getElementById('serietvTable').style.display = 'none';
+
+            getSerieTvDataSB_()
+                .then(function(data) {
+                    serieTvList = data || [];
+                    return getTuttiEpisodiSerieTvSB_();
+                })
+                .then(function(epData) {
+                    episodiSerieTvList = epData || [];
+                    document.getElementById('loadingSerieTv').style.display = 'none';
+                    document.getElementById('serietvTable').style.display = 'table';
+                    renderListSerieTv();
+                })
+                .catch(function(err) {
+                    console.error('Errore caricamento dati Serie TV da Supabase:', err);
+                    document.getElementById('loadingSerieTv').style.display = 'none';
+                    alert('❌ Errore nel caricamento delle serie TV. Controlla la console per i dettagli.');
+                });
+        }
+
+        function renderListSerieTv() {
+            const tbody = document.getElementById('serietvTableBody');
+            if (!tbody) return;
+            tbody.innerHTML = '';
+
+            // Contatori sopra i filtri: iniziate / stagioni viste / episodi visti / completate (verdi)
+            let serieIniziateCount = 0;
+            let serieTotaliCount = 0;
+            let stagioniVisteTotali = 0;
+            let stagioniTotaliGlobali = 0;
+            let serieCompletateCount = 0;
+            serieTvList.forEach(item => {
+                if (!item) return;
+                serieTotaliCount++;
+                const sVis = parseInt(item.stagioniViste) || 0;
+                const sTot = parseInt(item.stagioniTotali) || 0;
+                stagioniVisteTotali += sVis;
+                stagioniTotaliGlobali += sTot;
+                if (sVis > 0 || haProgressoStagioniParzialeSerieTv(item.titolo)) serieIniziateCount++;
+                if (item.coloreVisione === 'verde') serieCompletateCount++;
+            });
+            document.getElementById('statSerieTvIniziate').innerText = `${serieIniziateCount} / ${serieTotaliCount}`;
+            document.getElementById('statSerieTvStagioniViste').innerText = `${stagioniVisteTotali} / ${stagioniTotaliGlobali}`;
+            document.getElementById('statSerieTvCompletate').innerText = `${serieCompletateCount} / ${serieTotaliCount}`;
+
+            let episodiVistiGlobali = 0;
+            let episodiTotaliGlobali = 0;
+            episodiSerieTvList.forEach(ep => {
+                episodiVistiGlobali += parseInt(ep.episodiVisti) || 0;
+                episodiTotaliGlobali += parseInt(ep.episodiTotali) || 0;
+            });
+            const statEpEl = document.getElementById('statSerieTvEpisodiVisti');
+            if (statEpEl) statEpEl.innerText = `${episodiVistiGlobali} / ${episodiTotaliGlobali}`;
+
+            let filtered = serieTvList.filter(item => {
+                if (!item) return false;
+
+                const titoloOriginale = item.titolo || '';
+                let notaTestoSerie = "";
+                if (item.note && typeof item.note === "string") {
+                    notaTestoSerie = item.note.toLowerCase();
+                } else if (item.note) {
+                    notaTestoSerie = String(item.note).toLowerCase();
+                }
+
+                const termineRicerca = (currentSearchSerieTv || '').toLowerCase();
+                const matchesSearch = (item.titolo || '').toLowerCase().includes(termineRicerca) || notaTestoSerie.includes(termineRicerca);
+
+                const statoOriginale = item.stato || 'In corso';
+                const statoClean = statoOriginale.trim().toLowerCase();
+                let matchesStato = false;
+                if (currentFilterStatoSerieTv === 'all') {
+                    matchesStato = true;
+                } else if (currentFilterStatoSerieTv === 'Altro') {
+                    matchesStato = (statoClean !== 'in corso' && statoClean !== 'concluso');
+                } else {
+                    matchesStato = (statoClean === currentFilterStatoSerieTv.toLowerCase());
+                }
+
+                const stagioniTotali = parseInt(item.stagioniTotali) || 0;
+                const stagioniViste = parseInt(item.stagioniViste) || 0;
+
+                let coloreVisione = 'bianco';
+                const completato = (stagioniViste === stagioniTotali);
+                const iniziato = (stagioniViste > 0) || haProgressoStagioniParzialeSerieTv(item.titolo);
+                if (!iniziato) {
+                    coloreVisione = 'bianco';
+                } else if (!completato) {
+                    coloreVisione = 'celeste';
+                } else {
+                    coloreVisione = (statoClean === 'concluso') ? 'verde' : 'giallo';
+                }
+
+                const matchesVisione = (currentFilterVisioneSerieTv === 'all' || coloreVisione === currentFilterVisioneSerieTv);
+
+                // Filtro generi TMDB (logica AND, come il Cinema)
+                let matchesGenres = true;
+                if (selectedGenresSerieTv.length > 0) {
+                    const itemGenres = item.generi ? item.generi.split(',').map(g => g.trim()) : [];
+                    matchesGenres = selectedGenresSerieTv.every(g => itemGenres.includes(g));
+                }
+
+                let matchesFav = true;
+                if (typeof currentFavFilterSerieTv !== 'undefined' && currentFavFilterSerieTv === 'yes') {
+                    matchesFav = (item.preferito === true);
+                }
+
+                return matchesSearch && matchesStato && matchesVisione && matchesGenres && matchesFav;
+            });
+
+            const countEl = document.getElementById('countSerieTv');
+            if (countEl) countEl.textContent = filtered.length + ' di ' + serieTvList.length + ' serie TV';
+
+            const sortVal = document.getElementById('sortSelSerieTv').value;
+            filtered.sort((a, b) => {
+                const tA = a.titolo || '';
+                const tB = b.titolo || '';
+                if (sortVal === 'title-desc') return tB.localeCompare(tA);
+                return tA.localeCompare(tB); // default: alfabetico A-Z
+            });
+
+            filtered.forEach(item => {
+                const tr = document.createElement('tr');
+                const statoOriginale = item.stato || '';
+                const statoClean = statoOriginale.trim().toLowerCase();
+                let statusClass = 'status-altro-anime';
+                if (statoClean === 'in corso') statusClass = 'status-in-corso';
+                else if (statoClean === 'concluso') statusClass = 'status-concluso';
+
+                const stagioniTotali = parseInt(item.stagioniTotali) || 0;
+                const stagioniViste = parseInt(item.stagioniViste) || 0;
+
+                let coloreVisione = 'bianco';
+                const completato = (stagioniViste === stagioniTotali);
+                const iniziato = (stagioniViste > 0) || haProgressoStagioniParzialeSerieTv(item.titolo);
+                if (!iniziato) {
+                    coloreVisione = 'bianco';
+                } else if (!completato) {
+                    coloreVisione = 'celeste';
+                } else {
+                    coloreVisione = (statoClean === 'concluso') ? 'verde' : 'giallo';
+                }
+
+                const safeTitle = (item.titolo || '').replace(/'/g, "\\'").replace(/"/g, '\\"');
+
+                let genresHTML = '';
+                if (item.generi && item.generi.trim() !== '') {
+                    genresHTML = `<div class="genre-tags-list" style="color: var(--primary);">🎭 ${item.generi}</div>`;
+                }
+
+                const starClass = item.preferito ? 'action-icon-btn is-favorite' : 'action-icon-btn';
+                const starIcon = item.preferito ? '★' : '☆';
+
+                let avatarHTML = '';
+                if (item.immagine && item.immagine.trim() !== '') {
+                    const safeImgUrl = item.immagine.trim().replace(/'/g, "\\'");
+                    avatarHTML = `<img src="${safeImgUrl}" style="width: 45px; height: 45px; border-radius: 6px; object-fit: cover; flex-shrink: 0; border: 1px solid var(--border-color); cursor: zoom-in;" alt="Avatar" onclick="apriLightbox('${safeImgUrl}')">`;
+                } else {
+                    avatarHTML = `<div style="width: 45px; height: 45px; flex-shrink: 0;"></div>`;
+                }
+
+                tr.innerHTML = `
+                    <td class="media-title">
+                        <div style="display: flex; align-items: center; gap: 12px;">
+                            <button class="${starClass}" style="color: var(--warning); font-size: 16px; flex-shrink: 0;" onclick="toggleFavoriteSerieTv('${safeTitle}', this)">${starIcon}</button>
+                            ${avatarHTML}
+                            <div style="display: flex; flex-direction: column; gap: 3px;">
+                                <div style="font-weight: 600; display: flex; align-items: center; gap: 6px;">
+                                    <span>${item.titolo || 'Senza Titolo'}</span>
+                                    <button class="action-icon-btn" style="font-size: 13px; padding: 0; background: none; border: none; cursor: pointer;" onclick="mostraSinossi('${safeTitle}', 'serietv')" title="Visualizza Trama">ℹ️</button>
+                                    <button class="action-icon-btn" style="font-size: 13px; padding: 0; background: none; border: none; cursor: pointer;" onclick="apriGestioneStagioniSerieTv('${safeTitle}')" title="Gestisci Stagioni">📡</button>
+                                </div>
+                                <div style="font-size: 12px; color: var(--text-muted); font-weight: normal;">
+                                    Stagioni: <b>${stagioniViste}/${stagioniTotali}</b>
+                                </div>
+                                ${genresHTML}
+                            </div>
+                        </div>
+                    </td>
+                    <td><span class="status-badge ${statusClass}">${item.stato || '-'}</span></td>
+                    <td style="color:var(--text-muted); font-size:13px;">${item.note || '-'}</td>
+                    <td style="text-align: center;">
+                        <span class="vision-box box-${coloreVisione}"></span>
+                    </td>
+                    <td style="text-align: center; white-space: nowrap;">
+                        <button class="action-icon-btn" onclick="aggiornaStagioniSerieTvDaTMDB('${safeTitle}')" title="Rileggi da TMDB: aggiunge eventuali nuove stagioni uscite">🔄</button>
+                        <button class="action-icon-btn" onclick="apriModificaSerieTv('${safeTitle}')">✏️</button>
+                        <button class="action-icon-btn" onclick="rimuoviSerieTv('${safeTitle}')">🗑️</button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        document.getElementById('btnNuovaSerieTv').onclick = function() {
+            targetEditTitleSerieTv = null;
+            sinossiPendenteSerieTv = null;
+            episodiPerStagionePendenteSerieTv = null;
+            generiSelezionatiSerieTv = '';
+            tmdbIdSelezionatoSerieTv = null;
+            document.getElementById('modalTitleSerieTv').innerText = "Nuova Serie TV";
+            document.getElementById('serietvForm').reset();
+            document.getElementById('inpStagioniTotaliSerieTv').value = 0;
+            document.getElementById('inpStagioniVisteSerieTv').value = 0;
+            document.getElementById('inpGeneriSerieTv').value = '';
+            document.getElementById('inpImmagineSerieTv').value = '';
+            document.getElementById('inpGiaVistaSerieTv').checked = false;
+            document.getElementById('serieTvCandidatiWrapper').innerHTML = '';
+            document.getElementById('serieTvStagioniWrapper').innerHTML = '';
+            document.getElementById('modalOverlaySerieTv').classList.add('active');
+        };
+
+        window.apriModificaSerieTv = function(titolo) {
+            const item = serieTvList.find(s => s.titolo === titolo);
+            if (!item) return;
+
+            targetEditTitleSerieTv = titolo;
+            sinossiPendenteSerieTv = null;
+            episodiPerStagionePendenteSerieTv = null;
+            generiSelezionatiSerieTv = item.generi || '';
+            tmdbIdSelezionatoSerieTv = item.tmdbId || null;
+            document.getElementById('modalTitleSerieTv').innerText = "Modifica Serie TV";
+            document.getElementById('inpTitoloSerieTv').value = item.titolo || '';
+            document.getElementById('inpStatoSerieTv').value = ['In corso', 'Concluso', 'In arrivo'].includes(item.stato) ? item.stato : 'In corso';
+            document.getElementById('inpStagioniTotaliSerieTv').value = item.stagioniTotali || 0;
+            document.getElementById('inpStagioniVisteSerieTv').value = item.stagioniViste || 0;
+            document.getElementById('inpGeneriSerieTv').value = item.generi || '';
+            document.getElementById('inpNoteSerieTv').value = item.note || '';
+            document.getElementById('inpImmagineSerieTv').value = item.immagine || '';
+            // In modifica il flag nasce spuntato se la serie è già tutta vista
+            const giaTuttaVista = (parseInt(item.stagioniTotali) || 0) > 0 && (parseInt(item.stagioniViste) || 0) >= (parseInt(item.stagioniTotali) || 0);
+            document.getElementById('inpGiaVistaSerieTv').checked = giaTuttaVista;
+            document.getElementById('serieTvCandidatiWrapper').innerHTML = '';
+            document.getElementById('serieTvStagioniWrapper').innerHTML = '';
+
+            document.getElementById('modalOverlaySerieTv').classList.add('active');
+        };
+
+        document.getElementById('serietvForm').onsubmit = function(e) {
+            e.preventDefault();
+
+            const titoloForm = document.getElementById('inpTitoloSerieTv').value.trim();
+            if (!titoloForm) {
+                showToast('❌ Inserisci un titolo.', 'error');
+                return;
+            }
+
+            const sTot = parseInt(document.getElementById('inpStagioniTotaliSerieTv').value) || 0;
+            const flagGiaVista = document.getElementById('inpGiaVistaSerieTv').checked;
+            const isEdit = !!targetEditTitleSerieTv;
+
+            // Il flag viene valutato PRIMA di mettere il pulsante in
+            // "Salvataggio...", perché può interrompere il salvataggio.
+            let segnaComeVista = false;
+            if (flagGiaVista) {
+                if (sTot <= 0) {
+                    showToast('❌ Con "Serie già vista" devi indicare almeno 1 stagione totale.', 'error');
+                    return;
+                }
+                const itemCorrente = isEdit ? serieTvList.find(s => s.titolo === targetEditTitleSerieTv) : null;
+                const giaCompleta = !!(itemCorrente && (parseInt(itemCorrente.stagioniTotali) || 0) > 0 &&
+                    (parseInt(itemCorrente.stagioniViste) || 0) >= (parseInt(itemCorrente.stagioniTotali) || 0));
+                if (!(isEdit && giaCompleta)) {
+                    const statoForm = document.getElementById('inpStatoSerieTv').value || 'In corso';
+                    const coloreRisultante = calcolaColoreVisioneSerieTv_(sTot, sTot, statoForm, true);
+                    const etichettaColore = (coloreRisultante === 'verde') ? 'verde (completata)' :
+                        (coloreRisultante === 'giallo') ? 'giallo (in pari: la serie non è conclusa)' : coloreRisultante;
+                    const ok = confirm('Segno "' + titoloForm + '" come vista per intero: ' + sTot + ' stagioni, tutti gli episodi con totale noto.\nLo stato di visione risultante sarà ' + etichettaColore + '.\n\nProcedo con il salvataggio?');
+                    if (!ok) return;
+                }
+                segnaComeVista = true;
+            }
+
+            document.getElementById('btnSalvaSerieTv').innerText = "Salvataggio...";
+
+            const dati = {
+                titolo: titoloForm,
+                stato: document.getElementById('inpStatoSerieTv').value || 'In corso',
+                note: document.getElementById('inpNoteSerieTv').value,
+                stagioniTotali: sTot,
+                generi: generiSelezionatiSerieTv || '',
+                immagine: document.getElementById('inpImmagineSerieTv').value,
+                tmdbId: tmdbIdSelezionatoSerieTv || null,
+                episodiPerStagione: episodiPerStagionePendenteSerieTv,
+                segnaComeVista: segnaComeVista
+            };
+            const cb = function(data) {
+                serieTvList = data || [];
+                episodiPerStagionePendenteSerieTv = null;
+                generiSelezionatiSerieTv = '';
+                tmdbIdSelezionatoSerieTv = null;
+                // Trama TMDB scelta in sessione: la scriviamo ora, la riga in
+                // sinossi_serie_tv esiste di sicuro (creata da add, o già presente).
+                if (sinossiPendenteSerieTv) {
+                    impostaSinossiSB_(dati.titolo, 'serietv', sinossiPendenteSerieTv)
+                        .catch(function(err) {
+                            console.error('Errore salvataggio trama TMDB: ' + err);
+                            showToast('Serie salvata, ma la trama TMDB non è stata scritta. Riprova dal pulsante TMDB.', 'error');
+                        });
+                    sinossiPendenteSerieTv = null;
+                }
+                // Ricarica anche gli episodi: le righe stagioni sono cambiate
+                getTuttiEpisodiSerieTvSB_().then(function(epData) {
+                    episodiSerieTvList = epData || [];
+                    renderListSerieTv();
+                }).catch(function() { renderListSerieTv(); });
+                document.getElementById('btnSalvaSerieTv').innerText = "Salva";
+                chiudiModale('SerieTv');
+                showToast(isEdit ? 'Serie TV aggiornata con successo' : 'Serie TV aggiunta con successo', 'success');
+            };
+            const errorCb = function(err) {
+                alert("❌ Errore durante il salvataggio Serie TV: " + (err && err.message ? err.message : err));
+                document.getElementById('btnSalvaSerieTv').innerText = "Salva";
+            };
+
+            if (targetEditTitleSerieTv) {
+                updateSerieTvSB_(targetEditTitleSerieTv, dati).then(cb).catch(errorCb);
+            } else {
+                addSerieTvSB_(dati).then(cb).catch(errorCb);
+            }
+        };
+
+        window.rimuoviSerieTv = function(titolo) {
+            if (confirm("Eliminare definitivamente '" + titolo + "'?")) {
+                deleteSerieTvSB_(titolo).then(function(data) {
+                    serieTvList = data || [];
+                    return getTuttiEpisodiSerieTvSB_();
+                }).then(function(epData) {
+                    episodiSerieTvList = epData || [];
+                    renderListSerieTv();
+                    showToast('Serie TV eliminata', 'success');
+                }).catch(function(err) {
+                    console.error('Errore eliminazione serie TV:', err);
+                    alert("❌ Errore durante l'eliminazione.");
+                });
+            }
+        };
+
+        window.toggleFavoriteSerieTv = function(titolo, btn) {
+            const item = serieTvList.find(s => s.titolo === titolo);
+            if (!item) return;
+            const nuovoStato = !item.preferito;
+            toggleSerieTvPreferitoSB_(titolo, nuovoStato).then(function() {
+                item.preferito = nuovoStato;
+                renderListSerieTv();
+                showToast(nuovoStato ? 'Aggiunta ai preferiti' : 'Rimossa dai preferiti', 'success');
+            }).catch(function(err) {
+                console.error('Errore toggle preferito serie TV:', err);
+                showToast('❌ Errore aggiornamento preferito: ' + err.message, 'error');
+            });
+        };
+
+        // ==========================================
+        //   GESTIONE STAGIONI SERIE TV (Overlay dedicato)
+        // ==========================================
+        let stagioniSerieTvOverlayTitoloCorrente = null;
+
+        // Secondo parametro facoltativo come negli anime: passato solo dalle
+        // card del widget "In Corso", mostra la copertina di fianco all'elenco.
+        window.apriGestioneStagioniSerieTv = function(titolo, mostraCopertina) {
+            stagioniSerieTvOverlayTitoloCorrente = titolo;
+            document.getElementById('stagioniSerieTvModalTitle').innerText = '📡 Stagioni — ' + titolo;
+
+            let conCopertina = false;
+            if (mostraCopertina) {
+                const serie = (serieTvList || []).find(x => (x.titolo || '').trim() === String(titolo).trim());
+                conCopertina = renderCopertinaOverlay('stagioniSerieTvCopertina', serie);
+            } else {
+                nascondiCopertinaOverlay('stagioniSerieTvCopertina');
+            }
+
+            const modaleEl = document.querySelector('#modalOverlayStagioniSerieTv .modal');
+            if (modaleEl) modaleEl.style.maxWidth = conCopertina ? '640px' : '560px';
+
+            renderStagioniSerieTvOverlay();
+            document.getElementById('modalOverlayStagioniSerieTv').classList.add('active');
+        };
+
+        window.chiudiModaleStagioniSerieTv = function() {
+            document.getElementById('modalOverlayStagioniSerieTv').classList.remove('active');
+            stagioniSerieTvOverlayTitoloCorrente = null;
+        };
+
+        function renderStagioniSerieTvOverlay() {
+            const container = document.getElementById('stagioniSerieTvListContainer');
+            if (!container || !stagioniSerieTvOverlayTitoloCorrente) return;
+
+            const safeTitle = stagioniSerieTvOverlayTitoloCorrente.replace(/'/g, "\\'").replace(/"/g, '\\"');
+            const righe = episodiSerieTvList
+                .filter(ep => (ep.titolo || '').trim() === stagioniSerieTvOverlayTitoloCorrente.trim())
+                .slice()
+                .sort((a, b) => a.numero - b.numero);
+
+            if (righe.length === 0) {
+                container.innerHTML = `<p style="color:var(--text-muted); padding: 20px 0; text-align:center;">Nessuna stagione registrata per questo titolo. Imposta le "Stagioni Totali" dal pulsante ✏️ per generare le righe.</p>`;
+                return;
+            }
+
+            let html = `<div class="section-title-label" style="margin:14px 0 10px 0; font-size:12px;">Stagioni</div>`;
+            righe.forEach((ep, idx) => {
+                const totali = parseInt(ep.episodiTotali) || 0;
+                const visti = parseInt(ep.episodiVisti) || 0;
+                const completa = totali > 0 && visti >= totali;
+                const precedente = idx > 0 ? righe[idx - 1] : null;
+                const precedenteCompleta = !precedente || (parseInt(precedente.episodiTotali) > 0 && parseInt(precedente.episodiVisti) >= parseInt(precedente.episodiTotali));
+                const bloccata = !precedenteCompleta;
+                const percentuale = totali > 0 ? Math.min(100, Math.round((visti / totali) * 100)) : 0;
+                const disabledMeno = visti <= 0 ? 'disabled' : '';
+                const disabledPiu = (bloccata || (totali > 0 && visti >= totali)) ? 'disabled' : '';
+
+                html += `
+                    <div class="episodi-row ${bloccata ? 'locked' : ''}">
+                        <div class="episodi-row-info">
+                            <div class="episodi-row-title">🎞️ Stagione ${ep.numero} ${completa ? '✅' : (bloccata ? '🔒' : '')}
+                                <button class="episodi-btn-edit" onclick="modificaTotaleStagioneSerieTv('${safeTitle}', ${ep.numero}, ${totali})" title="Modifica episodi totali">✏️</button>
+                            </div>
+                            <div class="episodi-row-count">${visti} / ${totali} episodi</div>
+                            <div class="episodi-progress-outer"><div class="episodi-progress-inner" style="width:${percentuale}%;"></div></div>
+                        </div>
+                        <div class="episodi-row-actions">
+                            <button class="episodi-btn" ${disabledMeno} onclick="incrementaStagioneSerieTv('${safeTitle}', ${ep.numero}, -1)">−</button>
+                            <button class="episodi-btn" ${disabledPiu} onclick="incrementaStagioneSerieTv('${safeTitle}', ${ep.numero}, 1)">+</button>
+                        </div>
+                    </div>`;
+            });
+
+            container.innerHTML = html;
+        }
+
+        async function updateStagioneVistiSerieTvSB_(titolo, numero, delta) {
+            const titoloTrim = String(titolo).trim();
+            const numeroInt = parseInt(numero) || 0;
+            const deltaInt = parseInt(delta) || 0;
+
+            const numeriDaLeggere = (deltaInt > 0 && numeroInt > 1) ? [numeroInt - 1, numeroInt] : [numeroInt];
+            const { data: righe, error: errSel } = await supabaseClient
+                .from('episodi_serie_tv').select('numero,episodi_totali,episodi_visti')
+                .eq('serie_titolo', titoloTrim).in('numero', numeriDaLeggere);
+            if (errSel) throw errSel;
+
+            const rigaTarget = (righe || []).find(function(r) { return r.numero === numeroInt; });
+            if (!rigaTarget) return { errore: 'Riga stagione non trovata.' };
+
+            const episodiTotali = rigaTarget.episodi_totali;
+            const episodiVistiAttuale = rigaTarget.episodi_visti;
+
+            if (deltaInt > 0 && numeroInt > 1) {
+                const rigaPrec = righe.find(function(r) { return r.numero === numeroInt - 1; });
+                const rigaPrecedenteCompleta = !!(rigaPrec && rigaPrec.episodi_totali > 0 && rigaPrec.episodi_visti >= rigaPrec.episodi_totali);
+                if (!rigaPrecedenteCompleta) {
+                    return { errore: 'Devi prima completare la Stagione ' + (numeroInt - 1) + '.' };
+                }
+            }
+
+            let nuovoValore = episodiVistiAttuale + deltaInt;
+            if (nuovoValore < 0) nuovoValore = 0;
+            if (episodiTotali > 0 && nuovoValore > episodiTotali) nuovoValore = episodiTotali;
+
+            const { error: errUpd } = await supabaseClient
+                .from('episodi_serie_tv').update({ episodi_visti: nuovoValore })
+                .eq('serie_titolo', titoloTrim).eq('numero', numeroInt);
+            if (errUpd) throw errUpd;
+
+            const risultatoSync = await ricalcolaSincronizzaELoggaSerieTvSB_(titoloTrim);
+
+            if (nuovoValore !== episodiVistiAttuale) {
+                await registraLogEpisodioSB_(
+                    titoloTrim, 'Stagione', numeroInt, episodiVistiAttuale, nuovoValore, episodiTotali,
+                    (nuovoValore > episodiVistiAttuale) ? 'VISTO' : 'RIMOSSO',
+                    (risultatoSync && risultatoSync.eventoLoggato) || ''
+                );
+            }
+
+            const [serieAggiornate, episodiTutti] = await Promise.all([getSerieTvDataSB_(), getTuttiEpisodiSerieTvSB_()]);
+            return { episodiVisti: nuovoValore, episodiTotali: episodiTotali, serie: serieAggiornate, episodiTutti: episodiTutti };
+        }
+
+        async function updateStagioneTotaliSerieTvSB_(titolo, numero, nuovoTotale) {
+            const titoloTrim = String(titolo).trim();
+            const numeroInt = parseInt(numero) || 0;
+
+            const { data: righeTarget, error: errSel } = await supabaseClient
+                .from('episodi_serie_tv').select('episodi_visti')
+                .eq('serie_titolo', titoloTrim).eq('numero', numeroInt);
+            if (errSel) throw errSel;
+            if (!righeTarget || righeTarget.length === 0) return { errore: 'Riga stagione non trovata.' };
+
+            let totaleNuovo = parseInt(nuovoTotale) || 0;
+            if (totaleNuovo < 0) totaleNuovo = 0;
+
+            let episodiVistiNuovo = righeTarget[0].episodi_visti;
+            if (episodiVistiNuovo > totaleNuovo) episodiVistiNuovo = totaleNuovo;
+
+            const { error: errUpd } = await supabaseClient
+                .from('episodi_serie_tv').update({ episodi_totali: totaleNuovo, episodi_visti: episodiVistiNuovo })
+                .eq('serie_titolo', titoloTrim).eq('numero', numeroInt);
+            if (errUpd) throw errUpd;
+
+            await ricalcolaSincronizzaELoggaSerieTvSB_(titoloTrim);
+
+            const [serieAggiornate, episodiTutti] = await Promise.all([getSerieTvDataSB_(), getTuttiEpisodiSerieTvSB_()]);
+            return { episodiVisti: episodiVistiNuovo, episodiTotali: totaleNuovo, serie: serieAggiornate, episodiTutti: episodiTutti };
+        }
+
+        window.incrementaStagioneSerieTv = function(titolo, numero, delta) {
+            updateStagioneVistiSerieTvSB_(titolo, numero, delta)
+                .then(function(result) {
+                    if (result && result.errore) {
+                        showToast(result.errore, 'error');
+                        return;
+                    }
+                    serieTvList = result.serie || serieTvList;
+                    episodiSerieTvList = result.episodiTutti || episodiSerieTvList;
+                    renderStagioniSerieTvOverlay();
+                    renderListSerieTv();
+                    aggiornaLogStagioniSerieTvSeVisibile();
+                })
+                .catch(function(err) {
+                    showToast('❌ Errore aggiornamento episodio: ' + err.message, 'error');
+                });
+        };
+
+        window.modificaTotaleStagioneSerieTv = function(titolo, numero, totaleAttuale) {
+            const nuovoTotaleStr = prompt(`Numero totale episodi per Stagione ${numero}:`, totaleAttuale);
+            if (nuovoTotaleStr === null) return; // annullato
+            const nuovoTotale = parseInt(nuovoTotaleStr);
+            if (isNaN(nuovoTotale) || nuovoTotale < 0) {
+                showToast('❌ Inserisci un numero valido', 'error');
+                return;
+            }
+
+            updateStagioneTotaliSerieTvSB_(titolo, numero, nuovoTotale)
+                .then(function(result) {
+                    if (result && result.errore) {
+                        showToast(result.errore, 'error');
+                        return;
+                    }
+                    serieTvList = result.serie || serieTvList;
+                    episodiSerieTvList = result.episodiTutti || episodiSerieTvList;
+                    renderStagioniSerieTvOverlay();
+                    renderListSerieTv();
+                    showToast('Totale episodi aggiornato', 'success');
+                })
+                .catch(function(err) {
+                    showToast('❌ Errore aggiornamento totale episodi: ' + err.message, 'error');
+                });
+        };
+
+        // ==========================================================
+        // 🕘 LOG EPISODI SERIE TV (linguetta dentro la vista)
+        // ==========================================================
+        function switchSerieTvSubview(subview) {
+            const paneLista = document.getElementById('serietvPaneLista');
+            const paneLog = document.getElementById('serietvPaneLog');
+            const tabLista = document.getElementById('tabSerieTvLista');
+            const tabLog = document.getElementById('tabSerieTvLog');
+            if (!paneLista || !paneLog || !tabLista || !tabLog) return;
+
+            if (subview === 'log') {
+                paneLista.style.display = 'none';
+                paneLog.style.display = 'block';
+                tabLista.classList.remove('active');
+                tabLog.classList.add('active');
+                caricaLogStagioniSerieTv();
+            } else {
+                paneLog.style.display = 'none';
+                paneLista.style.display = 'block';
+                tabLog.classList.remove('active');
+                tabLista.classList.add('active');
+            }
+        }
+
+        function caricaLogStagioniSerieTv() {
+            const loadingEl = document.getElementById('loadingStagioniLog');
+            const tableEl = document.getElementById('stagioniLogTable');
+            const btnRefresh = document.getElementById('btnRefreshStagioniLog');
+            if (!tableEl) return;
+
+            if (loadingEl) {
+                loadingEl.style.display = 'block';
+                loadingEl.innerText = '⏳ Caricamento log episodi...';
+            }
+            tableEl.style.display = 'none';
+            if (btnRefresh) {
+                btnRefresh.classList.add('spinning');
+                btnRefresh.disabled = true;
+            }
+
+            const inputTitolo = document.getElementById('filterStagioniLogTitolo');
+            const selAzione = document.getElementById('filterStagioniLogAzione');
+            const inputDal = document.getElementById('filterStagioniLogDal');
+            const inputAl = document.getElementById('filterStagioniLogAl');
+            const btnOrdine = document.getElementById('btnToggleStagioniLogOrdine');
+
+            const filtroTitolo = inputTitolo ? inputTitolo.value.trim() : '';
+            const filtroAzione = selAzione ? selAzione.value : 'all';
+            const dataDal = inputDal ? inputDal.value : '';
+            const dataAl = inputAl ? inputAl.value : '';
+            const ordineAsc = btnOrdine ? (btnOrdine.getAttribute('data-asc') === 'true') : false;
+
+            const filtriAttivi = (filtroTitolo !== '' || filtroAzione !== 'all' || dataDal !== '' || dataAl !== '');
+
+            // Le serie TV scrivono solo righe di tipo 'Stagione': il filtro
+            // per tipo è fisso e non serve il selettore nella testata.
+            ottieniLogEpisodiSB_(filtroTitolo, 'Stagione', filtroAzione, dataDal, dataAl, ordineAsc)
+                .then(function(logs) {
+                    if (loadingEl) loadingEl.style.display = 'none';
+                    if (btnRefresh) {
+                        btnRefresh.classList.remove('spinning');
+                        btnRefresh.disabled = false;
+                    }
+                    tableEl.style.display = 'table';
+                    renderLogStagioniSerieTv(logs || [], filtriAttivi);
+                })
+                .catch(function(err) {
+                    console.error('Errore nel caricamento del Log Episodi Serie TV:', err);
+                    if (loadingEl) {
+                        loadingEl.style.display = 'block';
+                        loadingEl.innerText = '⚠️ Impossibile caricare il log episodi.';
+                    }
+                    if (btnRefresh) {
+                        btnRefresh.classList.remove('spinning');
+                        btnRefresh.disabled = false;
+                    }
+                });
+        }
+
+        function renderLogStagioniSerieTv(logs, filtriAttivi) {
+            const bodyEl = document.getElementById('stagioniLogTableBody');
+            const emptyEl = document.getElementById('stagioniLogEmpty');
+            const countEl = document.getElementById('countStagioniLog');
+            if (!bodyEl) return;
+
+            bodyEl.innerHTML = '';
+
+            if (countEl) countEl.innerText = logs && logs.length ? (logs.length + ' risultati') : '';
+
+            if (!logs || logs.length === 0) {
+                document.getElementById('stagioniLogTable').style.display = 'none';
+                if (emptyEl) {
+                    emptyEl.style.display = 'block';
+                    emptyEl.innerText = filtriAttivi
+                        ? 'Nessun episodio trovato con i filtri selezionati. 🔍'
+                        : 'Nessun episodio registrato finora. 📡';
+                }
+                return;
+            }
+            if (emptyEl) emptyEl.style.display = 'none';
+
+            logs.forEach(function(log) {
+                const tr = document.createElement('tr');
+
+                const isVisto = String(log.azione).toUpperCase() === 'VISTO';
+
+                const azioneBadge = isVisto
+                    ? '<span class="log-badge" style="background:rgba(52,211,153,.15); color:#6ee7b7; border:1px solid rgba(52,211,153,.4);">✅ Visto</span>'
+                    : '<span class="log-badge" style="background:rgba(248,113,113,.15); color:#fca5a5; border:1px solid rgba(248,113,113,.4);">↩️ Rimosso</span>';
+
+                const esitoTesto = log.esito ? ' · ' + escapeHtmlLog(log.esito) : '';
+
+                tr.innerHTML =
+                    '<td style="white-space:nowrap;">' + formatLogTimestamp(log.timestamp) + '</td>' +
+                    '<td>' + escapeHtmlLog(log.titolo || '') + '</td>' +
+                    '<td><span class="ep-log-badge-stagione">🎞️ Stagione ' + (parseInt(log.numero) || 0) + '</span></td>' +
+                    '<td style="text-align:center;">Ep. ' + (parseInt(log.episodioInteressato) || 0) + '/' + (parseInt(log.episodiTotali) || 0) + '</td>' +
+                    '<td style="text-align:center;">' + azioneBadge + '<div style="font-size:11px; color:var(--text-muted);">' + esitoTesto + '</div></td>';
+
+                bodyEl.appendChild(tr);
+            });
+        }
+
+        (function initStagioniLogFilters() {
+            const inputTitolo = document.getElementById('filterStagioniLogTitolo');
+            const selAzione = document.getElementById('filterStagioniLogAzione');
+            const inputDal = document.getElementById('filterStagioniLogDal');
+            const inputAl = document.getElementById('filterStagioniLogAl');
+            if (inputTitolo) inputTitolo.addEventListener('input', caricaLogStagioniSerieTv);
+            if (selAzione) selAzione.addEventListener('change', caricaLogStagioniSerieTv);
+            if (inputDal) inputDal.addEventListener('change', caricaLogStagioniSerieTv);
+            if (inputAl) inputAl.addEventListener('change', caricaLogStagioniSerieTv);
+
+            const btnOrdine = document.getElementById('btnToggleStagioniLogOrdine');
+            if (btnOrdine) btnOrdine.addEventListener('click', function() {
+                const asc = btnOrdine.getAttribute('data-asc') === 'true';
+                btnOrdine.setAttribute('data-asc', asc ? 'false' : 'true');
+                btnOrdine.innerHTML = asc ? '⬇️ Recenti' : '⬆️ Vecchi';
+                caricaLogStagioniSerieTv();
+            });
+        })();
+
+        (function initStagioniLogActions() {
+            const btnReset = document.getElementById('btnResetStagioniLogFiltri');
+            if (btnReset) btnReset.addEventListener('click', function() {
+                document.getElementById('filterStagioniLogTitolo').value = '';
+                document.getElementById('filterStagioniLogAzione').value = 'all';
+                document.getElementById('filterStagioniLogDal').value = '';
+                document.getElementById('filterStagioniLogAl').value = '';
+                const btnOrdine = document.getElementById('btnToggleStagioniLogOrdine');
+                if (btnOrdine) {
+                    btnOrdine.setAttribute('data-asc', 'false');
+                    btnOrdine.innerHTML = '⬇️ Recenti';
+                }
+                caricaLogStagioniSerieTv();
+            });
+
+            const btnRefresh = document.getElementById('btnRefreshStagioniLog');
+            if (btnRefresh) btnRefresh.addEventListener('click', caricaLogStagioniSerieTv);
+        })();
+
+        function aggiornaLogStagioniSerieTvSeVisibile() {
+            const paneLog = document.getElementById('serietvPaneLog');
+            if (paneLog && paneLog.style.display !== 'none') {
+                caricaLogStagioniSerieTv();
+            }
+        }
+
+        // ==========================================
+        //   TMDB SERIE TV (ricerca + dettaglio + stagioni)
+        // ==========================================
+        let ultimoDettaglioSerieTvTMDB = null;
+
+        function cercaSerieTvTMDB() {
+            const titolo = document.getElementById('inpTitoloSerieTv').value.trim();
+            if (!titolo) {
+                alert('Inserisci prima un titolo da cercare.');
+                return;
+            }
+
+            const wrapper = document.getElementById('serieTvCandidatiWrapper');
+            document.getElementById('serieTvStagioniWrapper').innerHTML = '';
+            wrapper.innerHTML = `<p style="color: var(--warning); font-weight:600;">⏳ Ricerca su TMDB in corso...</p>`;
+
+            cercaCandidatiSerieTvTMDBSB_(titolo)
+                .then(function(candidati) { renderCandidatiSerieTvTMDB_(candidati); })
+                .catch(function(err) { renderErroreSerieTvTMDB_(err); });
+        }
+
+        function renderCandidatiSerieTvTMDB_(candidati) {
+            const wrapper = document.getElementById('serieTvCandidatiWrapper');
+
+            if (!candidati || candidati.length === 0) {
+                wrapper.innerHTML = `<p style="color: var(--text-muted);">Nessun risultato trovato su TMDB per questo titolo. Puoi comunque salvare la serie inserendo i dati manualmente.</p>`;
+                return;
+            }
+
+            let grid = '<div style="display:grid; grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); gap:10px; margin-top:10px;">';
+            candidati.forEach(function(c) {
+                const safeImg = (c.immagine || '').replace(/'/g, "\\'");
+                grid += `
+                    <div class="cinema-candidato-card" style="cursor:pointer; border:1px solid var(--border-color); border-radius:8px; overflow:hidden; background: rgba(255,255,255,0.03);" onclick="selezionaCandidatoSerieTvTMDB_(${c.id}, '${(c.titolo || '').replace(/'/g, "\\'")}')">
+                        <img src="${safeImg}" style="width:100%; height:150px; object-fit:cover; display:block; background:#222;">
+                        <div style="padding:6px; font-size:11px; line-height:1.3; color: var(--text);">${c.titolo}${c.anno ? ' (' + c.anno + ')' : ''}</div>
+                    </div>
+                `;
+            });
+            grid += '</div>';
+            wrapper.innerHTML = grid;
+        }
+
+        function selezionaCandidatoSerieTvTMDB_(id) {
+            const wrapper = document.getElementById('serieTvCandidatiWrapper');
+            wrapper.innerHTML = `<p style="color: var(--warning); font-weight:600;">⏳ Recupero dettagli da TMDB...</p>`;
+
+            getDettaglioSerieTvTMDBSB_(id)
+                .then(function(dettaglio) { renderDettaglioSerieTvTMDB_(dettaglio); })
+                .catch(function(err) { renderErroreSerieTvTMDB_(err); });
+        }
+
+        function renderDettaglioSerieTvTMDB_(dettaglio) {
+            ultimoDettaglioSerieTvTMDB = dettaglio;
+            const wrapper = document.getElementById('serieTvCandidatiWrapper');
+            const stagioniWrap = document.getElementById('serieTvStagioniWrapper');
+
+            const safeImg = (dettaglio.immagine || '').replace(/'/g, "\\'");
+            const tramaAnteprima = dettaglio.trama && dettaglio.trama.length > 160
+                ? dettaglio.trama.substring(0, 160) + '…'
+                : (dettaglio.trama || '—');
+
+            wrapper.innerHTML = `
+                <div style="display:flex; gap:12px; margin-top:10px; padding:10px; border:1px solid var(--border-color); border-radius:8px; background: rgba(255,255,255,0.03);">
+                    ${safeImg ? `<img src="${safeImg}" style="width:90px; border-radius:6px; object-fit:cover;">` : ''}
+                    <div style="flex:1; font-size:13px; line-height:1.5;">
+                        <div style="font-weight:700; font-size:14px;">${dettaglio.titolo || ''}</div>
+                        <div style="color:var(--text-muted);">Stato: ${dettaglio.stato || 'In corso'}</div>
+                        ${dettaglio.generi ? `<div>🏷️ ${dettaglio.generi}</div>` : ''}
+                        <div style="font-style:italic; color:var(--text-muted); margin-top:4px;">${tramaAnteprima}</div>
+                        <button type="button" class="btn btn-serietv" style="margin-top:8px;" onclick="confermaDatiSerieTvTMDB_()">✅ Usa questi dati</button>
+                    </div>
+                </div>
+            `;
+
+            const stagioni = dettaglio.stagioni || [];
+            if (stagioni.length === 0) {
+                stagioniWrap.innerHTML = `<p style="color:var(--text-muted); font-size:13px;">TMDB non elenca stagioni per questa serie: inserisci il numero a mano.</p>`;
+                return;
+            }
+
+            let checkHtml = '<div style="margin-top:10px; padding:10px; border:1px dashed var(--border-color); border-radius:8px;">'
+                + '<div style="font-weight:700; font-size:13px; margin-bottom:6px;">📡 Stagioni trovate su TMDB (spunta quelle da caricare)</div>';
+            stagioni.forEach(function(s) {
+                checkHtml += `<label style="display:flex; align-items:center; gap:8px; font-size:13px; padding:3px 0;">`
+                    + `<input type="checkbox" class="serietv-tmdb-stagione-cb" data-numero="${s.numero}" data-episodi="${s.episodi || 0}" checked>`
+                    + `<span>Stagione ${s.numero} — ${s.episodi || 0} episodi${s.anno ? ' (' + s.anno + ')' : ''}</span>`
+                    + `</label>`;
+            });
+            checkHtml += '<button type="button" class="btn btn-serietv" style="margin-top:8px;" onclick="applicaStagioniSerieTvTMDB_()">✅ Applica stagioni spuntate</button></div>';
+            stagioniWrap.innerHTML = checkHtml;
+        }
+
+        function renderErroreSerieTvTMDB_(err) {
+            const wrapper = document.getElementById('serieTvCandidatiWrapper');
+            wrapper.innerHTML = `<p style="color:#f87171;">❌ ${((err && err.message) ? err.message : err)}</p>`;
+        }
+
+        // Scrive titolo/stato/immagine/generi/trama nel modale (le stagioni
+        // restano da applicare a parte, come le relazioni AniList).
+        function confermaDatiSerieTvTMDB_() {
+            const dettaglio = ultimoDettaglioSerieTvTMDB;
+            if (!dettaglio) return;
+            document.getElementById('inpTitoloSerieTv').value = dettaglio.titolo || '';
+            const statoSel = document.getElementById('inpStatoSerieTv');
+            if (['In corso', 'Concluso', 'In arrivo'].includes(dettaglio.stato)) statoSel.value = dettaglio.stato;
+            document.getElementById('inpImmagineSerieTv').value = dettaglio.immagine || '';
+            generiSelezionatiSerieTv = dettaglio.generi || '';
+            document.getElementById('inpGeneriSerieTv').value = generiSelezionatiSerieTv;
+            sinossiPendenteSerieTv = dettaglio.trama || null;
+            tmdbIdSelezionatoSerieTv = dettaglio.id || null;
+            showToast('Dati TMDB importati: ora spunta le stagioni e premi Applica', 'success');
+        }
+
+        function applicaStagioniSerieTvTMDB_() {
+            const checked = Array.from(document.querySelectorAll('.serietv-tmdb-stagione-cb:checked'));
+            if (checked.length === 0) {
+                showToast('❌ Spunta almeno una stagione.', 'error');
+                return;
+            }
+            const mappa = {};
+            checked.forEach(function(cb) {
+                mappa[parseInt(cb.getAttribute('data-numero')) || 0] = parseInt(cb.getAttribute('data-episodi')) || 0;
+            });
+            episodiPerStagionePendenteSerieTv = mappa;
+            document.getElementById('inpStagioniTotaliSerieTv').value = checked.length;
+            showToast(checked.length + ' stagioni pronte al salvataggio', 'success');
+        }
+
+        // 🔄 Rilegge la serie da TMDB e aggiunge solo le stagioni nuove
+        // (numero maggiore del massimo già salvato). Non cancella e non
+        // sovrascrive mai nulla: le correzioni restano manuali.
+        window.aggiornaStagioniSerieTvDaTMDB = function(titolo) {
+            const item = serieTvList.find(s => s.titolo === titolo);
+            if (!item) return;
+            if (!item.tmdbId) {
+                showToast('❌ Nessun collegamento TMDB per questa serie (aggiunta a mano).', 'error');
+                return;
+            }
+
+            showToast('⏳ Rileggo la serie da TMDB...', 'success');
+            getDettaglioSerieTvTMDBSB_(item.tmdbId)
+                .then(function(dettaglio) {
+                    const stagioniTMDB = dettaglio.stagioni || [];
+                    if (stagioniTMDB.length === 0) {
+                        showToast('TMDB non elenca stagioni per questa serie.', 'error');
+                        return;
+                    }
+                    const maxSalvata = parseInt(item.stagioniTotali) || 0;
+                    const nuove = stagioniTMDB.filter(s => (parseInt(s.numero) || 0) > maxSalvata);
+                    if (nuove.length === 0) {
+                        showToast('✅ Serie già aggiornata: nessuna nuova stagione su TMDB.', 'success');
+                        return;
+                    }
+                    const mappa = {};
+                    nuove.forEach(s => { mappa[parseInt(s.numero) || 0] = parseInt(s.episodi) || 0; });
+                    const maxNuovo = Math.max.apply(null, stagioniTMDB.map(s => parseInt(s.numero) || 0));
+
+                    const dati = {
+                        titolo: item.titolo, stato: item.stato, note: (item.note || '').replace(/<[^>]*>/g, ''),
+                        stagioniTotali: Math.max(maxSalvata, maxNuovo),
+                        generi: item.generi || '', immagine: item.immagine || '',
+                        tmdbId: item.tmdbId, episodiPerStagione: mappa, segnaComeVista: false
+                    };
+                    return updateSerieTvSB_(item.titolo, dati).then(function(data) {
+                        serieTvList = data || [];
+                        return getTuttiEpisodiSerieTvSB_();
+                    }).then(function(epData) {
+                        episodiSerieTvList = epData || [];
+                        renderListSerieTv();
+                        return registraLogSB_(item.titolo, 'SERIE_TV', 'AVANZAMENTO', 'N/D', 'Nuove stagioni da TMDB: ' + nuove.map(s => s.numero).join(', '));
+                    }).then(function() {
+                        showToast('📡 Aggiunte ' + nuove.length + ' nuove stagioni da TMDB', 'success');
+                    });
+                })
+                .catch(function(err) {
+                    console.error('Errore aggiornamento TMDB serie TV:', err);
+                    showToast('❌ Errore aggiornamento da TMDB: ' + (err && err.message ? err.message : err), 'error');
+                });
+        };
+
+        function resetFiltriSerieTv() {
+            currentSearchSerieTv = '';
+            currentFilterStatoSerieTv = 'all';
+            currentFilterVisioneSerieTv = 'all';
+            currentFavFilterSerieTv = 'all';
+            selectedGenresSerieTv = [];
+
+            document.getElementById('searchInpSerieTv').value = '';
+            document.getElementById('sortSelSerieTv').value = 'title-asc';
+
+            ['filterGroupStatoSerieTv', 'filterGroupVisioneSerieTv', 'filterGroupPreferitiSerieTv'].forEach(function(groupId) {
+                const group = document.getElementById(groupId);
+                if (!group) return;
+                group.querySelectorAll('.filter-btn').forEach(function(btn) { btn.classList.remove('active'); });
+                const first = group.querySelector('.filter-btn');
+                if (first) first.classList.add('active');
+            });
+
+            document.querySelectorAll('.serietv-filter-genre-cb:checked').forEach(function(cb) { cb.checked = false; });
+            const badgeSerieTv = document.getElementById('badgeGenresSerieTvCount');
+            if (badgeSerieTv) badgeSerieTv.innerText = '0';
+
+            renderListSerieTv();
+            showToast('Filtri Serie TV azzerati', 'success');
+        }
+
+        // Listener Real-Time per input e bottoni categoria Serie TV
+        document.getElementById('searchInpSerieTv').oninput = function(e) { currentSearchSerieTv = e.target.value; renderListSerieTv(); };
+        document.getElementById('sortSelSerieTv').onchange = renderListSerieTv;
+        document.getElementById('btnResetFiltriSerieTv').onclick = resetFiltriSerieTv;
+
+        document.querySelectorAll('#filterGroupStatoSerieTv .filter-btn').forEach(btn => {
+            btn.onclick = function(e) {
+                document.querySelector('#filterGroupStatoSerieTv .filter-btn.active').classList.remove('active');
+                e.target.classList.add('active');
+                currentFilterStatoSerieTv = e.target.getAttribute('data-status');
+                renderListSerieTv();
+            };
+        });
+        document.querySelectorAll('#filterGroupVisioneSerieTv .filter-btn').forEach(btn => {
+            btn.onclick = function(e) {
+                document.querySelector('#filterGroupVisioneSerieTv .filter-btn.active').classList.remove('active');
+                e.target.classList.add('active');
+                currentFilterVisioneSerieTv = e.target.getAttribute('data-vision');
+                renderListSerieTv();
+            };
+        });
+        document.querySelectorAll('#filterGroupPreferitiSerieTv .filter-btn').forEach(btn => {
+            btn.onclick = function(e) {
+                document.querySelector('#filterGroupPreferitiSerieTv .filter-btn.active').classList.remove('active');
+                e.target.classList.add('active');
+                currentFavFilterSerieTv = e.target.getAttribute('data-fav');
+                renderListSerieTv();
+            };
+        });
+
+        // Finestra fluttuante generi Serie TV (stesso schema del Cinema)
+        const btnToggleGenresSerieTvEl = document.getElementById('btnToggleGenresSerieTv');
+        if (btnToggleGenresSerieTvEl) {
+            btnToggleGenresSerieTvEl.onclick = function(e) {
+                e.stopPropagation();
+                document.getElementById('dropdownGenresSerieTv').classList.toggle('active');
+            };
+        }
+        const dropdownGenresSerieTvEl = document.getElementById('dropdownGenresSerieTv');
+        if (dropdownGenresSerieTvEl) {
+            dropdownGenresSerieTvEl.addEventListener('change', function() {
+                selectedGenresSerieTv = Array.from(document.querySelectorAll('.serietv-filter-genre-cb:checked')).map(cb => cb.value);
+                document.getElementById('badgeGenresSerieTvCount').innerText = selectedGenresSerieTv.length;
+                renderListSerieTv();
+            });
+        }
+
+        // ---- FINE SERIE TV ----
+
 
         function calcolaColoreLetturaManga_(volumiTotali, volumiLetti, stato) {
             const totali = parseInt(volumiTotali) || 0;
@@ -6268,8 +7501,8 @@ function togglePinManga(titolo, btn, event) {
 // ==========================================
 
 async function getSinossiSB_(titolo, tipo) {
-    const tabella = (tipo === 'anime') ? 'sinossi_anime' : 'sinossi_manga';
-    const colonnaTitolo = (tipo === 'anime') ? 'anime_titolo' : 'manga_titolo';
+    const tabella = (tipo === 'anime') ? 'sinossi_anime' : ((tipo === 'serietv') ? 'sinossi_serie_tv' : 'sinossi_manga');
+    const colonnaTitolo = (tipo === 'anime') ? 'anime_titolo' : ((tipo === 'serietv') ? 'serie_titolo' : 'manga_titolo');
     const messaggioErrore = "Nessuna informazione su questa opera!";
 
     const { data, error } = await supabaseClient.from(tabella).select('sinossi').eq(colonnaTitolo, String(titolo).trim());
@@ -6281,8 +7514,8 @@ async function getSinossiSB_(titolo, tipo) {
 }
 
 async function impostaSinossiSB_(titolo, tipo, testo) {
-    const tabella = (tipo === 'anime') ? 'sinossi_anime' : 'sinossi_manga';
-    const colonnaTitolo = (tipo === 'anime') ? 'anime_titolo' : 'manga_titolo';
+    const tabella = (tipo === 'anime') ? 'sinossi_anime' : ((tipo === 'serietv') ? 'sinossi_serie_tv' : 'sinossi_manga');
+    const colonnaTitolo = (tipo === 'anime') ? 'anime_titolo' : ((tipo === 'serietv') ? 'serie_titolo' : 'manga_titolo');
     const titoloTrim = String(titolo).trim();
 
     const { data, error: errSel } = await supabaseClient.from(tabella).select(colonnaTitolo).eq(colonnaTitolo, titoloTrim);
@@ -6350,7 +7583,7 @@ function mostraSinossi(titolo, tipo) {
     
     // Configurazione testi iniziali (caricamento asincrono)
     document.getElementById('sinossiTitle').innerText = titolo;
-    const colorLoading = tipo === 'anime' ? 'var(--primary, #7c6cff)' : 'var(--accent, #ff5da2)';
+    const colorLoading = (tipo === 'anime' || tipo === 'serietv') ? 'var(--primary, #7c6cff)' : 'var(--accent, #ff5da2)';
     document.getElementById('sinossiBody').innerHTML = `<span style="color: ${colorLoading}; font-weight: 600; display: inline-block; animation: pulse 1.5s infinite;">⏳ Recupero della sinossi...</span>`;
     
     // Mostra l'overlay grafico
@@ -7122,8 +8355,9 @@ function renderLogAttivita(logs, filtriAttivi) {
         const tipoMedia = String(log.tipoMedia || '').toUpperCase();
         const isAnime = (tipoMedia === 'ANIME');
         const isCinema = (tipoMedia === 'CINEMA');
-        const badgeClass = isAnime ? 'log-badge-anime' : (isCinema ? 'log-badge-cinema' : 'log-badge-manga');
-        const badgeLabel = isAnime ? 'ANIME' : (isCinema ? 'CINEMA' : 'MANGA');
+        const isSerieTv = (tipoMedia === 'SERIE_TV');
+        const badgeClass = isSerieTv ? 'log-badge-serietv' : (isAnime ? 'log-badge-anime' : (isCinema ? 'log-badge-cinema' : 'log-badge-manga'));
+        const badgeLabel = isSerieTv ? 'SERIE TV' : (isAnime ? 'ANIME' : (isCinema ? 'CINEMA' : 'MANGA'));
 
         const titoloHtml = '<span class="log-title-highlight">' + escapeHtmlLog(log.idTitolo || 'Titolo sconosciuto') + '</span>';
         const valoreNuovoHtml = '<span class="log-value-highlight">' + escapeHtmlLog(log.valoreNuovo) + '</span>';
@@ -7139,7 +8373,7 @@ function renderLogAttivita(logs, filtriAttivi) {
                 if (isAnime) {
                     frase = '📺 Avanzamento su ' + titoloHtml + ': ora a ' + valoreNuovoHtml + '!';
                 } else {
-                    frase = '📚 Letto il volume ' + valoreNuovoHtml + ' di ' + titoloHtml + '!';
+                    frase = isSerieTv ? '📡 Avanzamento su ' + titoloHtml + ': ora a ' + valoreNuovoHtml + '!' : '📚 Letto il volume ' + valoreNuovoHtml + ' di ' + titoloHtml + '!';
                 }
                 break;
             case 'COMPLETAMENTO':
@@ -7388,17 +8622,21 @@ function caricaWidgetInCorso() {
     const emptyEl = document.getElementById('homeProgressEmpty');
     if (emptyEl) emptyEl.style.display = 'none';
 
-    // Le tre chiamate (anime, manga, episodi) sono indipendenti tra loro:
+    // Le cinque chiamate (anime, manga, episodi anime, serie TV, episodi serie TV) sono indipendenti:
     // partono tutte e tre insieme e si aspetta solo la più lenta delle tre.
     Promise.all([
         getAnimeDataSB_(),
         getMangaDataSB_(),
-        getTuttiEpisodiAnimeSB_()
+        getTuttiEpisodiAnimeSB_(),
+        getSerieTvDataSB_(),
+        getTuttiEpisodiSerieTvSB_()
     ])
         .then(function(risultati) {
             animeList = risultati[0] || [];
             mangaList = risultati[1] || [];
             episodiAnimeList = risultati[2] || [];
+            serieTvList = risultati[3] || [];
+            episodiSerieTvList = risultati[4] || [];
             if (loadingEl) loadingEl.style.display = 'none';
             renderWidgetInCorso();
         })
@@ -7429,7 +8667,11 @@ function renderWidgetInCorso() {
         .filter(item => item && item.coloreLettura === 'giallo')
         .map(item => ({ tipo: 'manga', item: item }));
 
-    const combinati = animeInVisione.concat(mangaInLettura).sort((a, b) => {
+    const serieTvInVisione = (typeof serieTvList !== 'undefined' ? serieTvList : [])
+        .filter(item => item && item.coloreVisione === 'celeste')
+        .map(item => ({ tipo: 'serietv', item: item }));
+
+    const combinati = animeInVisione.concat(serieTvInVisione, mangaInLettura).sort((a, b) => {
         const tA = (a.item.titolo || '').toLowerCase();
         const tB = (b.item.titolo || '').toLowerCase();
         return tA.localeCompare(tB);
@@ -7451,6 +8693,7 @@ function renderWidgetInCorso() {
 // Costruisce la singola card cliccabile (banner + titolo + avanzamento)
 function creaProgressCard(tipo, item, idx) {
     const isAnime = (tipo === 'anime');
+    const isSerieTv = (tipo === 'serietv');
     const card = document.createElement('div');
     card.className = 'progress-card';
     card.style.animationDelay = (idx * 0.04) + 's';
@@ -7479,9 +8722,14 @@ function creaProgressCard(tipo, item, idx) {
         const vTot = parseInt(item.volumi) || 0;
         progressoHTML = `📖 ${vLetti}/${vTot} volumi`;
     }
+    if (isSerieTv) {
+        const sVis = parseInt(item.stagioniViste) || 0;
+        const sTot = parseInt(item.stagioniTotali) || 0;
+        progressoHTML = `🎞️ ${sVis}/${sTot} stagioni`;
+    }
 
-    const badgeClass = isAnime ? 'log-badge-anime' : 'log-badge-manga';
-    const badgeLabel = isAnime ? 'ANIME' : (item.tipologia || 'Manga');
+    const badgeClass = isSerieTv ? 'log-badge-serietv' : (isAnime ? 'log-badge-anime' : 'log-badge-manga');
+    const badgeLabel = isSerieTv ? 'SERIE TV' : (isAnime ? 'ANIME' : (item.tipologia || 'Manga'));
 
     card.innerHTML = `
         ${bannerHTML}
@@ -7494,7 +8742,9 @@ function creaProgressCard(tipo, item, idx) {
 
     // Click sulla card: apre l'overlay di avanzamento corretto in base al tipo
     card.onclick = function() {
-        if (isAnime) {
+        if (isSerieTv) {
+            apriGestioneStagioniSerieTv(item.titolo, true);
+        } else if (isAnime) {
             apriGestioneEpisodi(item.titolo, true); // Stesso overlay aperto dall'icona 📺 nella vista Anime, qui con la copertina di fianco
         } else {
             apriAvanzamentoVolumiManga(item.titolo); // Nuovo overlay compatto per i volumi letti
@@ -7680,8 +8930,8 @@ let ricercaGlobaleRisultatiFlat = [];
 let ricercaGlobaleAttivo = -1;
 let ricercaGlobaleTimer = null;
 
-const RICERCA_GLOBALE_ICONE = { anime: '📺', manga: '📚', cinema: '🎬' };
-const RICERCA_GLOBALE_LABEL = { anime: 'Anime', manga: 'Manga', cinema: 'Cinema' };
+const RICERCA_GLOBALE_ICONE = { anime: '📺', manga: '📚', cinema: '🎬', serietv: '📡' };
+const RICERCA_GLOBALE_LABEL = { anime: 'Anime', manga: 'Manga', cinema: 'Cinema', serietv: 'Serie TV' };
 
 // Toglie gli accenti e uniforma il case, così "citta" trova "Città" e viceversa.
 function normalizzaTestoRicerca(str) {
@@ -7692,7 +8942,7 @@ function normalizzaTestoRicerca(str) {
 }
 
 async function getIndiceRicercaSB_() {
-    const [animeData, mangaData, cinemaData] = await Promise.all([
+    const [animeData, mangaData, cinemaData, serieTvData] = await Promise.all([
         getAnimeDataSB_(), getMangaDataSB_(), getCinemaDataSB_()
     ]);
     const risultati = [];
@@ -7714,6 +8964,12 @@ async function getIndiceRicercaSB_() {
             titolo: c.titolo, tipo: 'cinema', dataUscita: c.dataUscita, dataVisione: c.dataVisione,
             visione: c.visione, immagine: c.immagine, streaming: c.streaming
         });
+    serieTvData.forEach(function(s) {
+        risultati.push({
+            titolo: s.titolo, tipo: 'serietv', stato: s.stato, coloreVisione: s.coloreVisione,
+            stagioniTotali: s.stagioniTotali, stagioniViste: s.stagioniViste, immagine: s.immagine
+        });
+    });
     });
     return risultati;
 }
@@ -7761,7 +9017,7 @@ function eseguiRicercaGlobale(query) {
     if (!q) { nascondiRisultatiRicercaGlobale(); return; }
     if (!ricercaGlobaleIndice) return;
 
-    const gruppi = { anime: [], manga: [], cinema: [] };
+    const gruppi = { anime: [], manga: [], cinema: [], serietv: [] };
     ricercaGlobaleIndice.forEach(function (item) {
         if (normalizzaTestoRicerca(item.titolo).includes(q)) {
             gruppi[item.tipo].push(item);
@@ -7790,6 +9046,17 @@ function sottotitoloRisultatoRicercaGlobale(item) {
         const avanzamento = parti.length > 0 ? ' (' + parti.join(', ') + ')' : '';
 
         return statoOpera + ' · ' + escapeHtmlLog(labelVisione) + avanzamento + voto;
+    }
+    if (item.tipo === 'serietv') {
+        const statoOpera = escapeHtmlLog(item.stato || 'In corso');
+        const labelVisione = COLORE_VISIONE_LABELS[item.coloreVisione] || 
+''
+;
+        if (item.coloreVisione === 'bianco' || item.coloreVisione === 'verde') {
+            return statoOpera + ' · ' + escapeHtmlLog(labelVisione);
+        }
+        const avanzamento = (item.stagioniTotali > 0) ? ' (' + item.stagioniViste + '/' + item.stagioniTotali + ' stag.)' : '';
+        return statoOpera + ' · ' + escapeHtmlLog(labelVisione) + avanzamento;
     }
     if (item.tipo === 'manga') {
         const vol = item.volumi ? ' · vol. ' + item.volumiLetti + '/' + item.volumi : '';
@@ -7820,7 +9087,7 @@ function renderRisultatiRicercaGlobale(gruppi) {
     ricercaGlobaleRisultatiFlat = [];
     ricercaGlobaleAttivo = -1;
 
-    const totale = gruppi.anime.length + gruppi.manga.length + gruppi.cinema.length;
+    const totale = gruppi.anime.length + gruppi.manga.length + gruppi.cinema.length + gruppi.serietv.length;
     if (totale === 0) {
         box.innerHTML = '<div class="global-search-empty">Nessun titolo trovato per "' + escapeHtmlLog(query) + '"</div>';
         box.style.display = 'block';
@@ -7828,7 +9095,7 @@ function renderRisultatiRicercaGlobale(gruppi) {
     }
 
     let html = '';
-    ['anime', 'manga', 'cinema'].forEach(function (tipo) {
+    ['anime', 'serietv', 'manga', 'cinema'].forEach(function (tipo) {
         const lista = gruppi[tipo].slice(0, 6);
         if (lista.length === 0) return;
 
@@ -7862,7 +9129,7 @@ function renderRisultatiRicercaGlobale(gruppi) {
 // Anime/Manga, scheda rapida dedicata per Cinema (che non ha una sinossi).
 function apriRisultatoRicercaGlobale(tipo, titolo) {
     nascondiRisultatiRicercaGlobale();
-    if (tipo === 'anime' || tipo === 'manga') {
+    if (tipo === 'anime' || tipo === 'manga' || tipo === 'serietv') {
         mostraSinossi(titolo, tipo);
     } else if (tipo === 'cinema') {
         mostraDettaglioCinemaRicercaGlobale(titolo);
@@ -7974,89 +9241,20 @@ function aggiornaEvidenziazioneAttivaRicercaGlobale() {
 })();
 
 // ==========================================================================
-//   📊 STATISTICHE (VIEW "STATS")
+//   STATISTICHE - vista rimossa (sezione superflua): restano qui solo i
+//   pezzi riusati altrove: toggleStatsWidget (widget Cinema), la mappa
+//   COLORE_VISIONE_LABELS (ricerca globale) e cssVar.
 // ==========================================================================
-// I dati arrivano già aggregati da getStatsData() lato server (un'unica
-// lettura del Tab_Log). Qui ci occupiamo solo di trasformarli in grafici
-// Chart.js, riusando la palette di colori del tema "Aurora".
-
-let statsData = null;
-let statsCharts = {}; // canvasId -> istanza Chart, per poter distruggere/ricreare al refresh
 
 // Legge una CSS custom property del tema (es. '--primary') già risolta a runtime
 function cssVar(nome) {
     return getComputedStyle(document.documentElement).getPropertyValue(nome).trim();
 }
 
-const STATS_PALETTE = ['#7c6cff', '#ff5da2', '#38bdf8', '#34d399', '#fbbf24', '#f87171',
-                        '#a78bfa', '#fb7185', '#22d3ee', '#4ade80', '#c084fc', '#facc15'];
-
-const COLORE_VISIONE_MAP = { bianco: '#8890ab', celeste: '#38bdf8', giallo: '#fbbf24', verde: '#34d399' };
 const COLORE_VISIONE_LABELS = { bianco: 'Da iniziare', celeste: 'In visione', giallo: 'In pari', verde: 'Completato' };
 
-const MESI_IT = ['Gen', 'Feb', 'Mar', 'Apr', 'Mag', 'Giu', 'Lug', 'Ago', 'Set', 'Ott', 'Nov', 'Dic'];
-function formattaMeseIt(chiaveYyyyMm) {
-    const parti = chiaveYyyyMm.split('-');
-    const mese = parseInt(parti[1], 10);
-    return MESI_IT[mese - 1] + ' \'' + parti[0].slice(2);
-}
-
-// Plugin Chart.js custom: disegna un testo al centro di un doughnut (usato per i "gauge")
-const statsCenterTextPlugin = {
-    id: 'statsCenterTextPlugin',
-    afterDraw: function (chart) {
-        if (!chart.options.centerText) return;
-        const ctx = chart.ctx;
-        const area = chart.chartArea;
-        ctx.save();
-        ctx.font = "700 22px 'Inter', sans-serif";
-        ctx.fillStyle = chart.options.centerTextColor || cssVar('--text');
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'middle';
-        ctx.fillText(chart.options.centerText, (area.left + area.right) / 2, (area.top + area.bottom) / 2);
-        ctx.restore();
-    }
-};
-
-let statsChartDefaultsPronti = false;
-function assicuraDefaultsChartJs() {
-    if (statsChartDefaultsPronti || typeof Chart === 'undefined') return;
-    Chart.register(statsCenterTextPlugin);
-    Chart.defaults.color = cssVar('--text-muted');
-    Chart.defaults.font.family = "'Inter', 'Segoe UI', system-ui, -apple-system, sans-serif";
-    Chart.defaults.borderColor = cssVar('--border-color');
-    statsChartDefaultsPronti = true;
-}
-
-// Crea (o ricrea, distruggendo l'istanza precedente) un Chart.js su un canvas
-function upsertChart(canvasId, config) {
-    const canvas = document.getElementById(canvasId);
-    if (!canvas) return null;
-    if (statsCharts[canvasId]) statsCharts[canvasId].destroy();
-    statsCharts[canvasId] = new Chart(canvas, config);
-    return statsCharts[canvasId];
-}
-
-function statsTooltipStyle() {
-    return {
-        backgroundColor: cssVar('--surface-solid'),
-        titleColor: cssVar('--text'),
-        bodyColor: cssVar('--text-muted'),
-        borderColor: cssVar('--border-color'),
-        borderWidth: 1,
-        padding: 10
-    };
-}
-
-function statsLegendStyle() {
-    return { position: 'bottom', labels: { color: cssVar('--text-muted'), boxWidth: 11, padding: 12, font: { size: 11 } } };
-}
-
-// Apre/chiude uno dei 4 widget a tendina della view Stats, animando l'altezza
+// Apre/chiude un widget a tendina (Home, Cinema), animando l'altezza
 // reale del contenuto (stessa tecnica del widget "Log di sistema" in Home).
-// I grafici vengono creati tutti insieme al caricamento dei dati, quindi
-// quelli dentro un widget ancora chiuso nascono con dimensioni a zero: alla
-// riapertura vanno "risvegliati" con resize(), a transizione ultimata.
 function toggleStatsWidget(widgetId) {
     const widget = document.getElementById(widgetId);
     if (!widget) return;
@@ -8072,10 +9270,7 @@ function toggleStatsWidget(widgetId) {
 
         setTimeout(function () {
             body.style.maxHeight = 'none'; // libera l'altezza per eventuali ridimensionamenti futuri
-            widget.querySelectorAll('canvas').forEach(function (canvas) {
-                const chart = statsCharts[canvas.id];
-                if (chart) chart.resize();
-            });
+            void widget.offsetHeight; // ricalcolo layout (la vista Stats con i grafici e' rimossa)
         }, 380);
     } else {
         body.style.maxHeight = body.scrollHeight + 'px'; // punto di partenza esplicito per poter animare verso 0
@@ -8084,702 +9279,7 @@ function toggleStatsWidget(widgetId) {
     }
 }
 
-// ==========================================
-//   FASE 11 — GRUPPO STATISTICHE (Supabase diretto)
-// ==========================================
-
-async function _leggiTabLogCompletoSB_() {
-    const { data, error } = await supabaseClient.from('log_attivita').select('timestamp,id_titolo,tipo_media,tipo_evento');
-    if (error) throw error;
-    const risultato = [];
-    (data || []).forEach(function(r) {
-        const ts = new Date(r.timestamp);
-        if (isNaN(ts.getTime())) return;
-        risultato.push({
-            timestamp: ts, idTitolo: String(r.id_titolo || ''),
-            tipoMedia: String(r.tipo_media || '').toUpperCase(), tipoEvento: String(r.tipo_evento || '').toUpperCase()
-        });
-    });
-    return risultato;
-}
-
-function _round1_(n) { return Math.round(n * 10) / 10; }
-
-function _parseGeneriString_(str) {
-    if (!str) return [];
-    return String(str).split(',').map(function (g) { return g.trim(); }).filter(Boolean);
-}
-
-function _contaGeneri_(items, filterFn) {
-    const conteggio = {};
-    items.forEach(function (item) {
-        if (filterFn && !filterFn(item)) return;
-        _parseGeneriString_(item.generi).forEach(function (g) {
-            conteggio[g] = (conteggio[g] || 0) + 1;
-        });
-    });
-    return conteggio;
-}
-
-function _topN_(conteggioObj, n) {
-    return Object.keys(conteggioObj)
-        .map(function (k) { return { genere: k, conteggio: conteggioObj[k] }; })
-        .sort(function (a, b) { return b.conteggio - a.conteggio; })
-        .slice(0, n);
-}
-
-function _diffGiorniISO_(isoInizio, isoFine) {
-    if (!isoInizio || !isoFine) return null;
-    const d1 = new Date(isoInizio);
-    const d2 = new Date(isoFine);
-    if (isNaN(d1.getTime()) || isNaN(d2.getTime())) return null;
-    return Math.round((d2 - d1) / 86400000);
-}
-
-// Formattazione mese/giorno in ora locale del browser (equivalente diretto
-// di Utilities.formatDate lato Apps Script, che usava il fuso dello script).
-function _formattaMeseLocale_(d) {
-    return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0');
-}
-function _formattaGiornoLocale_(d) {
-    return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
-}
-
-function _raggruppaPerMese_(items, getDataFn) {
-    const conteggio = {};
-    items.forEach(function (item) {
-        const iso = getDataFn(item);
-        if (!iso) return;
-        const d = new Date(iso);
-        if (isNaN(d.getTime())) return;
-        const chiave = _formattaMeseLocale_(d);
-        conteggio[chiave] = (conteggio[chiave] || 0) + 1;
-    });
-    return Object.keys(conteggio).sort().map(function (k) {
-        return { mese: k, conteggio: conteggio[k] };
-    });
-}
-
-// ==========================================
-//   Sezione ANIME
-// ==========================================
-function _statsAnime_(anime) {
-    const distribuzioneStati = {};
-    anime.forEach(function (a) {
-        const s = a.stato || 'In corso';
-        distribuzioneStati[s] = (distribuzioneStati[s] || 0) + 1;
-    });
-
-    const distribuzioneColoreVisione = { bianco: 0, celeste: 0, giallo: 0, verde: 0 };
-    anime.forEach(function (a) {
-        const c = a.coloreVisione || 'bianco';
-        if (distribuzioneColoreVisione.hasOwnProperty(c)) distribuzioneColoreVisione[c]++;
-    });
-
-    const istogrammaVoti = new Array(11).fill(0);
-    let sommaVoti = 0, numVoti = 0;
-    anime.forEach(function (a) {
-        const v = parseFloat(String(a.valutazione).replace(',', '.'));
-        if (!isNaN(v) && v >= 0 && v <= 10) {
-            const bucket = Math.min(10, Math.max(0, Math.round(v)));
-            istogrammaVoti[bucket]++;
-            sommaVoti += v;
-            numVoti++;
-        }
-    });
-    const votoMedio = numVoti > 0 ? _round1_(sommaVoti / numVoti) : null;
-
-    const sommaPerGenere = {}, countPerGenere = {};
-    anime.forEach(function (a) {
-        const v = parseFloat(String(a.valutazione).replace(',', '.'));
-        if (isNaN(v)) return;
-        _parseGeneriString_(a.generi).forEach(function (g) {
-            sommaPerGenere[g] = (sommaPerGenere[g] || 0) + v;
-            countPerGenere[g] = (countPerGenere[g] || 0) + 1;
-        });
-    });
-    const votoPerGenere = Object.keys(sommaPerGenere).map(function (g) {
-        return { genere: g, media: _round1_(sommaPerGenere[g] / countPerGenere[g]), conteggio: countPerGenere[g] };
-    }).sort(function (a, b) { return b.media - a.media; });
-
-    const topGeneri = _topN_(_contaGeneri_(anime), 10);
-
-    let stagioniViste = 0, stagioniTotali = 0, filmVisti = 0, filmTotali = 0;
-    anime.forEach(function (a) {
-        stagioniViste += a.stagioniViste || 0;
-        stagioniTotali += a.stagioniTotali || 0;
-        filmVisti += a.filmVisti || 0;
-        filmTotali += a.filmTotali || 0;
-    });
-    const completamento = {
-        stagioni: stagioniTotali > 0 ? _round1_(100 * stagioniViste / stagioniTotali) : 0,
-        film: filmTotali > 0 ? _round1_(100 * filmVisti / filmTotali) : 0,
-        complessivo: (stagioniTotali + filmTotali) > 0
-            ? _round1_(100 * (stagioniViste + filmVisti) / (stagioniTotali + filmTotali)) : 0
-    };
-
-    const preferiti = anime.filter(function (a) { return a.preferito; });
-    const priorita = anime.filter(function (a) { return a.priorita; });
-
-    return {
-        totale: anime.length,
-        distribuzioneStati: distribuzioneStati,
-        distribuzioneColoreVisione: distribuzioneColoreVisione,
-        istogrammaVoti: istogrammaVoti,
-        votoMedio: votoMedio,
-        numeroVoti: numVoti,
-        votoPerGenere: votoPerGenere,
-        topGeneri: topGeneri,
-        completamento: completamento,
-        preferiti: { count: preferiti.length, topGeneri: _topN_(_contaGeneri_(preferiti), 8) },
-        priorita: { count: priorita.length }
-    };
-}
-
-// ==========================================
-//   Sezione MANGA
-// ==========================================
-function _statsManga_(manga) {
-    const distribuzioneStati = {};
-    manga.forEach(function (m) {
-        const s = m.stato || 'In corso';
-        distribuzioneStati[s] = (distribuzioneStati[s] || 0) + 1;
-    });
-
-    const acquistatiSi = manga.filter(function (m) { return m.acquistato === 'Sì'; });
-    const acquistatiNo = manga.filter(function (m) { return m.acquistato !== 'Sì'; });
-    const volumiPosseduti = acquistatiSi.reduce(function (sum, m) { return sum + (parseInt(m.volumi) || 0); }, 0);
-
-    const volumiLettiTotali = manga.reduce(function (sum, m) { return sum + (m.volumiLetti || 0); }, 0);
-    const volumiTotaliTracciati = manga.reduce(function (sum, m) { return sum + (parseInt(m.volumi) || 0); }, 0);
-    const pctLetturaGlobale = volumiTotaliTracciati > 0 ? _round1_(100 * volumiLettiTotali / volumiTotaliTracciati) : 0;
-
-    const inCorso = manga.filter(function (m) {
-        return String(m.stato || '').trim().toLowerCase() === 'in corso' && (parseInt(m.volumi) || 0) > 0;
-    });
-    const piuIndietro = inCorso.map(function (m) {
-        const tot = parseInt(m.volumi) || 0;
-        const letti = m.volumiLetti || 0;
-        return { titolo: m.titolo, percentuale: tot > 0 ? _round1_(100 * letti / tot) : 0, letti: letti, totali: tot };
-    }).sort(function (a, b) { return a.percentuale - b.percentuale; }).slice(0, 5);
-
-    const topGeneri = _topN_(_contaGeneri_(manga), 10);
-
-    const preferiti = manga.filter(function (m) { return m.preferito; });
-    const priorita = manga.filter(function (m) { return m.priorita; });
-
-    return {
-        totale: manga.length,
-        distribuzioneStati: distribuzioneStati,
-        acquistato: { si: acquistatiSi.length, no: acquistatiNo.length, volumiPosseduti: volumiPosseduti },
-        percentualeLettura: {
-            media: pctLetturaGlobale, volumiLetti: volumiLettiTotali,
-            volumiTotali: volumiTotaliTracciati, piuIndietro: piuIndietro
-        },
-        topGeneri: topGeneri,
-        preferiti: { count: preferiti.length, topGeneri: _topN_(_contaGeneri_(preferiti), 8) },
-        priorita: { count: priorita.length }
-    };
-}
-
-// ==========================================
-//   Sezione CINEMA
-// ==========================================
-function _statsCinema_(cinema) {
-    const visti = cinema.filter(function (c) { return c.visione === 'Sì'; });
-    const daVedere = cinema.filter(function (c) { return c.visione !== 'Sì'; });
-    const streaming = cinema.filter(function (c) { return c.streaming; });
-    const sala = cinema.filter(function (c) { return !c.streaming; });
-
-    let sommaGiorni = 0, numCoppie = 0;
-    visti.forEach(function (c) {
-        if (c.streaming) return;
-        const giorni = _diffGiorniISO_(c.dataUscita, c.dataVisione);
-        if (giorni !== null) { sommaGiorni += giorni; numCoppie++; }
-    });
-    const tempoMedioUscitaVisione = numCoppie > 0 ? Math.round(sommaGiorni / numCoppie) : null;
-
-    const filmPerMeseUscita = _raggruppaPerMese_(cinema, function (c) { return c.dataUscita; });
-    const filmVistiPerMese = _raggruppaPerMese_(visti, function (c) { return c.dataVisione; });
-
-    return {
-        totale: cinema.length,
-        vistiVsDaVedere: { visti: visti.length, daVedere: daVedere.length },
-        streamingVsSala: { streaming: streaming.length, sala: sala.length },
-        tempoMedioUscitaVisione: tempoMedioUscitaVisione,
-        filmPerMeseUscita: filmPerMeseUscita,
-        filmVistiPerMese: filmVistiPerMese
-    };
-}
-
-// ==========================================
-//   Sezione CROSS-MEDIA (basata sul log attività)
-// ==========================================
-function _statsCrossMedia_(anime, manga, cinema, log) {
-    const ora = Date.now();
-    const dodiciMesiFa = new Date(ora - 365 * 86400000);
-    const unAnnoFa = new Date(ora - 370 * 86400000);
-
-    const attivitaMap = {};
-    log.forEach(function (ev) {
-        if (ev.tipoEvento !== 'COMPLETAMENTO') return;
-        if (ev.timestamp < dodiciMesiFa) return;
-        const chiave = _formattaMeseLocale_(ev.timestamp);
-        if (!attivitaMap[chiave]) attivitaMap[chiave] = { ANIME: 0, MANGA: 0, CINEMA: 0 };
-        if (attivitaMap[chiave].hasOwnProperty(ev.tipoMedia)) attivitaMap[chiave][ev.tipoMedia]++;
-    });
-    const attivitaPerMese = Object.keys(attivitaMap).sort().map(function (k) {
-        return { mese: k, anime: attivitaMap[k].ANIME, manga: attivitaMap[k].MANGA, cinema: attivitaMap[k].CINEMA };
-    });
-
-    const heatmapMap = {};
-    log.forEach(function (ev) {
-        if (ev.timestamp < unAnnoFa) return;
-        const chiave = _formattaGiornoLocale_(ev.timestamp);
-        heatmapMap[chiave] = (heatmapMap[chiave] || 0) + 1;
-    });
-    const heatmapAttivita = Object.keys(heatmapMap).sort().map(function (k) {
-        return { data: k, conteggio: heatmapMap[k] };
-    });
-
-    return {
-        totali: { anime: anime.length, manga: manga.length, cinema: cinema.length },
-        attivitaPerMese: attivitaPerMese,
-        heatmapAttivita: heatmapAttivita,
-        tempoMedioCompletamento: _tempoMedioCompletamentoPerTipo_(log),
-        radarGeneri: _radarGeneriAnimeManga_(anime, manga)
-    };
-}
-
-function _tempoMedioCompletamentoPerTipo_(log) {
-    const ordinato = log.slice().sort(function (a, b) { return a.timestamp - b.timestamp; });
-    const creazioniInAttesa = {};
-    const giorniPerTipo = { ANIME: [], MANGA: [], CINEMA: [] };
-
-    ordinato.forEach(function (ev) {
-        const chiave = ev.tipoMedia + '||' + ev.idTitolo;
-        if (ev.tipoEvento === 'CREAZIONE') {
-            if (!(chiave in creazioniInAttesa)) creazioniInAttesa[chiave] = ev.timestamp;
-        } else if (ev.tipoEvento === 'COMPLETAMENTO') {
-            if (chiave in creazioniInAttesa) {
-                const giorni = Math.round((ev.timestamp - creazioniInAttesa[chiave]) / 86400000);
-                if (giorni >= 0 && giorniPerTipo.hasOwnProperty(ev.tipoMedia)) {
-                    giorniPerTipo[ev.tipoMedia].push(giorni);
-                }
-                delete creazioniInAttesa[chiave];
-            }
-        }
-    });
-
-    const media = function (arr) {
-        if (!arr.length) return null;
-        return Math.round(arr.reduce(function (s, v) { return s + v; }, 0) / arr.length);
-    };
-
-    return { anime: media(giorniPerTipo.ANIME), manga: media(giorniPerTipo.MANGA), cinema: media(giorniPerTipo.CINEMA) };
-}
-
-function _radarGeneriAnimeManga_(anime, manga) {
-    const contAnime = _contaGeneri_(anime);
-    const contManga = _contaGeneri_(manga);
-
-    const tuttiGeneri = {};
-    Object.keys(contAnime).forEach(function (g) { tuttiGeneri[g] = (tuttiGeneri[g] || 0) + contAnime[g]; });
-    Object.keys(contManga).forEach(function (g) { tuttiGeneri[g] = (tuttiGeneri[g] || 0) + contManga[g]; });
-
-    const generiOrdinati = Object.keys(tuttiGeneri)
-        .sort(function (a, b) { return tuttiGeneri[b] - tuttiGeneri[a]; })
-        .slice(0, 8);
-
-    return {
-        labels: generiOrdinati,
-        anime: generiOrdinati.map(function (g) { return contAnime[g] || 0; }),
-        manga: generiOrdinati.map(function (g) { return contManga[g] || 0; })
-    };
-}
-
-async function getStatsDataSB_() {
-    try {
-        const [anime, manga, cinema, log] = await Promise.all([
-            getAnimeDataSB_(), getMangaDataSB_(), getCinemaDataSB_(), _leggiTabLogCompletoSB_()
-        ]);
-        return {
-            anime: _statsAnime_(anime),
-            manga: _statsManga_(manga),
-            cinema: _statsCinema_(cinema),
-            crossMedia: _statsCrossMedia_(anime, manga, cinema, log)
-        };
-    } catch (err) {
-        console.error('Errore in getStatsDataSB_: ' + err);
-        throw new Error('Impossibile calcolare le statistiche: ' + err.message);
-    }
-}
-
-// Punto di ingresso: carica i dati dal server e poi disegna tutti i grafici
-function caricaDatiStats() {
-    document.getElementById('loadingStats').style.display = 'block';
-    document.getElementById('statsContent').style.display = 'none';
-
-    getStatsDataSB_()
-        .then(function (data) {
-            statsData = data || {};
-            assicuraDefaultsChartJs();
-            document.getElementById('loadingStats').style.display = 'none';
-            document.getElementById('statsContent').style.display = 'block';
-            renderStatsCharts(statsData);
-        })
-        .catch(function (err) {
-            document.getElementById('loadingStats').innerHTML =
-                '❌ Errore nel caricamento delle statistiche: ' + (err && err.message ? err.message : err);
-        });
-}
-
-function renderStatsCharts(data) {
-    if (data.anime) renderStatsAnime_(data.anime);
-    if (data.manga) renderStatsManga_(data.manga);
-    if (data.cinema) renderStatsCinema_(data.cinema);
-    if (data.crossMedia) renderStatsCrossMedia_(data.crossMedia);
-}
-
-// -------------------------------------------------------------------------
-//  ANIME
-// -------------------------------------------------------------------------
-function renderStatsAnime_(a) {
-    document.getElementById('statAnimeVotoMedio').textContent = (a.votoMedio !== null && a.votoMedio !== undefined) ? a.votoMedio : '–';
-    document.getElementById('statAnimeVotoMedioLabel').textContent = 'Voto medio (' + (a.numeroVoti || 0) + ' opere votate)';
-    document.getElementById('statAnimePreferitiCount').textContent = a.preferiti ? a.preferiti.count : 0;
-    document.getElementById('statAnimePrioritaCount').textContent = a.priorita ? a.priorita.count : 0;
-
-    // Distribuzione stati
-    const stati = Object.keys(a.distribuzioneStati || {});
-    upsertChart('chartAnimeStati', {
-        type: 'doughnut',
-        data: {
-            labels: stati,
-            datasets: [{ data: stati.map(function (s) { return a.distribuzioneStati[s]; }), backgroundColor: STATS_PALETTE, borderWidth: 0 }]
-        },
-        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: statsLegendStyle(), tooltip: statsTooltipStyle() } }
-    });
-
-    // Distribuzione colore visione
-    const chiaviColore = ['bianco', 'celeste', 'giallo', 'verde'];
-    upsertChart('chartAnimeColore', {
-        type: 'doughnut',
-        data: {
-            labels: chiaviColore.map(function (c) { return COLORE_VISIONE_LABELS[c]; }),
-            datasets: [{
-                data: chiaviColore.map(function (c) { return a.distribuzioneColoreVisione[c] || 0; }),
-                backgroundColor: chiaviColore.map(function (c) { return COLORE_VISIONE_MAP[c]; }),
-                borderWidth: 0
-            }]
-        },
-        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: statsLegendStyle(), tooltip: statsTooltipStyle() } }
-    });
-
-    // Istogramma voti (0..10)
-    upsertChart('chartAnimeVoti', {
-        type: 'bar',
-        data: {
-            labels: (a.istogrammaVoti || []).map(function (_, i) { return String(i); }),
-            datasets: [{ label: 'Opere', data: a.istogrammaVoti || [], backgroundColor: cssVar('--primary'), borderRadius: 4 }]
-        },
-        options: {
-            responsive: true, maintainAspectRatio: false,
-            plugins: { legend: { display: false }, tooltip: statsTooltipStyle() },
-            scales: {
-                x: { grid: { display: false }, ticks: { color: cssVar('--text-muted') } },
-                y: { beginAtZero: true, ticks: { precision: 0, color: cssVar('--text-muted') }, grid: { color: cssVar('--border-color') } }
-            }
-        }
-    });
-
-    // Top generi
-    const topGeneri = a.topGeneri || [];
-    upsertChart('chartAnimeTopGeneri', {
-        type: 'bar',
-        data: {
-            labels: topGeneri.map(function (g) { return g.genere; }),
-            datasets: [{ label: 'Opere', data: topGeneri.map(function (g) { return g.conteggio; }), backgroundColor: STATS_PALETTE, borderRadius: 4 }]
-        },
-        options: {
-            indexAxis: 'y', responsive: true, maintainAspectRatio: false,
-            plugins: { legend: { display: false }, tooltip: statsTooltipStyle() },
-            scales: {
-                x: { beginAtZero: true, ticks: { precision: 0, color: cssVar('--text-muted') }, grid: { color: cssVar('--border-color') } },
-                y: { grid: { display: false }, ticks: { color: cssVar('--text-muted') } }
-            }
-        }
-    });
-
-    // Voto medio per genere
-    const votoPerGenere = (a.votoPerGenere || []).slice(0, 10);
-    upsertChart('chartAnimeVotoGenere', {
-        type: 'bar',
-        data: {
-            labels: votoPerGenere.map(function (g) { return g.genere; }),
-            datasets: [{ label: 'Voto medio', data: votoPerGenere.map(function (g) { return g.media; }), backgroundColor: cssVar('--accent'), borderRadius: 4 }]
-        },
-        options: {
-            indexAxis: 'y', responsive: true, maintainAspectRatio: false,
-            plugins: {
-                legend: { display: false },
-                tooltip: Object.assign(statsTooltipStyle(), {
-                    callbacks: {
-                        afterLabel: function (ctx) { return 'Su ' + votoPerGenere[ctx.dataIndex].conteggio + ' opere'; }
-                    }
-                })
-            },
-            scales: {
-                x: { min: 0, max: 10, ticks: { color: cssVar('--text-muted') }, grid: { color: cssVar('--border-color') } },
-                y: { grid: { display: false }, ticks: { color: cssVar('--text-muted') } }
-            }
-        }
-    });
-
-    // Gauge completamento
-    creaGauge_('chartAnimeGaugeStagioni', a.completamento ? a.completamento.stagioni : 0, cssVar('--info'));
-    creaGauge_('chartAnimeGaugeFilm', a.completamento ? a.completamento.film : 0, cssVar('--accent'));
-    creaGauge_('chartAnimeGaugeTotale', a.completamento ? a.completamento.complessivo : 0, cssVar('--success'));
-}
-
-// Crea un piccolo "gauge" (doughnut con testo centrale) per una percentuale 0-100
-function creaGauge_(canvasId, percentuale, colore) {
-    const valore = Math.max(0, Math.min(100, percentuale || 0));
-    upsertChart(canvasId, {
-        type: 'doughnut',
-        data: {
-            datasets: [{ data: [valore, 100 - valore], backgroundColor: [colore, cssVar('--surface-hover')], borderWidth: 0 }]
-        },
-        options: {
-            responsive: true, maintainAspectRatio: false,
-            cutout: '78%', rotation: -90, circumference: 360,
-            plugins: { legend: { display: false }, tooltip: { enabled: false } },
-            centerText: valore + '%',
-            centerTextColor: colore
-        }
-    });
-}
-
-// -------------------------------------------------------------------------
-//  MANGA
-// -------------------------------------------------------------------------
-function renderStatsManga_(m) {
-    document.getElementById('statMangaVolumiPosseduti').textContent = (m.acquistato ? m.acquistato.volumiPosseduti : 0);
-    document.getElementById('statMangaPreferitiCount').textContent = m.preferiti ? m.preferiti.count : 0;
-    document.getElementById('statMangaPrioritaCount').textContent = m.priorita ? m.priorita.count : 0;
-
-    const stati = Object.keys(m.distribuzioneStati || {});
-    upsertChart('chartMangaStati', {
-        type: 'doughnut',
-        data: {
-            labels: stati,
-            datasets: [{ data: stati.map(function (s) { return m.distribuzioneStati[s]; }), backgroundColor: STATS_PALETTE, borderWidth: 0 }]
-        },
-        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: statsLegendStyle(), tooltip: statsTooltipStyle() } }
-    });
-
-    const acq = m.acquistato || { si: 0, no: 0 };
-    upsertChart('chartMangaAcquistato', {
-        type: 'doughnut',
-        data: {
-            labels: ['Acquistato', 'Non acquistato'],
-            datasets: [{ data: [acq.si, acq.no], backgroundColor: [cssVar('--success'), cssVar('--text-muted')], borderWidth: 0 }]
-        },
-        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: statsLegendStyle(), tooltip: statsTooltipStyle() } }
-    });
-
-    creaGauge_('chartMangaGaugeLettura', m.percentualeLettura ? m.percentualeLettura.media : 0, cssVar('--primary'));
-
-    const topGeneri = m.topGeneri || [];
-    upsertChart('chartMangaTopGeneri', {
-        type: 'bar',
-        data: {
-            labels: topGeneri.map(function (g) { return g.genere; }),
-            datasets: [{ label: 'Opere', data: topGeneri.map(function (g) { return g.conteggio; }), backgroundColor: STATS_PALETTE, borderRadius: 4 }]
-        },
-        options: {
-            indexAxis: 'y', responsive: true, maintainAspectRatio: false,
-            plugins: { legend: { display: false }, tooltip: statsTooltipStyle() },
-            scales: {
-                x: { beginAtZero: true, ticks: { precision: 0, color: cssVar('--text-muted') }, grid: { color: cssVar('--border-color') } },
-                y: { grid: { display: false }, ticks: { color: cssVar('--text-muted') } }
-            }
-        }
-    });
-
-}
-
-// -------------------------------------------------------------------------
-//  CINEMA
-// -------------------------------------------------------------------------
-function renderStatsCinema_(c) {
-    document.getElementById('statCinemaTempoMedio').textContent =
-        (c.tempoMedioUscitaVisione !== null && c.tempoMedioUscitaVisione !== undefined) ? c.tempoMedioUscitaVisione : '–';
-
-    const vv = c.vistiVsDaVedere || { visti: 0, daVedere: 0 };
-    upsertChart('chartCinemaVisti', {
-        type: 'doughnut',
-        data: {
-            labels: ['Visti', 'Da vedere'],
-            datasets: [{ data: [vv.visti, vv.daVedere], backgroundColor: [cssVar('--success'), cssVar('--warning')], borderWidth: 0 }]
-        },
-        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: statsLegendStyle(), tooltip: statsTooltipStyle() } }
-    });
-
-    const ss = c.streamingVsSala || { streaming: 0, sala: 0 };
-    upsertChart('chartCinemaStreaming', {
-        type: 'doughnut',
-        data: {
-            labels: ['Streaming', 'Sala'],
-            datasets: [{ data: [ss.streaming, ss.sala], backgroundColor: [cssVar('--info'), cssVar('--primary')], borderWidth: 0 }]
-        },
-        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: statsLegendStyle(), tooltip: statsTooltipStyle() } }
-    });
-
-    const perMeseUscita = c.filmPerMeseUscita || [];
-    upsertChart('chartCinemaMeseUscita', {
-        type: 'bar',
-        data: {
-            labels: perMeseUscita.map(function (d) { return formattaMeseIt(d.mese); }),
-            datasets: [{ label: 'Film', data: perMeseUscita.map(function (d) { return d.conteggio; }), backgroundColor: cssVar('--primary'), borderRadius: 4 }]
-        },
-        options: {
-            responsive: true, maintainAspectRatio: false,
-            plugins: { legend: { display: false }, tooltip: statsTooltipStyle() },
-            scales: {
-                x: { grid: { display: false }, ticks: { color: cssVar('--text-muted') } },
-                y: { beginAtZero: true, ticks: { precision: 0, color: cssVar('--text-muted') }, grid: { color: cssVar('--border-color') } }
-            }
-        }
-    });
-
-    const perMeseVisti = c.filmVistiPerMese || [];
-    upsertChart('chartCinemaMeseVisti', {
-        type: 'line',
-        data: {
-            labels: perMeseVisti.map(function (d) { return formattaMeseIt(d.mese); }),
-            datasets: [{
-                label: 'Film visti', data: perMeseVisti.map(function (d) { return d.conteggio; }),
-                borderColor: cssVar('--accent'), backgroundColor: cssVar('--accent-glow'),
-                fill: true, tension: 0.35, pointBackgroundColor: cssVar('--accent')
-            }]
-        },
-        options: {
-            responsive: true, maintainAspectRatio: false,
-            plugins: { legend: { display: false }, tooltip: statsTooltipStyle() },
-            scales: {
-                x: { grid: { display: false }, ticks: { color: cssVar('--text-muted') } },
-                y: { beginAtZero: true, ticks: { precision: 0, color: cssVar('--text-muted') }, grid: { color: cssVar('--border-color') } }
-            }
-        }
-    });
-}
-
-// -------------------------------------------------------------------------
-//  CROSS-MEDIA
-// -------------------------------------------------------------------------
-function renderStatsCrossMedia_(x) {
-    const tempo = x.tempoMedioCompletamento || {};
-    document.getElementById('statCrossTempoAnime').textContent = (tempo.anime !== null && tempo.anime !== undefined) ? tempo.anime : '–';
-    document.getElementById('statCrossTempoManga').textContent = (tempo.manga !== null && tempo.manga !== undefined) ? tempo.manga : '–';
-    document.getElementById('statCrossTempoCinema').textContent = (tempo.cinema !== null && tempo.cinema !== undefined) ? tempo.cinema : '–';
-
-    const attivita = x.attivitaPerMese || [];
-    upsertChart('chartCrossAttivita', {
-        type: 'bar',
-        data: {
-            labels: attivita.map(function (d) { return formattaMeseIt(d.mese); }),
-            datasets: [
-                { label: 'Anime', data: attivita.map(function (d) { return d.anime; }), backgroundColor: cssVar('--primary'), stack: 's' },
-                { label: 'Manga', data: attivita.map(function (d) { return d.manga; }), backgroundColor: cssVar('--accent'), stack: 's' },
-                { label: 'Cinema', data: attivita.map(function (d) { return d.cinema; }), backgroundColor: cssVar('--info'), stack: 's' }
-            ]
-        },
-        options: {
-            responsive: true, maintainAspectRatio: false,
-            plugins: { legend: statsLegendStyle(), tooltip: statsTooltipStyle() },
-            scales: {
-                x: { stacked: true, grid: { display: false }, ticks: { color: cssVar('--text-muted') } },
-                y: { stacked: true, beginAtZero: true, ticks: { precision: 0, color: cssVar('--text-muted') }, grid: { color: cssVar('--border-color') } }
-            }
-        }
-    });
-
-    const totali = x.totali || { anime: 0, manga: 0, cinema: 0 };
-    upsertChart('chartCrossTotali', {
-        type: 'doughnut',
-        data: {
-            labels: ['Anime', 'Manga', 'Cinema'],
-            datasets: [{ data: [totali.anime, totali.manga, totali.cinema], backgroundColor: [cssVar('--primary'), cssVar('--accent'), cssVar('--info')], borderWidth: 0 }]
-        },
-        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: statsLegendStyle(), tooltip: statsTooltipStyle() } }
-    });
-
-    renderHeatmapAttivita_('heatmapCrossContainer', x.heatmapAttivita || []);
-
-    const radar = x.radarGeneri || { labels: [], anime: [], manga: [] };
-    upsertChart('chartCrossRadar', {
-        type: 'radar',
-        data: {
-            labels: radar.labels,
-            datasets: [
-                { label: 'Anime', data: radar.anime, borderColor: cssVar('--primary'), backgroundColor: 'rgba(124,108,255,0.18)', pointBackgroundColor: cssVar('--primary') },
-                { label: 'Manga', data: radar.manga, borderColor: cssVar('--accent'), backgroundColor: 'rgba(255,93,162,0.18)', pointBackgroundColor: cssVar('--accent') }
-            ]
-        },
-        options: {
-            responsive: true, maintainAspectRatio: false,
-            plugins: { legend: statsLegendStyle(), tooltip: statsTooltipStyle() },
-            scales: {
-                r: {
-                    beginAtZero: true,
-                    ticks: { color: cssVar('--text-muted'), backdropColor: 'transparent' },
-                    grid: { color: cssVar('--border-color') },
-                    angleLines: { color: cssVar('--border-color') },
-                    pointLabels: { color: cssVar('--text-muted'), font: { size: 11 } }
-                }
-            }
-        }
-    });
-}
-
-// Calendario attività in stile "GitHub contributions": una cella per giorno,
-// intensità del colore proporzionale al numero di eventi in quel giorno.
-function renderHeatmapAttivita_(containerId, heatmapData) {
-    const container = document.getElementById(containerId);
-    if (!container) return;
-    container.innerHTML = '';
-
-    const mappa = {};
-    heatmapData.forEach(function (d) { mappa[d.data] = d.conteggio; });
-
-    const oggi = new Date();
-    oggi.setHours(0, 0, 0, 0);
-    const giorni = [];
-    for (let i = 370; i >= 0; i--) {
-        const d = new Date(oggi.getTime() - i * 86400000);
-        const chiave = d.toISOString().slice(0, 10);
-        giorni.push({ data: chiave, conteggio: mappa[chiave] || 0 });
-    }
-
-    const massimo = giorni.reduce(function (max, g) { return Math.max(max, g.conteggio); }, 0);
-
-    const frammento = document.createDocumentFragment();
-    giorni.forEach(function (g) {
-        const cell = document.createElement('div');
-        cell.className = 'heatmap-cell';
-        let livello = 0;
-        if (massimo > 0 && g.conteggio > 0) {
-            const rapporto = g.conteggio / massimo;
-            livello = rapporto > 0.75 ? 4 : rapporto > 0.5 ? 3 : rapporto > 0.25 ? 2 : 1;
-        }
-        cell.setAttribute('data-livello', livello);
-        cell.title = g.data + ': ' + g.conteggio + ' eventi';
-        frammento.appendChild(cell);
-    });
-    container.appendChild(frammento);
-}
-
     </script>
 </body>
 </html>
+        getAnimeDataSB_(), getMangaDataSB_(), getCinemaDataSB_(), getSerieTvDataSB_()
