@@ -1421,9 +1421,71 @@ vincolo di unicità `(titolo, user_id)` con il messaggio Postgres
 `duplicate key…`. Non è un rischio introdotto ora (succedeva già ricliccando
 "Salva" a mano) e il dato resta corretto: nessun doppione a database.
 
-Richiesta 8 — Rimozione Stats/Consigliami + sezione Serie TV
-Rimozioni (solo index.html): eliminati bottone/menu/vista/JS Stats + CDN Chart.js (tenuti toggleStatsWidget, COLORE_VISIONE_LABELS, cssVar riusati da Cinema/ricerca; ripulito il riferimento a statsCharts nel toggle) e bottone/handler "Consigliami cosa guardare". CSS widget lasciato (riusato dal Cinema). DB già pronto da utente: tabelle serie_tv/episodi_serie_tv/sinossi_serie_tv (con user_id, RLS) + tmdb-proxy estesa (tv_search, tv_detail, niente Season 0, mappa stati). DB richiesto: ALTER TABLE log_attivita per ammettere SERIE_TV (vedi SQL sopra). Scelte: log_episodi condiviso senza colonna media (collisioni solo a parità titolo, accettato), generi sola-lettura da TMDB con lista fissa 16 voci TV, contatori Iniziate/Stagioni/Episodi/Completate, overlay dedicato, niente voto/priorità, icona 📡. Frontend (index.html): nuova vista/modali/overlay/log come da spec punti 1–12; file e funzioni con suffisso SerieTv/serietv; sinossi/ricerca/widget/log estesi a tipo serietv/SERIE_TV; nuova TMDB_TV_GENRES_LIST e CSS btn-serietv/log-badge-serietv/tipo-serietv.
 
+## Richiesta 8 — Rimozione Stats/Consigliami + nuova sezione Serie TV
+
+### Rimozioni (solo `index.html`, backup `index_backup_pre_serietv.html` prima di toccare nulla)
+
+- **Stats**: via bottone `nav-stats`, intero `statsView` (HTML), script CDN Chart.js,
+  ramo `stats` in `switchView`, ~800 righe JS (`getStatsDataSB_`, `caricaDatiStats`,
+  `renderStats*`, gauge, heatmap, palette). Conservati i 3 pezzi riusati altrove:
+  `toggleStatsWidget` (widget Cinema), `COLORE_VISIONE_LABELS` (ricerca globale),
+  `cssVar`; nel toggle rimosso il riferimento a `statsCharts` (ormai inesistente,
+  avrebbe rotto l'apertura dei widget Cinema). CSS di card/widget lasciato (riusato
+  dai widget Cinema).
+- **"Consigliami cosa guardare"**: via bottone `btnRandomAnime` + intero handler
+  `onclick` (autonomo, nessuna dipendenza).
+
+### Prerequisiti fatti da utente (dashboard Supabase, fuori da `index.html`)
+
+- Tabelle `serie_tv` / `episodi_serie_tv` / `sinossi_serie_tv` (nate già multi-utente:
+  `user_id`, UNIQUE composti, FK composite con CASCADE, RLS "solo le proprie righe").
+- Edge Function `tmdb-proxy` estesa con `tv_search` (primi 8 risultati) e `tv_detail`
+  (titolo, trama, immagine w500, generi, stato mappato Returning→In corso,
+  Ended/Canceled→Concluso, resto→In arrivo; Stagione 0 sempre esclusa).
+- **SQL richiesto prima del deploy** (il vincolo bloccava i log delle serie):
+  ```sql
+  ALTER TABLE log_attivita DROP CONSTRAINT log_attivita_tipo_media_check;
+  ALTER TABLE log_attivita ADD CONSTRAINT log_attivita_tipo_media_check
+    CHECK (tipo_media IN ('ANIME','MANGA','CINEMA','SERIE_TV'));
+  ```
+
+### Decisioni prese (punti 1–12 della richiesta)
+
+1. Flag "già vista" + picker TMDB: con TMDB segna tutto coi numeri reali; senza TMDB
+   le stagioni a totale 0 restano a 0 e si correggono a mano con la matita.
+2. Season 0 / Specials esclusi. 3. Mappatura stati confermata. 4. Generi in sola
+   lettura da TMDB (modello Cinema), filtro sulla lista fissa `TMDB_TV_GENRES_LIST`
+   (16 voci TV ufficiali). 5. Contatori: Serie Iniziate, Stagioni Viste, Episodi
+   Visti, Serie Completate. 6. Niente voto né priorità, solo preferito. 7. Overlay
+   episodi dedicato (non condiviso con Anime). 8. Ricerca globale estesa.
+   9. Totali TMDB = "uscito finora", nessun auto-aggiornamento. 10. Nuovo pulsante
+   🔄 "Aggiorna da TMDB": aggiunge solo stagioni con numero nuovo, mai
+   sovrascrive/cancella (richiede `tmdb_id` salvato). 11. Serie celesti nel widget
+   In Corso con avanzamento episodio per episodio. 12. Log episodi dedicato nella
+   vista + azioni generiche nel log Home (testata con genere SERIE_TV).
+   Extra: `log_episodi` condiviso senza colonna media (collisioni solo a parità di
+   titolo, accettato); icona sezione 📡.
+
+### Frontend (solo `index.html`, stile/nomi come gli Anime, suffissi `SerieTv`/`serietv`)
+
+- **Vista** `serietvView` (tra Anime e Manga): contatori, linguette Lista/Log,
+  filtri come Anime meno voto e stagioni esatte, tabella senza colonna Voto, azioni
+  riga ⭐/ℹ️ (trama via `mostraSinossi(...,'serietv')`)/📡/🔄/✏️/🗑️.
+- **Modali** `modalOverlaySerieTv` (titolo+TMDB, stato, stagioni tot/viste auto,
+  generi readonly, flag già-vista con `confirm`, note, immagine, checklist stagioni
+  TMDB) e `modalOverlayStagioniSerieTv` dedicato.
+- **JS dati**: `getSerieTvDataSB_`, `add/update/deleteSerieTvSB_`,
+  `ricalcolaSincronizzaELoggaSerieTvSB_` (log SERIE_TV: CREAZIONE/AVANZAMENTO/
+  IN_PARI/COMPLETAMENTO/CAMBIO_STATO), `segnaStagioniComeVisteSerieTvSB_`,
+  update stagioni con vincolo sequenziale, TMDB `tv_search`/`tv_detail`.
+- **Condivisi estesi**: sinossi (`serietv`→`sinossi_serie_tv`), widget In Corso
+  (card SERIE TV + overlay con copertina), log Home (badge + frasi), ricerca
+  globale (gruppo Serie TV), dropdown generi in `buildGenresForms`, `switchView`.
+- **CSS nuovi**: `btn-serietv`, `log-badge-serietv`, `tipo-serietv` (label/placeholder
+  ricerca).
+
+**Fix post-deploy (home bianca / bottoni morti):** la rimozione del ramo `stats` in `switchView` aveva portato via anche la `}` di chiusura del blocco Cinema → `SyntaxError: Unexpected end of input`, l intero script non girava. Ripristinata la chiusura; sistemati anche `getIndiceRicercaSB_` (mancava `getSerieTvDataSB_` nel `Promise.all`, push serie annidato nel forEach cinema) e rimossa una riga spuria finita dopo `</html>`. Verifica: pagina aperta in Chrome headless, zero `Uncaught` in console.
 # 👥 PARTE 4 — Multi-utente
 
 Obiettivo: condividere il sito con una seconda persona (login separato),
