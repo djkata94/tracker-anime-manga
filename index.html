@@ -2888,6 +2888,7 @@
                 document.getElementById('cinemaView').style.display = 'block';
                 document.getElementById('nav-cinema').classList.add('active-view');
                 caricaDatiCinema();
+            }
         }
 
         // ==========================================
@@ -8943,7 +8944,7 @@ function normalizzaTestoRicerca(str) {
 
 async function getIndiceRicercaSB_() {
     const [animeData, mangaData, cinemaData, serieTvData] = await Promise.all([
-        getAnimeDataSB_(), getMangaDataSB_(), getCinemaDataSB_()
+        getAnimeDataSB_(), getMangaDataSB_(), getCinemaDataSB_(), getSerieTvDataSB_()
     ]);
     const risultati = [];
     animeData.forEach(function(a) {
@@ -8964,12 +8965,12 @@ async function getIndiceRicercaSB_() {
             titolo: c.titolo, tipo: 'cinema', dataUscita: c.dataUscita, dataVisione: c.dataVisione,
             visione: c.visione, immagine: c.immagine, streaming: c.streaming
         });
+    });
     serieTvData.forEach(function(s) {
         risultati.push({
             titolo: s.titolo, tipo: 'serietv', stato: s.stato, coloreVisione: s.coloreVisione,
             stagioniTotali: s.stagioniTotali, stagioniViste: s.stagioniViste, immagine: s.immagine
         });
-    });
     });
     return risultati;
 }
@@ -9282,4 +9283,3 @@ function toggleStatsWidget(widgetId) {
     </script>
 </body>
 </html>
-        getAnimeDataSB_(), getMangaDataSB_(), getCinemaDataSB_(), getSerieTvDataSB_()
