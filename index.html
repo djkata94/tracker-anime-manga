@@ -3783,7 +3783,7 @@
 
         // --- Funzioni di scrittura Episodi Anime ---
 
-        async function registraLogEpisodioSB_(titolo, tipo, numero, episodioPrecedente, episodioNuovo, episodiTotali, azione, esito) {
+        async function registraLogEpisodioSB_(titolo, tipo, numero, episodioPrecedente, episodioNuovo, episodiTotali, azione, esito, tipoMedia) {
             try {
                 await supabaseClient.from('log_episodi').insert([{
                     timestamp: new Date().toISOString(),
@@ -3791,7 +3791,8 @@
                     episodio_precedente: parseInt(episodioPrecedente) || 0,
                     episodio_nuovo: parseInt(episodioNuovo) || 0,
                     episodi_totali: parseInt(episodiTotali) || 0,
-                    azione: azione || '', esito: esito || ''
+                    azione: azione || '', esito: esito || '',
+                    tipo_media: tipoMedia || 'ANIME'
                 }]);
             } catch (err) {
                 console.error("Errore durante la registrazione del log episodio ('" + azione + "' su '" + titolo + "' " + tipo + " " + numero + "'): " + err);
@@ -3838,7 +3839,8 @@
                 await registraLogEpisodioSB_(
                     titoloTrim, tipo, numeroInt, episodiVistiAttuale, nuovoValore, episodiTotali,
                     (nuovoValore > episodiVistiAttuale) ? 'VISTO' : 'RIMOSSO',
-                    (risultatoSync && risultatoSync.eventoLoggato) || ''
+                    (risultatoSync && risultatoSync.eventoLoggato) || '',
+                    'ANIME'
                 );
             }
 
@@ -3977,7 +3979,7 @@
             }
         }
 
-        async function ottieniLogEpisodiSB_(filtroTitolo, filtroTipo, filtroAzione, dataDa, dataA, ordineAsc) {
+        async function ottieniLogEpisodiSB_(filtroTitolo, filtroTipo, filtroAzione, dataDa, dataA, ordineAsc, filtroTipoMedia) {
             try {
                 const MAX_LOG = 100;
                 const filtroTesto = String(filtroTitolo || '').trim();
@@ -3988,6 +3990,7 @@
                 let query = supabaseClient.from('log_episodi').select('*');
                 if (filtroTesto !== '') query = query.ilike('titolo', '%' + filtroTesto + '%');
                 if (filtroTipoNorm !== 'all') query = query.eq('tipo', filtroTipoNorm);
+                if (filtroTipoMedia) query = query.eq('tipo_media', filtroTipoMedia);
                 if (filtroAzioneNorm !== 'ALL') query = query.eq('azione', filtroAzioneNorm);
                 if (dataDa) query = query.gte('timestamp', dataDa + 'T00:00:00');
                 if (dataA) query = query.lte('timestamp', dataA + 'T23:59:59');
@@ -4047,7 +4050,7 @@
 
             const filtriAttivi = (filtroTitolo !== '' || filtroTipo !== 'all' || filtroAzione !== 'all' || dataDal !== '' || dataAl !== '');
 
-            ottieniLogEpisodiSB_(filtroTitolo, filtroTipo, filtroAzione, dataDal, dataAl, ordineAsc)
+            ottieniLogEpisodiSB_(filtroTitolo, filtroTipo, filtroAzione, dataDal, dataAl, ordineAsc, 'ANIME')
                 .then(function(logs) {
                     if (loadingEl) loadingEl.style.display = 'none';
                     if (btnRefresh) {
@@ -5005,7 +5008,8 @@
                 await registraLogEpisodioSB_(
                     titoloTrim, 'Stagione', numeroInt, episodiVistiAttuale, nuovoValore, episodiTotali,
                     (nuovoValore > episodiVistiAttuale) ? 'VISTO' : 'RIMOSSO',
-                    (risultatoSync && risultatoSync.eventoLoggato) || ''
+                    (risultatoSync && risultatoSync.eventoLoggato) || '',
+                    'SERIE_TV'
                 );
             }
 
@@ -5140,7 +5144,7 @@
 
             // Le serie TV scrivono solo righe di tipo 'Stagione': il filtro
             // per tipo è fisso e non serve il selettore nella testata.
-            ottieniLogEpisodiSB_(filtroTitolo, 'Stagione', filtroAzione, dataDal, dataAl, ordineAsc)
+            ottieniLogEpisodiSB_(filtroTitolo, 'Stagione', filtroAzione, dataDal, dataAl, ordineAsc, 'SERIE_TV')
                 .then(function(logs) {
                     if (loadingEl) loadingEl.style.display = 'none';
                     if (btnRefresh) {
