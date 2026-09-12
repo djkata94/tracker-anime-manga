@@ -866,6 +866,17 @@
     transform: translateY(-4px); /* Effetto movimento verso l'alto */
 }
 
+/* Su mobile il pulsante è più piccolo e più a filo bordo, così non copre
+   i pulsanti di fine riga delle tabelle. */
+@media (max-width: 768px) {
+    #backToTop {
+        padding: 9px 12px;
+        font-size: 16px;
+        bottom: 15px;
+        right: 15px;
+    }
+}
+
 /* --- CONTATORE RISULTATI FILTRATI --- */
 .filter-count {
     color: var(--text-muted);
@@ -3751,7 +3762,14 @@
                 }
                 document.getElementById('btnSalvaAnime').innerText = "Salva";
                 chiudiModale('Anime');
-                renderListAnime();
+                // Ricarica anche gli episodi: le righe stagioni/film sono
+                // cambiate (stesso schema del salvataggio Serie TV). Senza
+                // questo l'overlay appena creato risultava vuoto fino al
+                // refresh manuale della pagina.
+                getTuttiEpisodiAnimeSB_().then(function(epData) {
+                    episodiAnimeList = epData || [];
+                    renderListAnime();
+                }).catch(function() { renderListAnime(); });
                 showToast(isEditAnime ? 'Anime aggiornato con successo' : 'Anime aggiunto con successo', 'success');
             };
             const errorCb = function(err) {
@@ -3770,6 +3788,9 @@
             if (confirm("Eliminare definitivamente '" + titolo + "'?")) {
                 deleteAnimeSB_(titolo).then(function(data) {
                     animeList = data || [];
+                    return getTuttiEpisodiAnimeSB_();
+                }).then(function(epData) {
+                    episodiAnimeList = epData || [];
                     renderListAnime();
                     showToast('Anime eliminato', 'success');
                 }).catch(function(err) {
@@ -7487,21 +7508,14 @@ window.addEventListener('scroll', function() {
 document.addEventListener('click', function(e) {
     if (e.target && e.target.id === 'backToTop') {
         e.preventDefault();
-        
-        // Intercetta la navbar che si trova sempre in cima a ogni scheda
-        const topAnchor = document.querySelector(".navbar");
-        if (topAnchor) {
-            topAnchor.scrollIntoView({
-                behavior: 'smooth',
-                block: 'start'
-            });
-        } else {
-            // Backup standard di scorrimento alle coordinate zero
-            window.scrollTo({
-                top: 0,
-                behavior: 'smooth'
-            });
-        }
+
+        // Scroll diretto della finestra: la vecchia versione puntava con
+        // scrollIntoView alla navbar, ma essendo sticky (sempre visibile)
+        // la chiamata era un no-op e la pagina non si muoveva mai.
+        window.scrollTo({
+            top: 0,
+            behavior: 'smooth'
+        });
     }
 });
 
