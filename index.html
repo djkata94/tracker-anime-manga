@@ -4049,7 +4049,9 @@
             }
         }
 
-        async function updateEpisodioVistiSB_(titolo, tipo, numero, delta) {
+        // senzaLogEpisodio = true per ✅/🔢 da overlay (popolamento archivio):
+        // aggiorna i visti e ricalcola, ma non scrive righe nel log episodi.
+        async function updateEpisodioVistiSB_(titolo, tipo, numero, delta, senzaLogEpisodio) {
             const titoloTrim = String(titolo).trim();
             const numeroInt = parseInt(numero) || 0;
             const deltaInt = parseInt(delta) || 0;
@@ -4085,7 +4087,7 @@
 
             const risultatoSync = await ricalcolaSincronizzaELoggaSB_(titoloTrim);
 
-            if (nuovoValore !== episodiVistiAttuale) {
+            if (nuovoValore !== episodiVistiAttuale && !senzaLogEpisodio) {
                 await registraLogEpisodioSB_(
                     titoloTrim, tipo, numeroInt, episodiVistiAttuale, nuovoValore, episodiTotali,
                     (nuovoValore > episodiVistiAttuale) ? 'VISTO' : 'RIMOSSO',
@@ -4190,7 +4192,7 @@
                 showToast('Unità già completa.', 'success');
                 return;
             }
-            updateEpisodioVistiSB_(titolo, tipo, numero, totali - visti)
+            updateEpisodioVistiSB_(titolo, tipo, numero, totali - visti, true)
                 .then(function(result) {
                     if (result && result.errore) {
                         showToast(result.errore, 'error');
@@ -4230,7 +4232,7 @@
                 showToast('Nessuna modifica.', 'success');
                 return;
             }
-            updateEpisodioVistiSB_(titolo, tipo, numero, nuovoVisti - visti)
+            updateEpisodioVistiSB_(titolo, tipo, numero, nuovoVisti - visti, true)
                 .then(function(result) {
                     if (result && result.errore) {
                         showToast(result.errore, 'error');
@@ -5401,7 +5403,9 @@
             container.innerHTML = html;
         }
 
-        async function updateStagioneVistiSerieTvSB_(titolo, numero, delta) {
+        // senzaLogEpisodio = true per ✅/🔢 da overlay (popolamento archivio):
+        // aggiorna i visti e ricalcola, ma non scrive righe nel log episodi.
+        async function updateStagioneVistiSerieTvSB_(titolo, numero, delta, senzaLogEpisodio) {
             const titoloTrim = String(titolo).trim();
             const numeroInt = parseInt(numero) || 0;
             const deltaInt = parseInt(delta) || 0;
@@ -5437,7 +5441,7 @@
 
             const risultatoSync = await ricalcolaSincronizzaELoggaSerieTvSB_(titoloTrim);
 
-            if (nuovoValore !== episodiVistiAttuale) {
+            if (nuovoValore !== episodiVistiAttuale && !senzaLogEpisodio) {
                 await registraLogEpisodioSB_(
                     titoloTrim, 'Stagione', numeroInt, episodiVistiAttuale, nuovoValore, episodiTotali,
                     (nuovoValore > episodiVistiAttuale) ? 'VISTO' : 'RIMOSSO',
@@ -5542,7 +5546,7 @@
                 showToast('Stagione già completa.', 'success');
                 return;
             }
-            updateStagioneVistiSerieTvSB_(titolo, numero, totali - visti)
+            updateStagioneVistiSerieTvSB_(titolo, numero, totali - visti, true)
                 .then(function(result) {
                     if (result && result.errore) {
                         showToast(result.errore, 'error');
@@ -5582,7 +5586,7 @@
                 showToast('Nessuna modifica.', 'success');
                 return;
             }
-            updateStagioneVistiSerieTvSB_(titolo, numero, nuovoVisti - visti)
+            updateStagioneVistiSerieTvSB_(titolo, numero, nuovoVisti - visti, true)
                 .then(function(result) {
                     if (result && result.errore) {
                         showToast(result.errore, 'error');
@@ -6763,6 +6767,10 @@ function apriLightbox(url) {
         //   Nuove voci: aggiungere in CIMA all'array.
         // ==========================================
         const PATCH_NOTES = [
+            { v: '1.0.19', titolo: '✅ e 🔢 silenziosi nel log', data: '13/09/2026 · 16:07', punti: [
+                '✅ (tutta vista) e 🔢 (visti manuali) non scrivono più righe nel log episodi: ideali per popolare l\u2019archivio.',
+                'I pulsanti +/− continuano a registrare ogni episodio come prima.'
+            ] },
             { v: '1.0.18', titolo: 'Anime abbandonati', data: '13/09/2026 · 15:50', punti: [
                 'Il flag ⛔ arriva anche negli Anime: pulsante riga e checkbox nel modale, mutua esclusione con "già visto".',
                 'Flag visione rosso, fuori dal widget "In Corso", overlay congelato (solo totali modificabili).'
