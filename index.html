@@ -1890,6 +1890,7 @@
 				<button class="filter-btn" data-vision="celeste">In Visione</button>
 				<button class="filter-btn" data-vision="giallo">In Pari</button>
 				<button class="filter-btn" data-vision="verde">Completato</button>
+				<button class="filter-btn" data-vision="rosso">⛔ Abbandonati</button>
 			</div>
 
             <button type="button" id="btnResetFiltriAnime" class="btn-reset-filters">↺ Reset Filtri</button>
@@ -2475,6 +2476,13 @@
                     </label>
                     <small style="color:var(--text-muted);">Se spuntato, al salvataggio chiede conferma e segna come visti tutti gli episodi di stagioni e film inseriti. Togliere la spunta non azzera gli episodi già visti.</small>
                 </div>
+                <div class="form-group">
+                    <label style="display:flex; align-items:center; gap:8px; cursor:pointer;">
+                        <input type="checkbox" id="inpAbbandonataAnime" style="width:16px; height:16px;">
+                        <span>⛔ Anime abbandonato</span>
+                    </label>
+                    <small style="color:var(--text-muted);">Se spuntato, l'anime esce dal widget "In Corso" e il flag visione diventa rosso, ma il progresso resta salvato. Esclude "già visto". Non disponibile sugli anime completati (verdi).</small>
+                </div>
                 <div class="form-group"><label>Note</label><textarea id="inpNoteAnime" rows="2"></textarea></div>
                 <div class="form-group"><label>URL Immagine / Avatar</label><input type="url" id="inpImmagineAnime" placeholder="Inserisci il link dell'immagine (es. https://...)"></div>
                 
@@ -2997,7 +3005,8 @@
         // Porting 1:1 di calcolaColoreVisioneAnime_ da codice.gs — pura
         // logica, nessuna chiamata al server, quindi la traduzione è
         // identica riga per riga.
-        function calcolaColoreVisioneAnime_(stagioniTotali, stagioniViste, filmTotali, filmVisti, stato, haProgressoParziale) {
+        function calcolaColoreVisioneAnime_(stagioniTotali, stagioniViste, filmTotali, filmVisti, stato, haProgressoParziale, abbandonata) {
+            if (abbandonata) return 'rosso';
             const statoClean = String(stato || '').trim().toLowerCase();
             const completato = (stagioniViste === stagioniTotali) && (filmVisti === filmTotali);
             const iniziato = (stagioniViste > 0) || (filmVisti > 0) || !!haProgressoParziale;
@@ -3036,7 +3045,7 @@
 
                 const haProgressoParziale = titoliConProgressoParziale.has(a.titolo);
                 const coloreVisione = calcolaColoreVisioneAnime_(
-                    a.stagioni_totali, a.stagioni_viste, a.film_totali, a.film_visti, a.stato, haProgressoParziale
+                    a.stagioni_totali, a.stagioni_viste, a.film_totali, a.film_visti, a.stato, haProgressoParziale, !!a.abbandonata
                 );
 
                 return {
@@ -3045,7 +3054,7 @@
                     stagioniTotali: a.stagioni_totali || 0, stagioniViste: a.stagioni_viste || 0,
                     filmTotali: a.film_totali || 0, filmVisti: a.film_visti || 0,
                     coloreVisione: coloreVisione, generi: a.generi || '', preferito: !!a.preferito,
-                    immagine: a.immagine || '', priorita: !!a.priorita
+                    immagine: a.immagine || '', priorita: !!a.priorita, abbandonata: !!a.abbandonata
                 };
             });
         }
@@ -3128,7 +3137,7 @@
         async function calcolaProgressoAnimeSB_(titolo) {
             const titoloTrim = String(titolo).trim();
             const { data: righeAnime, error: errAnime } = await supabaseClient
-                .from('anime').select('stato,stagioni_totali,film_totali').eq('titolo', titoloTrim);
+                .from('anime').select('stato,stagioni_totali,film_totali,abbandonata').eq('titolo', titoloTrim);
             if (errAnime) throw errAnime;
             if (!righeAnime || righeAnime.length === 0) return null;
 
@@ -3159,7 +3168,7 @@
             const stagioniViste = contaCompletiContigui(stagioniRighe);
             const filmVisti = contaCompletiContigui(filmRighe);
             const haProgressoParziale = episodi.some(function(e) { return (parseInt(e.episodiVisti) || 0) > 0; });
-            const coloreVisione = calcolaColoreVisioneAnime_(stagioniTotali, stagioniViste, filmTotali, filmVisti, stato, haProgressoParziale);
+            const coloreVisione = calcolaColoreVisioneAnime_(stagioniTotali, stagioniViste, filmTotali, filmVisti, stato, haProgressoParziale, !!righeAnime[0].abbandonata);
 
             return { stagioniViste: stagioniViste, filmVisti: filmVisti, coloreVisione: coloreVisione,
                      stato: stato, stagioniTotali: stagioniTotali, filmTotali: filmTotali, eventoLoggato: null };
@@ -3204,12 +3213,14 @@
                 valutazione: (dati.valutazione === '' || dati.valutazione === undefined || dati.valutazione === '-') ? null : dati.valutazione,
                 stagioni_totali: parseInt(dati.stagioniTotali) || 0, stagioni_viste: parseInt(dati.stagioniViste) || 0,
                 film_totali: parseInt(dati.filmTotali) || 0, film_visti: parseInt(dati.filmVisti) || 0,
-                generi: dati.generi || '', preferito: false, immagine: dati.immagine || '', priorita: false
+                generi: dati.generi || '', preferito: false, immagine: dati.immagine || '', priorita: false,
+                abbandonata: !!dati.abbandonata
             }]);
             if (errIns) throw errIns;
 
             await supabaseClient.from('sinossi_anime').insert([{ anime_titolo: dati.titolo, sinossi: '' }]);
             await registraLogSB_(dati.titolo, 'ANIME', 'CREAZIONE', 'N/D', dati.stato || 'In corso');
+            if (dati.abbandonata) await registraLogSB_(dati.titolo, 'ANIME', 'ABBANDONO', 'N/D', 'Abbandonato');
 
             try {
                 const stagioniTotaliNuove = parseInt(dati.stagioniTotali) || 0;
@@ -3244,7 +3255,7 @@
                 valutazione: (dati.valutazione === '' || dati.valutazione === undefined || dati.valutazione === '-') ? null : dati.valutazione,
                 stagioni_totali: parseInt(dati.stagioniTotali) || 0, stagioni_viste: parseInt(dati.stagioniViste) || 0,
                 film_totali: parseInt(dati.filmTotali) || 0, film_visti: parseInt(dati.filmVisti) || 0,
-                generi: dati.generi || '', immagine: dati.immagine || ''
+                generi: dati.generi || '', immagine: dati.immagine || '', abbandonata: !!dati.abbandonata
             }).eq('titolo', vecchioTitoloTrim);
             if (errUpd) throw errUpd;
 
@@ -3295,6 +3306,13 @@
                         await registraLogSB_(titoloLog, 'ANIME', 'CAMBIO_STATO', vecchioStatoLog, nuovoStato);
                     }
                 }
+                const eraAbbandonataLogAnime = !!vecchiaRiga.abbandonata;
+                const oraAbbandonataLogAnime = !!dati.abbandonata;
+                if (oraAbbandonataLogAnime && !eraAbbandonataLogAnime) {
+                    await registraLogSB_(titoloLog, 'ANIME', 'ABBANDONO', 'In visione', 'Abbandonato');
+                } else if (!oraAbbandonataLogAnime && eraAbbandonataLogAnime) {
+                    await registraLogSB_(titoloLog, 'ANIME', 'RIPRESA', 'Abbandonato', 'In visione');
+                }
             } catch (logErr) {
                 console.error("Errore durante la valutazione degli eventi di log per updateAnime: " + logErr);
             }
@@ -3310,6 +3328,11 @@
 
         async function toggleAnimePreferitoSB_(titolo, preferitoStato) {
             const { error } = await supabaseClient.from('anime').update({ preferito: !!preferitoStato }).eq('titolo', String(titolo).trim());
+            if (error) throw error;
+        }
+
+        async function toggleAnimeAbbandonataSB_(titolo, abbandonataStato) {
+            const { error } = await supabaseClient.from('anime').update({ abbandonata: !!abbandonataStato }).eq('titolo', String(titolo).trim());
             if (error) throw error;
         }
 
@@ -3465,12 +3488,13 @@
 					
 					} else {
 					
-						if (statoClean === 'concluso') {
-							coloreVisione = 'verde';
-						} else {
-							coloreVisione = 'giallo';
-						}
+					if (statoClean === 'concluso') {
+						coloreVisione = 'verde';
+					} else {
+						coloreVisione = 'giallo';
 					}
+				}
+                if (item.abbandonata) coloreVisione = 'rosso';
 
                 const matchesVisione = (currentFilterVisioneAnime === 'all' || coloreVisione === currentFilterVisioneAnime);
                 let matchesVoto = true;
@@ -3564,6 +3588,7 @@
 					}
 				
 				}
+                if (item.abbandonata) coloreVisione = 'rosso';
                 
                 const safeTitle = (item.titolo || '').replace(/'/g, "\\'").replace(/"/g, '\\"');
                 
@@ -3619,7 +3644,7 @@
                                     <button class="action-icon-btn" style="font-size: 13px; padding: 0; background: none; border: none; cursor: pointer;" onclick="apriGestioneEpisodi('${safeTitle}')" title="Gestisci Episodi">📺</button>
                                 </div>
                                 <div style="font-size: 12px; color: var(--text-muted); font-weight: normal;">
-                                    Stagioni: <b>${stagioniViste}/${stagioniTotali}</b> | Film: <b>${filmVisti}/${filmTotali}</b>
+                                    Stagioni: <b>${stagioniViste}/${stagioniTotali}</b> | Film: <b>${filmVisti}/${filmTotali}</b>${item.abbandonata ? ' <span style="color:#f87171; font-weight:700;">⛔ Abbandonato</span>' : ''}
                                 </div>
                                 ${genresHTML}
                             </div>
@@ -3634,6 +3659,7 @@
                     <td style="text-align: center;">
                         <button class="action-icon-btn" onclick="apriModificaAnime('${safeTitle}')">✏️</button>
                         <button class="action-icon-btn" onclick="rimuoviAnime('${safeTitle}')">🗑️</button>
+                        <button class="action-icon-btn" style="${item.abbandonata ? '' : 'opacity:0.45;'}" onclick="toggleAbbandonataAnime('${safeTitle}')" title="${item.abbandonata ? 'Riprendi l\'anime' : 'Abbandona l\'anime'}">⛔</button>
                     </td>
                 `;
                 tbody.appendChild(tr);
@@ -3653,6 +3679,8 @@
             document.getElementById('inpFilmVistiAnime').value = 0;
             document.getElementById('inpImmagineAnime').value = ''; // <--- NUOVO: Svuota campo immagine
             document.getElementById('inpGiaVistoAnime').checked = false;
+            document.getElementById('inpAbbandonataAnime').checked = false;
+            document.getElementById('inpAbbandonataAnime').disabled = false;
             // Uncheck tutti i checkbox generi anime
             document.querySelectorAll('input[name="anime_genres_cb"]').forEach(cb => cb.checked = false);
             document.getElementById('modalOverlayAnime').classList.add('active');
@@ -3681,6 +3709,10 @@
                 (parseInt(item.stagioniViste) || 0) >= (parseInt(item.stagioniTotali) || 0) &&
                 (parseInt(item.filmVisti) || 0) >= (parseInt(item.filmTotali) || 0);
             document.getElementById('inpGiaVistoAnime').checked = giaTuttoVistoAnime;
+            // Anime verde (finito davvero): abbandonarlo non ha senso.
+            document.getElementById('inpAbbandonataAnime').checked = !!item.abbandonata;
+            const eAnimeVerde = giaTuttoVistoAnime && String(item.stato || '').trim().toLowerCase().includes('conclus');
+            document.getElementById('inpAbbandonataAnime').disabled = eAnimeVerde;
             
             // Ripristina la selezione dei checkbox generi anime
             document.querySelectorAll('input[name="anime_genres_cb"]').forEach(cb => {
@@ -3692,6 +3724,14 @@
             });
 
             document.getElementById('modalOverlayAnime').classList.add('active');
+        };
+
+        // "Già visto" e "Abbandonato" si escludono a vicenda.
+        document.getElementById('inpGiaVistoAnime').onchange = function() {
+            if (this.checked) document.getElementById('inpAbbandonataAnime').checked = false;
+        };
+        document.getElementById('inpAbbandonataAnime').onchange = function() {
+            if (this.checked) document.getElementById('inpGiaVistoAnime').checked = false;
         };
 
         document.getElementById('animeForm').onsubmit = function(e) {
@@ -3748,6 +3788,25 @@
                 fVis = fTot;
                 segnaComeVistaAnime = true;
             }
+
+            // Flag "⛔ Anime abbandonato": congela l'anime (flag rosso, fuori
+            // dal widget In Corso). Conferma solo sulla transizione, non a ogni
+            // salvataggio. Prevale su "già visto".
+            const flagAbbandonataAnime = document.getElementById('inpAbbandonataAnime').checked;
+            const itemCorrenteAbbAnime = isEditAnimeFlag ? animeList.find(a => a.titolo === targetEditTitleAnime) : null;
+            const eraAbbandonataAnime = !!(itemCorrenteAbbAnime && itemCorrenteAbbAnime.abbandonata);
+            let abbandonataNuovaAnime = false;
+            if (flagAbbandonataAnime) {
+                if (!eraAbbandonataAnime) {
+                    const okAbbandonoAnime = confirm('Segno "' + document.getElementById('inpTitoloAnime').value.trim() + '" come abbandonato: uscirà dal widget "In Corso", il flag visione diventerà rosso e il progresso resterà congelato. Potrai riprenderlo quando vuoi.\n\nProcedo con il salvataggio?');
+                    if (!okAbbandonoAnime) {
+                        document.getElementById('btnSalvaAnime').innerText = "Salva";
+                        return;
+                    }
+                }
+                abbandonataNuovaAnime = true;
+                segnaComeVistaAnime = false;
+            }
             const stOriginale = document.getElementById('inpStatoAnime').value || 'In corso';
             const stClean = stOriginale.trim().toLowerCase();
 
@@ -3794,7 +3853,8 @@
                 generi: selectedGenres,
                 immagine: document.getElementById('inpImmagineAnime').value, // <--- NUOVO: Salva l'URL dell'immagine nel foglio
                 episodiPerStagione: episodiPerStagionePendenteAnime,
-                segnaComeVista: segnaComeVistaAnime
+                segnaComeVista: segnaComeVistaAnime,
+                abbandonata: abbandonataNuovaAnime
             };
             const isEditAnime = !!targetEditTitleAnime;
             const cb = function(data) {
@@ -3909,6 +3969,14 @@
             const stagioni = righe.filter(r => r.tipo === 'Stagione');
             const film = righe.filter(r => r.tipo === 'Film');
 
+            // Anime abbandonato: i visti sono congelati (banner + controlli
+            // disabilitati/nascosti), i totali restano modificabili con ✏️.
+            const animeCorrenteOverlay = (animeList || []).find(function(x) { return (x.titolo || '').trim() === episodiOverlayTitoloCorrente.trim(); });
+            const overlayCongelatoAnime = !!(animeCorrenteOverlay && animeCorrenteOverlay.abbandonata);
+            if (overlayCongelatoAnime) {
+                html += `<p style="color:#f87171; font-size:12.5px; font-weight:600; margin:0 0 6px 0;">⛔ Anime abbandonato: i progressi sono congelati. Riprendilo (⛔ nella lista) per modificarli — i totali restano modificabili con ✏️.</p>`;
+            }
+
             function renderGruppo(gruppo, iconaTipo) {
                 let out = '';
                 gruppo.forEach((ep, idx) => {
@@ -3919,21 +3987,24 @@
                     const precedenteCompleta = !precedente || (parseInt(precedente.episodiTotali) > 0 && parseInt(precedente.episodiVisti) >= parseInt(precedente.episodiTotali));
                     const bloccata = !precedenteCompleta;
                     const percentuale = totali > 0 ? Math.min(100, Math.round((visti / totali) * 100)) : 0;
-                    const disabledMeno = visti <= 0 ? 'disabled' : '';
-                    const disabledPiu = (bloccata || (totali > 0 && visti >= totali)) ? 'disabled' : '';
+                    const disabledMeno = (visti <= 0 || overlayCongelatoAnime) ? 'disabled' : '';
+                    const disabledPiu = (bloccata || overlayCongelatoAnime || (totali > 0 && visti >= totali)) ? 'disabled' : '';
 
                     // ✅ = segna l'unità come tutta vista (solo se sbloccata e non
                     // già completa); 🔢 = imposta a mano gli episodi visti.
-                    const btnTuttaVista = (!completa && !bloccata)
+                    const btnTuttaVista = (!completa && !bloccata && !overlayCongelatoAnime)
                         ? `<button class="episodi-btn-edit" onclick="segnaUnitaComeVistaAnime('${safeTitle}', '${ep.tipo}', ${ep.numero})" title="Segna ${ep.tipo} ${ep.numero} come tutto visto">✅</button>`
                         : '';
+                    const btnVistiManualAnime = overlayCongelatoAnime
+                        ? ''
+                        : `<button class="episodi-btn-edit" onclick="modificaVistiEpisodi('${safeTitle}', '${ep.tipo}', ${ep.numero}, ${visti}, ${totali})" title="Imposta manualmente gli episodi visti">🔢</button>`;
 
                     out += `
                         <div class="episodi-row ${bloccata ? 'locked' : ''}">
                             <div class="episodi-row-info">
                                 <div class="episodi-row-title">${iconaTipo} ${ep.tipo} ${ep.numero} ${completa ? '✅' : (bloccata ? '🔒' : '')}
                                     <button class="episodi-btn-edit" onclick="modificaTotaleEpisodi('${safeTitle}', '${ep.tipo}', ${ep.numero}, ${totali})" title="Modifica episodi totali">✏️</button>
-                                    <button class="episodi-btn-edit" onclick="modificaVistiEpisodi('${safeTitle}', '${ep.tipo}', ${ep.numero}, ${visti}, ${totali})" title="Imposta manualmente gli episodi visti">🔢</button>
+                                    ${btnVistiManualAnime}
                                     ${btnTuttaVista}
                                 </div>
                                 <div class="episodi-row-count">${visti} / ${totali} episodi</div>
@@ -6692,6 +6763,10 @@ function apriLightbox(url) {
         //   Nuove voci: aggiungere in CIMA all'array.
         // ==========================================
         const PATCH_NOTES = [
+            { v: '1.0.18', titolo: 'Anime abbandonati', data: '13/09/2026 · 15:50', punti: [
+                'Il flag ⛔ arriva anche negli Anime: pulsante riga e checkbox nel modale, mutua esclusione con "già visto".',
+                'Flag visione rosso, fuori dal widget "In Corso", overlay congelato (solo totali modificabili).'
+            ] },
             { v: '1.0.17', titolo: 'Patch notes nel sito', data: '13/09/2026 · 15:41', punti: [
                 'Nuovo bottone 📝 Patch notes nella navbar: tendina con lo storico versioni e overlay col dettaglio.',
                 'Ogni voce riporta la data di deploy.'
@@ -8163,6 +8238,36 @@ function toggleFavoriteAnime(titolo, btn) {
         })
         .catch(function(err) {
              console.error("Errore aggiornamento preferito Anime: ", err);
+        });
+}
+
+// ⛔ Toggle abbandono dal pulsante riga (stesso schema Serie TV): congela
+// (rosso, fuori dal widget) o riprende. Solo la colonna + log, mai il progresso.
+function toggleAbbandonataAnime(titolo) {
+    const item = animeList.find(x => x.titolo === titolo);
+    if (!item) return;
+    if (item.coloreVisione === 'verde') {
+        showToast('❌ Anime completato: non ha senso abbandonarlo.', 'error');
+        return;
+    }
+    const nuovoStato = !item.abbandonata;
+    const msg = nuovoStato
+        ? 'Segno "' + titolo + '" come abbandonato: uscirà dal widget "In Corso", il flag visione diventerà rosso e il progresso resterà congelato. Potrai riprenderlo quando vuoi.\n\nProcedo?'
+        : 'Riprendo "' + titolo + '"? Tornerà nel widget "In Corso" se in visione.';
+    if (!confirm(msg)) return;
+    toggleAnimeAbbandonataSB_(titolo, nuovoStato)
+        .then(function() {
+            return registraLogSB_(titolo, 'ANIME', nuovoStato ? 'ABBANDONO' : 'RIPRESA',
+                nuovoStato ? 'In visione' : 'Abbandonato', nuovoStato ? 'Abbandonato' : 'In visione');
+        })
+        .then(function() { return getAnimeDataSB_(); })
+        .then(function(data) {
+            animeList = data || [];
+            renderListAnime();
+            showToast(nuovoStato ? '⛔ Anime abbandonato' : 'Anime ripreso', 'success');
+        }).catch(function(err) {
+            console.error('Errore toggle abbandonato anime:', err);
+            showToast('❌ Errore aggiornamento: ' + err.message, 'error');
         });
 }
 
