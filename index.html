@@ -400,6 +400,11 @@
             font-weight: 800;
             text-shadow: 0 0 8px rgba(251, 191, 36, 0.5);
         }
+        .ep-log-azione-completato-serietv {
+            color: var(--warning);
+            font-weight: 800;
+            text-shadow: 0 0 8px rgba(251, 191, 36, 0.5);
+        }
         .ep-log-titolo { font-weight: 600; color: #fff; }
         .ep-log-timestamp { font-family: 'Courier New', monospace; color: var(--text-muted); font-size: 12.5px; white-space: nowrap; }
 
@@ -5710,18 +5715,29 @@
 
                 const isVisto = String(log.azione).toUpperCase() === 'VISTO';
 
-                const azioneBadge = isVisto
-                    ? '<span class="log-badge" style="background:rgba(52,211,153,.15); color:#6ee7b7; border:1px solid rgba(52,211,153,.4);">✅ Visto</span>'
-                    : '<span class="log-badge" style="background:rgba(248,113,113,.15); color:#fca5a5; border:1px solid rgba(248,113,113,.4);">↩️ Rimosso</span>';
+                // Come negli anime: il "Visto" che chiude l'ultimo episodio della
+                // stagione mostra la dicitura composta invece dell'esito grezzo
+                // (COMPLETAMENTO -> Serie completata, altrimenti -> Stagione completata).
+                const haCompletatoStagione = isVisto && (parseInt(log.episodiTotali) || 0) > 0 &&
+                    (parseInt(log.episodioInteressato) || 0) === (parseInt(log.episodiTotali) || 0);
 
-                const esitoTesto = log.esito ? ' · ' + escapeHtmlLog(log.esito) : '';
+                let azioneBadge;
+                if (haCompletatoStagione && String(log.esito).toUpperCase() === 'COMPLETAMENTO') {
+                    azioneBadge = '<span class="ep-log-azione ep-log-azione-completato-serietv">✅ Visto — 🏆 Serie completata</span>';
+                } else if (haCompletatoStagione) {
+                    azioneBadge = '<span class="ep-log-azione ep-log-azione-completato-unita">✅ Visto — 🎞️ Stagione completata</span>';
+                } else if (isVisto) {
+                    azioneBadge = '<span class="log-badge" style="background:rgba(52,211,153,.15); color:#6ee7b7; border:1px solid rgba(52,211,153,.4);">✅ Visto</span>';
+                } else {
+                    azioneBadge = '<span class="log-badge" style="background:rgba(248,113,113,.15); color:#fca5a5; border:1px solid rgba(248,113,113,.4);">↩️ Rimosso</span>';
+                }
 
                 tr.innerHTML =
                     '<td style="white-space:nowrap;">' + formatLogTimestamp(log.timestamp) + '</td>' +
                     '<td>' + escapeHtmlLog(log.titolo || '') + '</td>' +
                     '<td><span class="ep-log-badge-stagione">🎞️ Stagione ' + (parseInt(log.numero) || 0) + '</span></td>' +
                     '<td style="text-align:center;">Ep. ' + (parseInt(log.episodioInteressato) || 0) + '/' + (parseInt(log.episodiTotali) || 0) + '</td>' +
-                    '<td style="text-align:center;">' + azioneBadge + '<div style="font-size:11px; color:var(--text-muted);">' + esitoTesto + '</div></td>';
+                    '<td style="text-align:center;">' + azioneBadge + '</td>';
 
                 bodyEl.appendChild(tr);
             });
