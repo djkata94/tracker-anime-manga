@@ -5163,11 +5163,19 @@
                 const disabledMeno = visti <= 0 ? 'disabled' : '';
                 const disabledPiu = (bloccata || (totali > 0 && visti >= totali)) ? 'disabled' : '';
 
+                // ✅ = segna la stagione come tutta vista (solo se sbloccata e non
+                // già completa); 🔢 = imposta a mano gli episodi visti.
+                const btnTuttaVistaSerieTv = (!completa && !bloccata)
+                    ? `<button class="episodi-btn-edit" onclick="segnaStagioneComeVistaSerieTv('${safeTitle}', ${ep.numero})" title="Segna Stagione ${ep.numero} come tutta vista">✅</button>`
+                    : '';
+
                 html += `
                     <div class="episodi-row ${bloccata ? 'locked' : ''}">
                         <div class="episodi-row-info">
                             <div class="episodi-row-title">🎞️ Stagione ${ep.numero}${ep.anno ? ' (' + ep.anno + ')' : ''} ${completa ? '✅' : (bloccata ? '🔒' : '')}
                                 <button class="episodi-btn-edit" onclick="modificaTotaleStagioneSerieTv('${safeTitle}', ${ep.numero}, ${totali})" title="Modifica episodi totali">✏️</button>
+                                <button class="episodi-btn-edit" onclick="modificaVistiStagioneSerieTv('${safeTitle}', ${ep.numero}, ${visti}, ${totali})" title="Imposta manualmente gli episodi visti">🔢</button>
+                                ${btnTuttaVistaSerieTv}
                             </div>
                             <div class="episodi-row-count">${visti} / ${totali} episodi</div>
                             <div class="episodi-progress-outer"><div class="episodi-progress-inner" style="width:${percentuale}%;"></div></div>
@@ -5299,6 +5307,85 @@
                 })
                 .catch(function(err) {
                     showToast('❌ Errore aggiornamento totale episodi: ' + err.message, 'error');
+                });
+        };
+
+        // ✅ Segna la stagione come tutta vista in un colpo solo. Delega a
+        // updateStagioneVistiSerieTvSB_ col delta mancante, così restano validi
+        // vincolo sequenziale, log SERIE_TV e ricalcolo (stesso schema anime).
+        window.segnaStagioneComeVistaSerieTv = function(titolo, numero) {
+            const riga = (episodiSerieTvList || []).find(function(e) {
+                return (e.titolo || '').trim() === String(titolo).trim() && parseInt(e.numero) === parseInt(numero);
+            });
+            if (!riga) {
+                showToast('❌ Riga non trovata', 'error');
+                return;
+            }
+            const totali = parseInt(riga.episodiTotali) || 0;
+            const visti = parseInt(riga.episodiVisti) || 0;
+            if (totali <= 0) {
+                showToast('❌ Imposta prima gli episodi totali con la matita ✏️, poi segna come vista.', 'error');
+                return;
+            }
+            if (visti >= totali) {
+                showToast('Stagione già completa.', 'success');
+                return;
+            }
+            updateStagioneVistiSerieTvSB_(titolo, numero, totali - visti)
+                .then(function(result) {
+                    if (result && result.errore) {
+                        showToast(result.errore, 'error');
+                        return;
+                    }
+                    serieTvList = result.serie || serieTvList;
+                    episodiSerieTvList = result.episodiTutti || episodiSerieTvList;
+                    renderStagioniSerieTvOverlay();
+                    renderListSerieTv();
+                    aggiornaLogStagioniSerieTvSeVisibile();
+                    showToast('✅ Stagione ' + numero + ' segnata come tutta vista', 'success');
+                })
+                .catch(function(err) {
+                    showToast('❌ Errore aggiornamento episodio: ' + err.message, 'error');
+                });
+        };
+
+        // 🔢 Imposta a mano gli episodi visti (stesso schema di
+        // modificaVistiEpisodi negli anime: aumenti sequenziali, diminuzioni
+        // libere, rifiuto oltre il totale).
+        window.modificaVistiStagioneSerieTv = function(titolo, numero, vistiAttuali, totaleAttuale) {
+            const totali = parseInt(totaleAttuale) || 0;
+            const intervallo = totali > 0 ? ' (0–' + totali + ')' : '';
+            const nuovoVistiStr = prompt(`Episodi visti per Stagione ${numero}${intervallo}:`, vistiAttuali);
+            if (nuovoVistiStr === null) return; // annullato
+            const nuovoVisti = parseInt(nuovoVistiStr);
+            if (isNaN(nuovoVisti) || nuovoVisti < 0) {
+                showToast('❌ Inserisci un numero valido', 'error');
+                return;
+            }
+            if (totali > 0 && nuovoVisti > totali) {
+                showToast('❌ Il massimo per Stagione ' + numero + ' è ' + totali + ' episodi.', 'error');
+                return;
+            }
+            const visti = parseInt(vistiAttuali) || 0;
+            if (nuovoVisti === visti) {
+                showToast('Nessuna modifica.', 'success');
+                return;
+            }
+            updateStagioneVistiSerieTvSB_(titolo, numero, nuovoVisti - visti)
+                .then(function(result) {
+                    if (result && result.errore) {
+                        showToast(result.errore, 'error');
+                        return;
+                    }
+                    serieTvList = result.serie || serieTvList;
+                    episodiSerieTvList = result.episodiTutti || episodiSerieTvList;
+                    renderStagioniSerieTvOverlay();
+                    renderListSerieTv();
+                    aggiornaLogStagioniSerieTvSeVisibile();
+                    showToast('Episodi visti aggiornati', 'success');
+                })
+                .catch(function(err) {
+                    showToast('❌ Errore aggiornamento episodi visti: ' + err.message, 'error');
                 });
         };
 
