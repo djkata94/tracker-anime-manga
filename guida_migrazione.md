@@ -1518,6 +1518,138 @@ Colonna nullable: le righe esistenti restano valide con anno vuoto. Nessuna poli
 
 **Soluzione (nessuna modifica a `index.html`):** script usa-e-getta da Console del browser (F12), appoggiato al `supabaseClient` globale già presente nel sito. Per ogni titolo con `tmdb_id` chiama `tmdb-proxy` (`tv_detail`), costruisce la mappa `numero → anno` e fa `UPDATE episodi_serie_tv SET anno` solo sulle righe con `anno IS NULL` (mai sovrascritture). Gira prima in simulazione (`SIMULA = true`), poi in scrittura (`false`). Chiamate sequenziali con 350 ms di pausa. Serie senza link TMDB e stagioni senza anno su TMDB elencate nel riepilogo e lasciate vuote. Con RLS ognuno sistema solo le proprie righe. Testato dal vivo: funzionante.
 
+## Richiesta 12 — Icona joystick per preferiti e schermata Home
+
+**Problema:** salvando il sito tra i preferiti o sulla schermata Home appariva l'icona di default del browser. Voluta: joystick da gaming retrò (palla rossa, base blu).
+
+**Soluzione in due parti (`index.html`, backup `index_backup_pre_favicon.html`):**
+- **Schede e preferiti (tutti i browser, zero file extra):** favicon joystick ridisegnata in SVG inline come data-URI (`<link rel="icon" type="image/svg+xml" ...>`) nella `<head>` — approssima l'immagine originale (palla rossa, stick bianco, base blu con tasti rosso/giallo). Funziona subito al deploy, senza caricare nulla oltre a `index.html`.
+- **"Aggiungi a schermata Home" su iOS:** Safari ignora i data-URI e vuole un file PNG reale. Riga `<link rel="apple-touch-icon" href="apple-touch-icon.png">` già pronta nel file; il file va caricato a parte (vedi sotto).
+- Bonus: `<meta name="theme-color" content="#2b2b6d">` (blu scuro della base) per la barra del browser su mobile.
+
+**Azione manuale rimasta (una tantum, interfaccia web GitHub):** salvare l'immagine del joystick come PNG **180x180** chiamata esattamente `apple-touch-icon.png` e caricarla nella root della repo (`Add file → Upload files → Commit`), accanto a `index.html`. Finché manca, la riga è innocua (solo un 404 in console).
+
+**Note:** le favicon sono cache aggressive — dopo il deploy serve un refresh forzato (Ctrl+F5) e, su iOS, eliminare e ricreare il collegamento Home. Su Android senza web manifest il collegamento Home potrebbe usare un'anteprima generica: se succede, il passo successivo è aggiungere un mini-manifest (lavoro futuro, non fatto ora).
+
+## Richiesta 13 — Flag "già visto" anime + ✅/🔢 per riga + icona overlay Serie TV
+
+*Deploy: 12/09/2026 · 18:20*
+
+**Contesto:** le Serie TV avevano il flag "già vista" nel modale, gli Anime no; segnare 3 stagioni viste su 5 o 450 episodi su 800 richiedeva 450 click sul +.
+
+**Solo `index.html`, backup `index_backup_pre_flagAnimeVisto.html`, nessuna modifica a database o Edge Function.**
+
+### Flag "📺 Anime già visto per intero" nel modale (stesso ragionamento Serie TV)
+- **Markup**: checkbox `inpGiaVistoAnime` in `modalOverlayAnime`, tra Generi e Note (stessa posizione/testo del flag Serie TV).
+- **`btnNuovoAnime.onclick`**: flag sempre spento sulle nuove opere. **`apriModificaAnime()`**: pre-spuntato se già tutto visto (stagioni e film in pari).
+- **`animeForm.onsubmit`**: valutato prima del salvataggio (con `alert` + ripristino pulsante come le altre validazioni anime). Richiede almeno 1 stagione o 1 film totale; `confirm()` riepilogativo (saltato se già completo in modifica); porta `sVis = sTot` e `fVis = fTot` così anche il calcolo colore esistente torna da solo.
+- **Nuova `segnaEpisodiComeVistiAnimeSB_()`** (vicino a `aggiungi/rimuoviRigheEpisodiSB_`): marca `visti = totali` su tutte le righe Stagione+Film con totale noto; quelle a 0 restano a 0 (correzione a mano, come Serie TV). Chiamata da `addAnimeSB_` (seguita da `ricalcolaSincronizzaELoggaSB_`, che prima in creazione non girava) e da `updateAnimeSB_` (prima del ricalcolo già esistente) quando `dati.segnaComeVista` è true.
+
+### Overlay episodi Anime: ✅ per riga e 🔢 visti manuali (vale Stagioni e Film, stesso codice)
+- **✅ "tutta vista"**: visibile solo su righe sbloccate e non complete (`segnaUnitaComeVistaAnime`). Se il totale è ignoto chiede prima la matita ✏️. Delega a `updateEpisodioVistiSB_` col delta mancante: vincolo sequenziale, log VISTO e ricalcolo restano quelli esistenti.
+- **🔢 "visti manuali"** (`modificaVistiEpisodi`, stile `prompt` della matita): accetta 0–totale, rifiuta oltre il totale, ignora i valori invariati, poi delega con `nuovo - attuale` (aumenti sequenziali, diminuzioni libere, clamp esistente).
+- L'overlay Serie TV NON ha questi due pulsanti (scelta di scopo: lì il caricamento stagioni arriva già coi numeri TMDB).
+
+### Icona overlay stagioni Serie TV
+Pulsante riga "Gestisci Stagioni" e titolo overlay (statico + dinamico): **📡 → 📺**, stessa icona dell'overlay anime. Le 📡 di sezione restano (nav, titoli, badge, log, TMDB restano invariati).
+
+## Richiesta 14 — Fix freccia "torna su" + refresh episodi dopo salva/elimina anime
+
+*Deploy: 12/09/2026 · 21:05*
+
+**Solo `index.html`, backup `index_backup_pre_fixTopRefresh.html`, nessuna modifica a database o Edge Function.**
+
+### Freccia ↑ che non funzionava + troppo grande su mobile
+- **Causa del mancato funzionamento:** il click puntava con `scrollIntoView` alla `.navbar`, ma essendo `sticky` (sempre visibile) la chiamata era un no-op e la pagina non si muoveva mai; il `window.scrollTo` di riserva non girava perché la navbar esiste sempre. Sostituito con `window.scrollTo({ top: 0, behavior: 'smooth' })` diretto (stessa delegation sul click, stesso listener di comparsa oltre 250px).
+- **Mobile:** nuova media query sotto 768px (padding 9×12, font 16px, angolo a 15px) così non copre più i pulsanti di fine riga.
+
+### Overlay stagioni vuoto dopo aver aggiunto un anime
+- **Causa:** la `cb` del salvataggio anime aggiornava `animeList` e ridisegnava la lista, ma non ricaricava mai `episodiAnimeList` (le righe stagioni/film appena create): l'overlay filtrava su dati vecchi e rispondeva "nessun dato" fino al refresh manuale. Le Serie TV non avevano il problema (la loro `cb` ricaricava già gli episodi).
+- **Fix:** `cb` anime e `rimuoviAnime` ora ricaricano `episodiAnimeList` via `getTuttiEpisodiAnimeSB_()` prima di `renderListAnime()`, copiando lo schema Serie TV (`rimuoviSerieTv`). Vale per aggiunta, modifica (stessa `cb`) ed eliminazione; bonus: i contatori/colori in lista (che leggono gli episodi) sono giusti subito, anche col flag "già visto".
+
+## Richiesta 15 — ✅/🔢 per riga anche nell'overlay stagioni Serie TV
+
+*Deploy: 12/09/2026 · 22:40*
+
+**Contesto:** la Richiesta 13 aveva messo ✅ (tutta vista) e 🔢 (visti manuali) solo nell'overlay anime; le Serie TV avevano solo ✏️ e +/−.
+
+**Solo `index.html`, backup `index_backup_pre_flagSerieTv.html`, nessuna modifica a database o Edge Function.** Copia speculare del codice anime, adattata ai nomi Serie TV:
+- `renderStagioniSerieTvOverlay()`: 🔢 sempre visibile, ✅ solo su righe sbloccate e non complete (stessa regola anime). L'anno in etichetta resta dov'era.
+- Nuove `segnaStagioneComeVistaSerieTv()` (delega a `updateStagioneVistiSerieTvSB_` col delta mancante; se totale ignoto rimanda alla matita ✏️) e `modificaVistiStagioneSerieTv()` (`prompt` 0–totale, rifiuto oltre il totale, delega con `nuovo - attuale`). Vincolo sequenziale, log SERIE_TV, ricalcolo e refresh lista/log invariati perché riusati.
+
+## Richiesta 16 — Serie TV abbandonate (flag rosso)
+
+*Deploy: 13/09/2026 · 09:15*
+
+**Discussione teorica preliminare in chat** (decisioni: nome "Abbandonata", flag visione rosso, bulk le aggiorna ma le dichiara, overlay blocca solo i visti, solo Serie TV niente anime).
+
+**Prerequisito fuori da `index.html` (eseguire PRIMA di caricare il nuovo file):**
+```sql
+ALTER TABLE serie_tv ADD COLUMN abbandonata BOOLEAN NOT NULL DEFAULT FALSE;
+```
+Default false = finché non abbandoni nulla, tutto resta identico a oggi. Nessuna policy RLS da toccare, nessuna Edge Function.
+
+**Solo `index.html` per il resto, backup `index_backup_pre_abbandonate.html`.**
+
+### Flag visione rosso (vince su tutto)
+- Nuovo `.box-rosso` (CSS, usa `--danger`) accanto agli altri `box-*`.
+- `calcolaColoreVisioneSerieTv_()` ha un 5º parametro `abbandonata`: se true restituisce `'rosso'` prima di ogni altro calcolo. Propagato in `getSerieTvDataSB_` (nuovo campo `abbandonata` sugli item), `calcolaProgressoSerieTvSB_` (select estesa) e nei due ricalcoli locali di `renderListSerieTv` (filtro + riga).
+- Filtro Visione: nuovo bottone `⛔ Abbandonate` (`data-vision="rosso"`); `COLORE_VISIONE_LABELS` + `rosso: 'Abbandonata'` (vale anche in ricerca globale: "In corso · Abbandonata (1/7 stag.)").
+- Widget Home "In Corso": nessun cambio codice — filtra `celeste`, quindi le rosse ne escono da sole. Contatori invariati (il progresso resta conteggiato, le completate contano solo i verdi).
+
+### Abbandono / ripresa
+- **Modale**: checkbox `inpAbbandonataSerieTv` sotto "già vista", con spiegazione; `onchange` di mutua esclusione tra le due; in modifica disabilitata sul verde (serie finita davvero). Submit: `confirm()` solo sulla transizione (non a ogni salvataggio); se abbandonata, `segnaComeVista` viene forzato a false.
+- **Riga**: pulsante ⛔ dopo 🗑️ (attenuato se non attiva), con `confirm()` e divieto sul verde; tag `⛔ Abbandonata` accanto a "Stagioni: x/y".
+- **Dati**: `add/updateSerieTvSB_` scrivono la colonna; nuova `toggleAbbandonataSerieTvSB_()` + `toggleAbbandonataSerieTv()` per il pulsante (solo colonna + log, mai il progresso). Eventi log `ABBANDONO`/`RIPRESA` (campo libero, nessun vincolo) con frasi nel Log di Sistema (⛔/🔄).
+- **Overlay stagioni**: banner rosso + `+`/`−` disabilitati, ✅/🔢 nascosti; la matita ✏️ dei totali resta (possono uscire nuove stagioni anche se non le guarderai).
+
+### Bulk "Aggiorna tutte"
+Le abbandonate **vengono scansionate e aggiornate** come le altre (solo non concluse con `tmdbId`), ma il riepilogo ha un paragrafo rosso dedicato ("⛔ Di cui N nuove stagioni su M serie abbandonate: titoli…") e ogni titolo abbandonato in lista porta il tag `⛔ abbandonata`.
+
+## Richiesta 17 — Patch notes nel sito (v1.0.N)
+
+*Deploy: 13/09/2026 · 15:41*
+
+**Scelta architetturale (contro il file separato):** tendina, overlay, bottone, CSS e JS devono stare comunque in `index.html`; un file esterno conterrebbe solo i testi, costando un secondo upload + un `fetch` che può fallire (file mancante, percorsi). Le 16 voci condensate pesano ~4 KB su 480: tutto integrato, nessun file nuovo da caricare.
+
+**Solo `index.html`, backup `index_backup_pre_patchnotes.html`, nessuna modifica a database o Edge Function.**
+- **Bottone** `📝 Patch notes` in navbar, prima dell'email (con `margin-left:auto` spostato su di lui, tolto dallo span email).
+- **Tendina sinistra** (`patchDrawer` + backdrop, `z-index` 2000/2001): elenco versioni dalla più recente (pill `v1.0.N` + titolo). **Overlay dettaglio** (`modalOverlayPatchDetail`, riuso classi `.modal`, `z-index` 3000 via regola dedicata) con i punti della versione; chiusure con ×, backdrop e "Chiudi" (via `chiudiModale('PatchDetail')` generico).
+- **Dati** in `PATCH_NOTES` (dopo `chiudiModale`): `{ v, titolo, punti[] }`, v1.0.1→1.0.17 distillate dalle Richieste (la guida resta il diario tecnico). **Nuove voci: aggiungere in CIMA all'array** (commento nel codice).
+- **Date deploy** (dal 12/09/2026): ogni voce ha `data` ("gg/mm/aaaa · hh:mm"), mostrata sotto il titolo in tendina e nel dettaglio. Le v1.0.1→1.0.12 (precedenti al tracciamento) restano senza data. **Convenzione da ora in poi:** ogni nuovo blocco Richiesta in guida porta la riga `*Deploy: ...*` e la stessa data finisce in `PATCH_NOTES`.
+
+## Richiesta 18 — Anime abbandonati (flag rosso)
+
+*Deploy: 13/09/2026 · 15:50*
+
+**Speculare alla Richiesta 16 (Serie TV), adattata al modello anime (stagioni + film).**
+
+**Prerequisito fuori da `index.html` (eseguire PRIMA di caricare il nuovo file):**
+```sql
+ALTER TABLE anime ADD COLUMN abbandonata BOOLEAN NOT NULL DEFAULT FALSE;
+```
+Default false, nessuna RLS da toccare, nessuna Edge Function.
+
+**Solo `index.html` per il resto, backup `index_backup_pre_abbandonoAnime.html`.**
+- **Rosso**: `calcolaColoreVisioneAnime_()` con 7º parametro `abbandonata` → `'rosso'`; propagato in `getAnimeDataSB_` (nuovo campo item), `calcolaProgressoAnimeSB_` (select estesa) e nei due ricalcoli locali di `renderListAnime` (filtro + riga). `.box-rosso` e `COLORE_VISIONE_LABELS.rosso` già esistevano (R16); nuovo bottone filtro `⛔ Abbandonati`. Widget "In Corso" invariato (filtra `celeste`).
+- **Modale**: checkbox `inpAbbandonataAnime` sotto "già visto", `onchange` di mutua esclusione, disabilitata sul verde (tutto visto + Concluso). Submit: `confirm()` solo sulla transizione; se abbandonato, `segnaComeVistaAnime` forzato a false.
+- **Riga**: pulsante ⛔ dopo 🗑️ (attenuato se non attivo, divieto sul verde) + tag `⛔ Abbandonato` accanto a "Stagioni x/y | Film a/b". Nuove `toggleAnimeAbbandonataSB_()` + `toggleAbbandonataAnime()` (solo colonna + log, mai il progresso).
+- **Dati**: `add/updateAnimeSB_` scrivono la colonna; log `ABBANDONO`/`RIPRESA` con tipo `ANIME` (le frasi generiche R16 valgono già, nessun cambio).
+- **Overlay episodi**: banner rosso + `+`/`−` disabilitati, ✅/🔢 nascosti (vale Stagioni e Film, stesso `renderGruppo`); matita ✏️ totali resta.
+- **Patch notes**: voce `1.0.18` in cima a `PATCH_NOTES` con stessa data.
+
+## Richiesta 19 — ✅ e 🔢 senza scrittura nel log episodi
+
+*Deploy: 13/09/2026 · 16:07*
+
+**Problema:** popolando l'archivio con ✅ (stagione tutta vista) e 🔢 (visti manuali), ogni uso scriveva una riga VISTO nel log episodi, seppellendo la linguetta sotto decine di righe di popolamento. Confermato: entrambi passavano da `updateEpisodioVistiSB_` / `updateStagioneVistiSerieTvSB_`, che loggano sempre.
+
+**Solo `index.html`, backup `index_backup_pre_nolog.html`, nessuna modifica a database o Edge Function.**
+- Nuovo 5º parametro opzionale `senzaLogEpisodio` sulle due funzioni SB: salta solo la `registraLogEpisodioSB_`. Ricalcolo, vincolo sequenziale, clamp e refresh invariati.
+- ✅ e 🔢 (anime + serie TV) lo passano a `true`; i `+`/`−` lo omettono e continuano a loggare come prima.
+- Nota: il ricalcolo può ancora generare righe AVANZAMENTO/COMPLETAMENTO nel Log di Sistema quando cambia il conteggio stagioni — voluto (i contatori devono aggiornarsi); a non essere più scritte sono solo le righe per-episodio.
+- **Patch notes**: voce `1.0.19` in cima a `PATCH_NOTES` con stessa data.
+
 # 👥 PARTE 4 — Multi-utente
 
 Obiettivo: condividere il sito con una seconda persona (login separato),
