@@ -1464,9 +1464,15 @@
     font-size: 12px;
 }
 .widget-search-results {
-    border-bottom: 1px solid var(--border-color);
-    max-height: 280px;
+    position: fixed;
+    z-index: 9000;
+    background: var(--surface-solid);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius);
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
+    max-height: 320px;
     overflow-y: auto;
+    animation: fadeIn 0.15s ease-out;
 }
 @media (max-width: 560px) {
     #widgetInCorsoSearch {
@@ -1772,7 +1778,7 @@
             <div class="home-progress-header" id="homeProgressHeader">
                 <span class="home-progress-title">🎬 IN CORSO — Anime e Serie TV in Visione &amp; Manga in Lettura</span>
                 <div class="home-progress-header-right">
-                    <input type="search" id="widgetInCorsoSearch" class="log-filter-select" placeholder="🔍 Opera da segnare..." autocomplete="off" title="Cerca anime, manga o serie TV e apri subito l'overlay di avanzamento" style="max-width:220px;">
+                    <input type="search" id="widgetInCorsoSearch" class="log-filter-select" placeholder="🔍 Ricerca opere..." autocomplete="off" title="Cerca anime, manga o serie TV e apri subito l'overlay di avanzamento" style="max-width:220px;">
                     <span class="home-progress-count" id="homeProgressCount"></span>
                     <span class="system-log-toggle-icon home-progress-toggle-icon" id="homeProgressToggleIcon">▾</span>
                 </div>
@@ -2986,6 +2992,8 @@
             document.getElementById('animeView').style.display = 'none';
             document.getElementById('mangaView').style.display = 'none';
             document.getElementById('cinemaView').style.display = 'none';
+            var wsrSwitch = document.getElementById('widgetInCorsoSearchResults');
+            if (wsrSwitch) wsrSwitch.style.display = 'none';
             document.getElementById('serietvView').style.display = 'none';
             
             // Chiudi eventuali filtri fluttuanti aperti cambiando pagina
@@ -6823,6 +6831,10 @@ function apriLightbox(url) {
         //   Nuove voci: aggiungere in CIMA all'array.
         // ==========================================
         const PATCH_NOTES = [
+            { v: '1.0.20', titolo: 'Ricerca nel widget In Corso', data: '15/09/2026', punti: [
+                'Casella di ricerca nella testata del widget: trova anime, manga e serie TV e apre subito l\u2019overlay di avanzamento.',
+                'Al primo episodio/volume segnato l\u2019opera entra da sola nel widget, senza passare dalla vista.'
+            ] },
             { v: '1.0.19', titolo: '✅ e 🔢 silenziosi nel log', data: '13/09/2026 · 16:07', punti: [
                 '✅ (tutta vista) e 🔢 (visti manuali) non scrivono più righe nel log episodi: ideali per popolare l\u2019archivio.',
                 'I pulsanti +/− continuano a registrare ogni episodio come prima.'
@@ -9692,6 +9704,7 @@ function creaProgressCard(tipo, item, idx) {
             if (!risultati || risultati.length === 0) {
                 box.innerHTML = '<div class="global-search-empty">Nessun titolo tra anime, manga e serie TV.</div>';
                 box.style.display = 'block';
+                posizionaRisultatiWidgetInCorso_();
                 return;
             }
             let html = '';
@@ -9712,6 +9725,19 @@ function creaProgressCard(tipo, item, idx) {
             });
             box.innerHTML = html;
             box.style.display = 'block';
+            posizionaRisultatiWidgetInCorso_();
+        }
+
+        // Allinea il riquadro fluttuante sotto la casella di ricerca
+        // (position:fixed, fuori dal flusso: le card non si spostano).
+        function posizionaRisultatiWidgetInCorso_() {
+            const input = document.getElementById('widgetInCorsoSearch');
+            const box = document.getElementById('widgetInCorsoSearchResults');
+            if (!input || !box || box.style.display === 'none') return;
+            const r = input.getBoundingClientRect();
+            box.style.left = Math.max(8, r.left) + 'px';
+            box.style.top = (r.bottom + 6) + 'px';
+            box.style.width = Math.min(Math.max(r.width, 300), window.innerWidth - 16) + 'px';
         }
 
         function apriOperaWidgetInCorso_(tipo, titolo) {
@@ -9746,6 +9772,8 @@ function creaProgressCard(tipo, item, idx) {
             document.addEventListener('click', function(e) {
                 if (e.target !== input && !box.contains(e.target)) box.style.display = 'none';
             });
+            window.addEventListener('scroll', function() { posizionaRisultatiWidgetInCorso_(); }, true);
+            window.addEventListener('resize', function() { posizionaRisultatiWidgetInCorso_(); });
         })();
 
         (function initHomeProgressWidget() {
