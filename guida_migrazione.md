@@ -1650,6 +1650,18 @@ Default false, nessuna RLS da toccare, nessuna Edge Function.
 - Nota: il ricalcolo può ancora generare righe AVANZAMENTO/COMPLETAMENTO nel Log di Sistema quando cambia il conteggio stagioni — voluto (i contatori devono aggiornarsi); a non essere più scritte sono solo le righe per-episodio.
 - **Patch notes**: voce `1.0.19` in cima a `PATCH_NOTES` con stessa data.
 
+
+## Richiesta 20 — Ricerca rapida nel widget In Corso
+
+Casella di ricerca nella testata del widget Home (solo anime/manga/serie TV, niente cinema): cerca tra tutte le opere in archivio e al click apre subito l overlay di avanzamento (stagioni/episodi o volumi) con copertina. Al primo episodio/volume segnato l opera entra in corso e compare nel widget.
+
+Solo `index.html` (backup `index_backup_pre_widgetsearch.html`): input `#widgetInCorsoSearch` in testata (click con stopPropagation, la testata apre/chiude il widget), risultati in flusso a inizio body (`#widgetInCorsoSearchResults`, niente absolute: il widget ha overflow hidden), righe riusate dallo stile ricerca globale con badge ANIME/SERIE TV/MANGA, match accent-insensitive via `normalizzaTestoRicerca`, max 10 risultati, Esc/click-fuori chiude. Refresh lista nei 6 callback overlay anime/serie (`renderWidgetInCorso()` se `homeProgressList` esiste, stesso schema già usato per il manga). Verifica: Chrome headless, zero `Uncaught`.
+
+
+## Richiesta 21 — Fix layout mobile (solo CSS)
+
+Su telefono la pagina sforava a destra: mail in navbar senza wrap, banner contatori senza wrap, gruppi filtro con bottoni lunghi. Solo `index.html` (backup `index_backup_pre_mobilefix.html`), nuovo blocco `@media (max-width: 640px)` dopo quello a 768px (desktop invariato): `#loggedUserEmail` nascosta (`!important`, vince sullo style inline), `.stat-banner` in wrap con `.stat-block` a 2 colonne e divisori nascosti, `.filter-group` con scroll orizzontale interno e `.filter-btn` nowrap. Icona Esci riportata da ⏻ (tofu su Android) a 🚪. Patch notes v1.0.21.
+
 # 👥 PARTE 4 — Multi-utente
 
 Obiettivo: condividere il sito con una seconda persona (login separato),
