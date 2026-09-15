@@ -846,6 +846,49 @@
 				white-space: nowrap; /* Impedisce alle colonne di deformarsi solo sui telefoni */
 			}
 		}
+
+		/* ================================================================
+		   📱 FIX MOBILE (solo sotto i 640px, desktop invariato):
+		   la mail in navbar allargava la pagina oltre il viewport, il banner
+		   contatori non andava mai a capo e i gruppi filtro coi bottoni lunghi
+		   spingevano fuori bordo. Qui restano tutti contenuti.
+		   ================================================================ */
+		@media (max-width: 640px) {
+			/* Mail nascosta: Patch notes + Esci restano allineati a destra */
+			#loggedUserEmail {
+				display: none !important;
+			}
+
+			/* Contatori in griglia 2x2 (via i divisori verticali) */
+			.stat-banner {
+				flex-wrap: wrap;
+				gap: 12px;
+				padding: 14px;
+			}
+			.stat-banner > div:not(.stat-block) {
+				display: none;
+			}
+			.stat-block {
+				flex: 1 1 42%;
+				min-width: 0;
+			}
+			.stat-value {
+				font-size: 17px;
+				overflow-wrap: anywhere;
+			}
+
+			/* Gruppi filtro: scorrono dentro il proprio riquadro, bottoni
+			   sempre su una riga, la pagina non si allarga mai */
+			.filter-group {
+				max-width: 100%;
+				overflow-x: auto;
+				justify-content: flex-start;
+			}
+			.filter-btn {
+				flex: 1 0 auto;
+				white-space: nowrap;
+			}
+		}
 		
 		/* --- STILE PULSANTE TORNA IN ALTO --- */
 #backToTop {
@@ -1716,7 +1759,7 @@
         <button id="nav-cinema" class="btn btn-nav" onclick="switchView('cinema')">🎬 Cinema</button>
         <button id="btnPatchNotes" class="btn btn-nav" style="margin-left:auto;" onclick="apriPatchNotes()" title="Note di versione">📝 Patch notes</button>
         <span id="loggedUserEmail" style="color: var(--text-muted); font-size:13px; display:flex; align-items:center; gap:6px;"></span>
-        <button id="btnLogout" class="btn btn-nav" onclick="handleLogout()" title="Esci">⏻ Esci</button>
+        <button id="btnLogout" class="btn btn-nav" onclick="handleLogout()" title="Esci">🚪 Esci</button>
     </div>
 
     <div id="homeView" class="view-container home-dashboard">
@@ -6831,6 +6874,10 @@ function apriLightbox(url) {
         //   Nuove voci: aggiungere in CIMA all'array.
         // ==========================================
         const PATCH_NOTES = [
+            { v: '1.0.21', titolo: 'Layout mobile', data: '15/09/2026', punti: [
+                'Navbar su telefono: mail nascosta, Patch notes ed Esci allineati; icona Esci di nuovo visibile.',
+                'Contatori Anime/Serie TV in griglia 2x2 e filtri con scorrimento interno: la pagina non sfora più.'
+            ] },
             { v: '1.0.20', titolo: 'Ricerca nel widget In Corso', data: '15/09/2026', punti: [
                 'Casella di ricerca nella testata del widget: trova anime, manga e serie TV e apre subito l\u2019overlay di avanzamento.',
                 'Al primo episodio/volume segnato l\u2019opera entra da sola nel widget, senza passare dalla vista.'
