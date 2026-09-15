@@ -1455,6 +1455,26 @@
     background: rgba(124, 108, 255, 0.1);
 }
 
+/* Ricerca rapida dentro il widget "In Corso": l'input vive in testata,
+   i risultati stanno in flusso a inizio body (niente absolute: il widget
+   ha overflow hidden e li ritaglierebbe). Le righe riusano lo stile della
+   ricerca globale. */
+#widgetInCorsoSearch {
+    max-width: 230px;
+    font-size: 12px;
+}
+.widget-search-results {
+    border-bottom: 1px solid var(--border-color);
+    max-height: 280px;
+    overflow-y: auto;
+}
+@media (max-width: 560px) {
+    #widgetInCorsoSearch {
+        max-width: 100%;
+        flex: 1 1 100%;
+    }
+}
+
 .home-progress-title {
     font-family: 'Courier New', monospace;
     font-weight: 800;
@@ -1752,11 +1772,13 @@
             <div class="home-progress-header" id="homeProgressHeader">
                 <span class="home-progress-title">🎬 IN CORSO — Anime e Serie TV in Visione &amp; Manga in Lettura</span>
                 <div class="home-progress-header-right">
+                    <input type="search" id="widgetInCorsoSearch" class="log-filter-select" placeholder="🔍 Opera da segnare..." autocomplete="off" title="Cerca anime, manga o serie TV e apri subito l'overlay di avanzamento" style="max-width:220px;">
                     <span class="home-progress-count" id="homeProgressCount"></span>
                     <span class="system-log-toggle-icon home-progress-toggle-icon" id="homeProgressToggleIcon">▾</span>
                 </div>
             </div>
             <div class="home-progress-body" id="homeProgressBody">
+                <div id="widgetInCorsoSearchResults" class="widget-search-results" style="display:none;"></div>
                 <div id="homeProgressLoading" class="system-log-loading">⏳ Caricamento opere in corso...</div>
                 <div id="homeProgressList" class="home-progress-list"></div>
                 <div id="homeProgressEmpty" class="system-log-empty" style="display:none;">Nessuna opera attualmente in visione o in lettura. 🎉</div>
@@ -4144,6 +4166,9 @@
                     renderEpisodiOverlay();
                     renderListAnime();
                     aggiornaLogEpisodiSeVisibile();
+                    if (document.getElementById('homeProgressList')) {
+                        renderWidgetInCorso();
+                    }
                 })
                 .catch(function(err) {
                     showToast('❌ Errore aggiornamento episodio: ' + err.message, 'error');
@@ -4205,6 +4230,9 @@
                     }
                     animeList = result.anime || animeList;
                     episodiAnimeList = result.episodiTutti || episodiAnimeList;
+                    if (document.getElementById('homeProgressList')) {
+                        renderWidgetInCorso();
+                    }
                     renderEpisodiOverlay();
                     renderListAnime();
                     aggiornaLogEpisodiSeVisibile();
@@ -4242,6 +4270,9 @@
                     if (result && result.errore) {
                         showToast(result.errore, 'error');
                         return;
+                    if (document.getElementById('homeProgressList')) {
+                        renderWidgetInCorso();
+                    }
                     }
                     animeList = result.anime || animeList;
                     episodiAnimeList = result.episodiTutti || episodiAnimeList;
@@ -5498,6 +5529,9 @@
                     renderStagioniSerieTvOverlay();
                     renderListSerieTv();
                     aggiornaLogStagioniSerieTvSeVisibile();
+                    if (document.getElementById('homeProgressList')) {
+                        renderWidgetInCorso();
+                    }
                 })
                 .catch(function(err) {
                     showToast('❌ Errore aggiornamento episodio: ' + err.message, 'error');
@@ -5559,6 +5593,9 @@
                     }
                     serieTvList = result.serie || serieTvList;
                     episodiSerieTvList = result.episodiTutti || episodiSerieTvList;
+                    if (document.getElementById('homeProgressList')) {
+                        renderWidgetInCorso();
+                    }
                     renderStagioniSerieTvOverlay();
                     renderListSerieTv();
                     aggiornaLogStagioniSerieTvSeVisibile();
@@ -5596,6 +5633,9 @@
                     if (result && result.errore) {
                         showToast(result.errore, 'error');
                         return;
+                    if (document.getElementById('homeProgressList')) {
+                        renderWidgetInCorso();
+                    }
                     }
                     serieTvList = result.serie || serieTvList;
                     episodiSerieTvList = result.episodiTutti || episodiSerieTvList;
@@ -9612,7 +9652,103 @@ function creaProgressCard(tipo, item, idx) {
 }
 
 // Gestione del click sull'header per collassare/espandere il widget "In Corso"
-(function initHomeProgressWidget() {
+        // ================================================================
+        // 🔍 RICERCA RAPIDA nel widget "In Corso" (solo anime/manga/serie TV,
+        // i film hanno già il loro widget). Trova un'opera qualsiasi e ne apre
+        // subito l'overlay di avanzamento (stagioni/episodi o volumi): al primo
+        // episodio/volume segnato l'opera entra in corso e compare nel widget,
+        // perché i callback degli overlay ridisegnano già la lista (stesso
+        // schema già usato per il manga).
+        // ================================================================
+        function widgetInCorsoCercaOpere_(testo) {
+            const q = normalizzaTestoRicerca(testo || '');
+            if (!q) return [];
+            const risultati = [];
+            (animeList || []).forEach(function(a) {
+                if (!a || !a.titolo) return;
+                if (!normalizzaTestoRicerca(a.titolo).includes(q)) return;
+                risultati.push({ tipo: 'anime', titolo: a.titolo, immagine: a.immagine || '',
+                    sub: 'Stagioni ' + (parseInt(a.stagioniViste) || 0) + '/' + (parseInt(a.stagioniTotali) || 0) + ' · ' + (a.stato || 'In corso') });
+            });
+            (serieTvList || []).forEach(function(s) {
+                if (!s || !s.titolo) return;
+                if (!normalizzaTestoRicerca(s.titolo).includes(q)) return;
+                risultati.push({ tipo: 'serietv', titolo: s.titolo, immagine: s.immagine || '',
+                    sub: 'Stagioni ' + (parseInt(s.stagioniViste) || 0) + '/' + (parseInt(s.stagioniTotali) || 0) + ' · ' + (s.stato || 'In corso') });
+            });
+            (mangaList || []).forEach(function(m) {
+                if (!m || !m.titolo) return;
+                if (!normalizzaTestoRicerca(m.titolo).includes(q)) return;
+                risultati.push({ tipo: 'manga', titolo: m.titolo, immagine: m.immagine || '',
+                    sub: 'Volumi ' + (parseInt(m.volumiLetti) || 0) + '/' + (parseInt(m.volumi) || 0) + ' · ' + (m.stato || 'In corso') });
+            });
+            risultati.sort(function(x, y) { return (x.titolo || '').localeCompare(y.titolo || ''); });
+            return risultati.slice(0, 10);
+        }
+
+        function renderRisultatiWidgetInCorso_(risultati) {
+            const box = document.getElementById('widgetInCorsoSearchResults');
+            if (!box) return;
+            if (!risultati || risultati.length === 0) {
+                box.innerHTML = '<div class="global-search-empty">Nessun titolo tra anime, manga e serie TV.</div>';
+                box.style.display = 'block';
+                return;
+            }
+            let html = '';
+            risultati.forEach(function(item) {
+                const safeTitle = String(item.titolo || '').replace(/'/g, "\\'").replace(/"/g, '\\"');
+                const badgeClass = item.tipo === 'serietv' ? 'log-badge-serietv' : (item.tipo === 'anime' ? 'log-badge-anime' : 'log-badge-manga');
+                const badgeLabel = item.tipo === 'serietv' ? 'SERIE TV' : item.tipo.toUpperCase();
+                const icona = item.tipo === 'serietv' ? '📡' : (item.tipo === 'anime' ? '📺' : '📚');
+                const thumb = item.immagine
+                    ? '<img class="global-search-thumb" src="' + item.immagine + '" loading="lazy">'
+                    : '<div class="global-search-thumb-placeholder tipo-' + item.tipo + '">' + icona + '</div>';
+                html += '<div class="global-search-row" onclick="apriOperaWidgetInCorso_(\'' + item.tipo + '\', \'' + safeTitle + '\')">'
+                    + thumb
+                    + '<div class="global-search-row-info">'
+                    + '<div class="global-search-row-title">' + escapeHtmlLog(item.titolo) + '</div>'
+                    + '<div class="global-search-row-sub"><span class="log-badge ' + badgeClass + '">' + badgeLabel + '</span> ' + escapeHtmlLog(item.sub) + '</div>'
+                    + '</div></div>';
+            });
+            box.innerHTML = html;
+            box.style.display = 'block';
+        }
+
+        function apriOperaWidgetInCorso_(tipo, titolo) {
+            const box = document.getElementById('widgetInCorsoSearchResults');
+            if (box) { box.style.display = 'none'; box.innerHTML = ''; }
+            const input = document.getElementById('widgetInCorsoSearch');
+            if (input) input.value = '';
+            if (tipo === 'anime') {
+                apriGestioneEpisodi(titolo, true);
+            } else if (tipo === 'serietv') {
+                apriGestioneStagioniSerieTv(titolo, true);
+            } else if (tipo === 'manga') {
+                apriAvanzamentoVolumiManga(titolo);
+            }
+        }
+
+        (function initWidgetInCorsoSearch() {
+            const input = document.getElementById('widgetInCorsoSearch');
+            const box = document.getElementById('widgetInCorsoSearchResults');
+            if (!input || !box) return;
+            // L'header apre/chiude il widget al click: il click nella casella
+            // non deve propagare (stesso schema dello switch Sala/Streaming).
+            input.addEventListener('click', function(e) { e.stopPropagation(); });
+            input.addEventListener('input', function() {
+                const testo = input.value.trim();
+                if (!testo) { box.style.display = 'none'; box.innerHTML = ''; return; }
+                renderRisultatiWidgetInCorso_(widgetInCorsoCercaOpere_(testo));
+            });
+            input.addEventListener('keydown', function(e) {
+                if (e.key === 'Escape') { box.style.display = 'none'; input.blur(); }
+            });
+            document.addEventListener('click', function(e) {
+                if (e.target !== input && !box.contains(e.target)) box.style.display = 'none';
+            });
+        })();
+
+        (function initHomeProgressWidget() {
     const headerEl = document.getElementById('homeProgressHeader');
     const widgetEl = document.getElementById('homeProgressWidget');
     if (headerEl && widgetEl) {
