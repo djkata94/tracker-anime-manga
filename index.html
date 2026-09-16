@@ -5162,6 +5162,7 @@
                         <span class="vision-box box-${coloreVisione}"></span>
                     </td>
                     <td style="text-align: center; white-space: nowrap;">
+                        ${item.tmdbId ? `<button class="action-icon-btn" onclick="apriSeriesGraphSerieTv(${item.tmdbId})" title="Voti episodi su Series Graph">📊</button>` : ''}
                         <button class="action-icon-btn" onclick="aggiornaStagioniSerieTvDaTMDB('${safeTitle}')" title="Rileggi da TMDB: aggiunge eventuali nuove stagioni uscite">🔄</button>
                         <button class="action-icon-btn" onclick="apriModificaSerieTv('${safeTitle}')">✏️</button>
                         <button class="action-icon-btn" onclick="rimuoviSerieTv('${safeTitle}')">🗑️</button>
@@ -5334,6 +5335,19 @@
                 addSerieTvSB_(dati).then(cb).catch(errorCb);
             }
         };
+
+        // 📊 Apre la pagina Series Graph della serie (voti IMDb per episodio).
+        // Series Graph indirizza per TMDB ID: niente ambiguita di omonimi ne
+        // problemi di lingua. Il bottone in riga esiste solo sulle serie collegate.
+        window.apriSeriesGraphSerieTv = function(tmdbId) {
+            const id = parseInt(tmdbId) || 0;
+            if (!id) {
+                showToast('Nessun collegamento TMDB per questa serie.', 'error');
+                return;
+            }
+            window.open('https://seriesgraph.com/show/' + id, '_blank', 'noopener');
+        };
+
 
         window.rimuoviSerieTv = function(titolo) {
             if (confirm("Eliminare definitivamente '" + titolo + "'?")) {
@@ -6874,6 +6888,10 @@ function apriLightbox(url) {
         //   Nuove voci: aggiungere in CIMA all'array.
         // ==========================================
         const PATCH_NOTES = [
+            { v: '1.0.22', titolo: 'Voti Series Graph', data: '16/09/2026 · 11:40', punti: [
+                'Nuovo bottone 📊 nelle azioni delle Serie TV: apre i voti IMDb per episodio su Series Graph.',
+                'Visibile solo sulle serie collegate a TMDB.'
+            ] },
             { v: '1.0.21', titolo: 'Layout mobile', data: '15/09/2026 · 18:26', punti: [
                 'Navbar su telefono: mail nascosta, Patch notes ed Esci allineati; icona Esci di nuovo visibile.',
                 'Contatori Anime/Serie TV in griglia 2x2 e filtri con scorrimento interno: la pagina non sfora più.'

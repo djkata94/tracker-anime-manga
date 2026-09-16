@@ -1662,6 +1662,11 @@ Solo `index.html` (backup `index_backup_pre_widgetsearch.html`): input `#widgetI
 
 Su telefono la pagina sforava a destra: mail in navbar senza wrap, banner contatori senza wrap, gruppi filtro con bottoni lunghi. Solo `index.html` (backup `index_backup_pre_mobilefix.html`), nuovo blocco `@media (max-width: 640px)` dopo quello a 768px (desktop invariato): `#loggedUserEmail` nascosta (`!important`, vince sullo style inline), `.stat-banner` in wrap con `.stat-block` a 2 colonne e divisori nascosti, `.filter-group` con scroll orizzontale interno e `.filter-btn` nowrap. Icona Esci riportata da ⏻ (tofu su Android) a 🚪. Patch notes v1.0.21.
 
+
+## Richiesta 22 — Bottone voti Series Graph nelle Serie TV
+
+Bottone 📊 nelle azioni di riga (solo serie con `tmdb_id`): apre `https://seriesgraph.com/show/<tmdb_id>` in nuova scheda (voti IMDb per episodio). Niente omonimi (link per ID) né problemi di lingua. Solo `index.html` (backup `index_backup_pre_seriesgraph.html`): riga condizionale nel render + `window.apriSeriesGraphSerieTv`; niente DB/Edge. Patch notes v1.0.22. Deployati su GitHub `index.html` e `guida_migrazione.md`.
+
 # 👥 PARTE 4 — Multi-utente
 
 Obiettivo: condividere il sito con una seconda persona (login separato),
