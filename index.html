@@ -6888,6 +6888,10 @@ function apriLightbox(url) {
         //   Nuove voci: aggiungere in CIMA all'array.
         // ==========================================
         const PATCH_NOTES = [
+            { v: '1.0.23', titolo: 'Volumi manga da AniList', data: '16/09/2026 · 14:56', punti: [
+                'La ricerca AniList nel modale manga compila anche il Numero Volumi, se li conosce.',
+                'Il tuo numero scritto a mano viene sempre rispettato.'
+            ] },
             { v: '1.0.22', titolo: 'Voti Series Graph', data: '16/09/2026 · 11:40', punti: [
                 'Nuovo bottone 📊 nelle azioni delle Serie TV: apre i voti IMDb per episodio su Series Graph.',
                 'Visibile solo sulle serie collegate a TMDB.'
@@ -8776,6 +8780,7 @@ async function getDettaglioTraduzioneAniListSB_(id) {
                 format
                 episodes
                 seasonYear
+                volumes
             }
         }
     `;
@@ -8806,6 +8811,7 @@ async function getDettaglioTraduzioneAniListSB_(id) {
             generiSuggeriti: (media.genres || []).concat((media.tags || []).map(function(t) { return t.name; })),
             formato: media.format || '',
             episodi: media.episodes || 0,
+            volumi: (media.volumes === null || media.volumes === undefined) ? null : media.volumes,
             anno: media.seasonYear || ''
         };
     } catch (err) {
@@ -9099,6 +9105,23 @@ function applicaDatiPrincipaliAniList_(tipo) {
     const imgInputId = tipo === 'anime' ? 'inpImmagineAnime' : 'inpImmagineManga';
     if (titoloFinale) document.getElementById(titoloInputId).value = titoloFinale;
     document.getElementById(imgInputId).value = immagineFinale || '';
+
+    // Volumi manga da AniList: rispetta il numero già scritto a mano, lo
+    // riempie solo se il campo è vuoto/zero e AniList lo conosce davvero.
+    if (tipo === 'manga') {
+        const volumiAniList = (ultimoDettaglioAniList.volumi === null || ultimoDettaglioAniList.volumi === undefined)
+            ? null : (parseInt(ultimoDettaglioAniList.volumi) || 0);
+        const inpVolumi = document.getElementById('inpVolumiManga');
+        const volumiAttuali = parseInt(inpVolumi.value) || 0;
+        if (volumiAniList === null) {
+            showToast('AniList non conosce i volumi di questa opera: inseriscili a mano.', 'error');
+        } else if (volumiAttuali <= 0) {
+            inpVolumi.value = volumiAniList;
+            showToast('Volumi importati da AniList: ' + volumiAniList, 'success');
+        } else {
+            showToast('Tengo i tuoi volumi (' + volumiAttuali + '), AniList ne indica ' + volumiAniList + '.', 'success');
+        }
+    }
 
     if (tipo === 'anime') sinossiPendenteAnime = sinossiFinale;
     else sinossiPendenteManga = sinossiFinale;
