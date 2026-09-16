@@ -6890,7 +6890,8 @@ function apriLightbox(url) {
         const PATCH_NOTES = [
             { v: '1.0.23', titolo: 'Volumi manga da AniList', data: '16/09/2026 · 14:56', punti: [
                 'La ricerca AniList nel modale manga compila anche il Numero Volumi, se li conosce.',
-                'Il tuo numero scritto a mano viene sempre rispettato.'
+                'Il tuo numero scritto a mano viene sempre rispettato.',
+                'Importa anche lo stato editoriale giapponese (solo manga, modificabile dopo).'
             ] },
             { v: '1.0.22', titolo: 'Voti Series Graph', data: '16/09/2026 · 11:40', punti: [
                 'Nuovo bottone 📊 nelle azioni delle Serie TV: apre i voti IMDb per episodio su Series Graph.',
@@ -8781,6 +8782,7 @@ async function getDettaglioTraduzioneAniListSB_(id) {
                 episodes
                 seasonYear
                 volumes
+                status
             }
         }
     `;
@@ -8812,6 +8814,7 @@ async function getDettaglioTraduzioneAniListSB_(id) {
             formato: media.format || '',
             episodi: media.episodes || 0,
             volumi: (media.volumes === null || media.volumes === undefined) ? null : media.volumes,
+            statoAniList: media.status || '',
             anno: media.seasonYear || ''
         };
     } catch (err) {
@@ -9041,13 +9044,26 @@ function renderDettaglioAniList_(tipo, dettaglio) {
 
     // Volumi manga in anteprima: mostra subito il numero che verrà importato
     // (solo se il campo scheda è vuoto/zero, altrimenti resta il tuo).
+    // Stessa cosa per lo stato editoriale (riferito al Giappone): anteprima
+    // e importazione solo lato manga, per gli anime resta manuale.
     if (tipo === 'manga') {
         const volumiNoti = (dettaglio.volumi !== null && dettaglio.volumi !== undefined);
+        const mappaStatoManga = {
+            'RELEASING': 'In corso',
+            'FINISHED': 'Concluso',
+            'NOT_YET_RELEASED': 'In arrivo',
+            'CANCELLED': 'Concluso',
+            'HIATUS': 'In corso'
+        };
+        const statoMappato = mappaStatoManga[dettaglio.statoAniList] || '';
         const volInfo = document.createElement('div');
         volInfo.style = 'margin-top:12px; font-size:13px; color: var(--text, #f2f3fa);';
-        volInfo.innerHTML = volumiNoti
+        volInfo.innerHTML = (volumiNoti
             ? `📚 Volumi totali su AniList: <b>${dettaglio.volumi}</b> (importati solo se il campo scheda è vuoto)`
-            : `📚 AniList non indica i volumi di questa opera: inseriscili a mano nella scheda.`;
+            : `📚 AniList non indica i volumi di questa opera: inseriscili a mano nella scheda.`)
+            + (statoMappato
+                ? `<div style="margin-top:6px;">📰 Stato in Giappone: <b>${statoMappato}</b> (verrà impostato, modificabile dopo)</div>`
+                : `<div style="margin-top:6px;">📰 Stato non indicato su AniList: lascio il tuo.</div>`);
         body.appendChild(volInfo);
     }
 
@@ -9132,6 +9148,20 @@ function applicaDatiPrincipaliAniList_(tipo) {
             showToast('Volumi importati da AniList: ' + volumiAniList, 'success');
         } else {
             showToast('Tengo i tuoi volumi (' + volumiAttuali + '), AniList ne indica ' + volumiAniList + '.', 'success');
+        }
+
+        // Stato editoriale dal Giappone: imposta il menu, resta modificabile.
+        const mappaStatoManga = {
+            'RELEASING': 'In corso',
+            'FINISHED': 'Concluso',
+            'NOT_YET_RELEASED': 'In arrivo',
+            'CANCELLED': 'Concluso',
+            'HIATUS': 'In corso'
+        };
+        const statoMappato = mappaStatoManga[ultimoDettaglioAniList.statoAniList] || '';
+        if (statoMappato) {
+            document.getElementById('inpStatoManga').value = statoMappato;
+            showToast('Stato editoriale (Giappone): ' + statoMappato, 'success');
         }
     }
 

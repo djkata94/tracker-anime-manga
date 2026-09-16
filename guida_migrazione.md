@@ -1670,7 +1670,7 @@ Bottone 📊 nelle azioni di riga (solo serie con `tmdb_id`): apre `https://seri
 
 ## Richiesta 23 — Volumi manga da AniList
 
-La ricerca AniList nel modale manga ora importa anche il Numero Volumi (`volumes` aggiunto alla query dettaglio, propagato in `applicaDatiPrincipaliAniList_`): se AniList non li conosce (null) lascia il campo e avvisa; se il campo è vuoto/zero lo riempie; se hai già scritto un numero a mano lo rispetta (toast riepilogativo). Solo `index.html` (backup `index_backup_pre_volumimanga.html`), niente DB/Edge. Patch notes v1.0.23. Deployati su GitHub `index.html` e `guida_migrazione.md`.
+La ricerca AniList nel modale manga ora importa anche il Numero Volumi (`volumes` aggiunto alla query dettaglio, propagato in `applicaDatiPrincipaliAniList_`): se AniList non li conosce (null) lascia il campo e avvisa; se il campo è vuoto/zero lo riempie; se hai già scritto un numero a mano lo rispetta (toast riepilogativo). Aggiunta anche l'importazione dello stato editoriale giapponese (`status`: RELEASING→In corso, FINISHED→Concluso, NOT_YET_RELEASED→In arrivo, CANCELLED→Concluso, HIATUS→In corso), solo lato manga con anteprima nel modale e menu impostato alla conferma; lato anime resta manuale (idea futura). Solo `index.html` (backup `index_backup_pre_volumimanga.html`), niente DB/Edge. Patch notes v1.0.23. Deployati su GitHub `index.html` e `guida_migrazione.md`.
 
 # 👥 PARTE 4 — Multi-utente
 
