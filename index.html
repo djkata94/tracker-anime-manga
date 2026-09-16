@@ -9039,6 +9039,18 @@ function renderDettaglioAniList_(tipo, dettaglio) {
     document.getElementById('anilistTitoloInput').value = dettaglio.titolo || '';
     document.getElementById('anilistSinossiTextarea').value = dettaglio.sinossi || '';
 
+    // Volumi manga in anteprima: mostra subito il numero che verrà importato
+    // (solo se il campo scheda è vuoto/zero, altrimenti resta il tuo).
+    if (tipo === 'manga') {
+        const volumiNoti = (dettaglio.volumi !== null && dettaglio.volumi !== undefined);
+        const volInfo = document.createElement('div');
+        volInfo.style = 'margin-top:12px; font-size:13px; color: var(--text, #f2f3fa);';
+        volInfo.innerHTML = volumiNoti
+            ? `📚 Volumi totali su AniList: <b>${dettaglio.volumi}</b> (importati solo se il campo scheda è vuoto)`
+            : `📚 AniList non indica i volumi di questa opera: inseriscili a mano nella scheda.`;
+        body.appendChild(volInfo);
+    }
+
     // === Generi/tag rilevati: confronto testuale (case-insensitive) tra ciò che AniList
     // restituisce (genres + tags) e la tua lista predefinita MASTER_GENRES_LIST. Solo le
     // corrispondenze vengono mostrate, pre-selezionate, e deselezionabili una per una. ===
