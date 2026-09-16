@@ -7396,12 +7396,20 @@ function apriLightbox(url) {
                 ? `<span class="cinema-badge-streaming" title="Da vedere in streaming (promemoria)">S</span>`
                 : '';
 
+            // Generi sotto al titolo, come nelle altre viste (l'overlay ℹ️ resta per la trama)
+            const generiCinemaHTML = (item.generi && item.generi.trim() !== '')
+                ? `<div class="genre-tags-list" style="color: var(--primary);">🎭 ${item.generi}</div>`
+                : '';
+
             const titoloCol = `
                 <td>
                     <div style="display:flex; align-items:center; gap:10px;">
                         ${badgeStreaming}
                         ${posterHTML}
-                        <span class="media-title">${item.titolo || 'Senza Titolo'}</span>
+                        <div style="display: flex; flex-direction: column; gap: 3px;">
+                            <span class="media-title">${item.titolo || 'Senza Titolo'}</span>
+                            ${generiCinemaHTML}
+                        </div>
                     </div>
                 </td>`;
 
