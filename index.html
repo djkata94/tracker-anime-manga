@@ -9656,7 +9656,7 @@ setTimeout(caricaLogAttivita, 1000);
 // ============================================================================
 // Carica anime, manga ed episodi (necessari per riusare l'overlay episodi
 // della vista Anime) e popola le card cliccabili del widget nella Home.
-function caricaWidgetInCorso() {
+function caricaWidgetInCorso(tentativo) {
     const loadingEl = document.getElementById('homeProgressLoading');
     const listEl = document.getElementById('homeProgressList');
     if (!listEl) return; // Il widget non è presente in questa vista
@@ -9668,14 +9668,25 @@ function caricaWidgetInCorso() {
     const emptyEl = document.getElementById('homeProgressEmpty');
     if (emptyEl) emptyEl.style.display = 'none';
 
-    // Le cinque chiamate (anime, manga, episodi anime, serie TV, episodi serie TV) sono indipendenti:
-    // partono tutte e tre insieme e si aspetta solo la più lenta delle tre.
+    // Le cinque chiamate (anime, manga, episodi anime, serie TV, episodi serie TV) sono indipendenti
+    // e partono tutte insieme. Ognuna è protetta singolarmente: se una fallisce (es. token in
+    // refresh dopo inattività) le altre passano lo stesso. Al primo tentativo fallito si riprova
+    // una sola volta dopo 1.5s, poi si disegna comunque con i dati arrivati.
+    const tentativiWidget = parseInt(tentativo) || 0;
+    let erroriWidget = 0;
+    function sicuraWidgetInCorso_(promessa) {
+        return promessa.catch(function(err) {
+            erroriWidget++;
+            console.warn('Widget In Corso: chiamata fallita (' + erroriWidget + '/5), uso lista vuota. Dettaglio: ' + err);
+            return [];
+        });
+    }
     Promise.all([
-        getAnimeDataSB_(),
-        getMangaDataSB_(),
-        getTuttiEpisodiAnimeSB_(),
-        getSerieTvDataSB_(),
-        getTuttiEpisodiSerieTvSB_()
+        sicuraWidgetInCorso_(getAnimeDataSB_()),
+        sicuraWidgetInCorso_(getMangaDataSB_()),
+        sicuraWidgetInCorso_(getTuttiEpisodiAnimeSB_()),
+        sicuraWidgetInCorso_(getSerieTvDataSB_()),
+        sicuraWidgetInCorso_(getTuttiEpisodiSerieTvSB_())
     ])
         .then(function(risultati) {
             animeList = risultati[0] || [];
@@ -9683,6 +9694,11 @@ function caricaWidgetInCorso() {
             episodiAnimeList = risultati[2] || [];
             serieTvList = risultati[3] || [];
             episodiSerieTvList = risultati[4] || [];
+            if (erroriWidget > 0 && tentativiWidget < 1) {
+                if (loadingEl) loadingEl.innerText = '⏳ Riconnessione in corso...';
+                setTimeout(function() { caricaWidgetInCorso(tentativiWidget + 1); }, 1500);
+                return;
+            }
             if (loadingEl) loadingEl.style.display = 'none';
             renderWidgetInCorso();
         })
