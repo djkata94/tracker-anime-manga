@@ -2817,7 +2817,10 @@
             // Ricarica il widget "In Corso" a ogni login: il caricamento
             // automatico all'avvio può essere partito senza sessione (la RLS
             // restituisce liste vuote senza errore) e non si riprenderebbe mai.
+            // Stessa cosa per gli altri due widget della Home.
             caricaWidgetInCorso();
+            caricaWidgetCinemaProssimi();
+            caricaLogAttivita();
         }
 		
         function mostraLogin_() {
