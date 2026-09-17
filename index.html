@@ -1905,6 +1905,7 @@
     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 10px;">
         <h2 style="margin:0; font-size:24px; font-weight:700;">Catalogo Anime</h2>
         <div style="display: flex; gap: 10px;">
+            <button id="btnAiringAnime" class="btn btn-anime" onclick="apriDrawerAiringAnime()" title="Prossimi episodi in uscita degli anime in corso">📅 Prossime uscite</button>
             <button id="btnNuovoAnime" class="btn btn-anime">+ Nuovo Anime</button>
         </div>
     </div>
@@ -2050,6 +2051,7 @@
     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 10px;">
         <h2 style="margin:0; font-size:24px; font-weight:700;">Catalogo Serie TV</h2>
         <div style="display: flex; gap: 10px;">
+            <button id="btnAiringSerieTv" class="btn btn-serietv" onclick="apriDrawerAiringSerieTv()" title="Prossimi episodi in uscita delle serie in corso">📅 Prossime uscite</button>
             <button id="btnAggiornaTutteSerieTv" class="btn btn-serietv" onclick="aggiornaTutteSerieTvDaTMDB()" title="Cerca nuove stagioni su TMDB per tutte le serie non concluse">🔄 Aggiorna tutte</button>
             <button id="btnNuovaSerieTv" class="btn btn-serietv">+ Nuova Serie TV</button>
         </div>
@@ -2708,6 +2710,14 @@
             <button class="close-modal" onclick="chiudiPatchNotes()">&times;</button>
         </div>
         <div id="patchNotesList" class="patch-drawer-list"></div>
+    </aside>
+    <div id="airingDrawerBackdrop" class="patch-drawer-backdrop" onclick="chiudiAiringDrawer()"></div>
+    <aside id="airingDrawer" class="patch-drawer">
+        <div class="patch-drawer-header">
+            <span style="font-weight:700;" id="airingDrawerTitle">📅 Prossime uscite</span>
+            <button class="close-modal" onclick="chiudiAiringDrawer()">&times;</button>
+        </div>
+        <div id="airingDrawerList" class="patch-drawer-list"></div>
     </aside>
     <div class="modal-overlay" id="modalOverlayPatchDetail">
         <div class="modal" style="max-width: 520px;">
@@ -6888,6 +6898,10 @@ function apriLightbox(url) {
         //   Nuove voci: aggiungere in CIMA all'array.
         // ==========================================
         const PATCH_NOTES = [
+            { v: '1.0.24', titolo: 'Prossime uscite', data: '17/09/2026 · 10:04', punti: [
+                'Bottone 📅 in testata Anime e Serie TV: tendina con i prossimi episodi in uscita, dal più vicino.',
+                'Anime via AniList (stagione calcolata), serie via TMDB: richiede la Edge Function aggiornata.'
+            ] },
             { v: '1.0.23', titolo: 'Volumi manga da AniList', data: '16/09/2026 · 14:56', punti: [
                 'La ricerca AniList nel modale manga compila anche il Numero Volumi, se li conosce.',
                 'Il tuo numero scritto a mano viene sempre rispettato.',
@@ -7010,6 +7024,233 @@ function apriLightbox(url) {
         // ==========================================
         //   🎬 TRACKER FILM AL CINEMA (view "Cinema")
         // ==========================================
+        // ==========================================
+        //   📅 PROSSIME USCITE (drawer: anime via AniList, serie via TMDB)
+        //   Bottone in testata di ogni vista, solo opere in corso e non
+        //   abbandonate. Nessuna scrittura su DB: lettura al volo a drawer
+        //   aperto, risultati ordinati dal più vicino (senza data in fondo).
+        // ==========================================
+        let scansioneAiringInCorso = false;
+
+        window.chiudiAiringDrawer = function() {
+            document.getElementById('airingDrawerBackdrop').classList.remove('active');
+            document.getElementById('airingDrawer').classList.remove('open');
+        };
+
+        function apriAiringDrawerBase_(titolo) {
+            document.getElementById('airingDrawerTitle').innerText = titolo;
+            document.getElementById('airingDrawerList').innerHTML =
+                '<p style="color:var(--text-muted); padding:8px 4px;">⏳ Leggo le prossime uscite...</p>';
+            document.getElementById('airingDrawerBackdrop').classList.add('active');
+            document.getElementById('airingDrawer').classList.add('open');
+        }
+
+        // "oggi" / "domani" / "tra N giorni" da data ISO o timestamp unix.
+        function testoCountdownAiring_(dataISO, timestampSec) {
+            let target = null;
+            if (timestampSec) target = new Date(timestampSec * 1000);
+            else if (dataISO) target = new Date(dataISO + 'T12:00:00');
+            if (!target || isNaN(target.getTime())) return '';
+            const oggi = new Date();
+            oggi.setHours(0, 0, 0, 0);
+            const g = new Date(target);
+            g.setHours(0, 0, 0, 0);
+            const diff = Math.round((g - oggi) / 86400000);
+            if (diff < 0) return '';
+            if (diff === 0) return 'oggi';
+            if (diff === 1) return 'domani';
+            return 'tra ' + diff + ' giorni';
+        }
+
+        function dataItalianaAiring_(dataISO) {
+            if (!dataISO) return '';
+            if (typeof formattaDataItalianaCinema_ === 'function') return formattaDataItalianaCinema_(dataISO);
+            const m = String(dataISO).substring(0, 10).match(/^(\d{4})-(\d{2})-(\d{2})$/);
+            return m ? (m[3] + '/' + m[2] + '/' + m[1]) : String(dataISO).substring(0, 10);
+        }
+
+        function dataItalianaDaTimestamp_(ts) {
+            try {
+                return new Date(ts * 1000).toLocaleDateString('it-IT', { day: '2-digit', month: '2-digit', year: 'numeric' });
+            } catch (e) { return ''; }
+        }
+
+        // Disegna le due sezioni (con data / senza data annunciata).
+        function renderAiringDrawer_(conData, senzaData) {
+            const box = document.getElementById('airingDrawerList');
+            if (!box) return;
+            let html = '';
+            if (conData.length === 0 && senzaData.length === 0) {
+                html = '<p style="color:var(--text-muted); padding:8px 4px;">Nessuna opera in corso trovata. 🎉</p>';
+            } else {
+                conData.forEach(function(r) {
+                    html += '<div style="padding:10px 12px; border:1px solid var(--border-color); border-radius:8px; background:rgba(255,255,255,0.03);">'
+                        + '<div style="font-weight:700;">' + escapeHtmlLog(r.titolo) + '</div>'
+                        + '<div style="font-size:12px; color:var(--text-muted);">' + escapeHtmlLog(r.dettaglio) + '</div>'
+                        + '<div style="font-size:13px; margin-top:2px;">📅 ' + escapeHtmlLog(r.data) + (r.countdown ? ' · ' + escapeHtmlLog(r.countdown) : '') + '</div>'
+                        + '</div>';
+                });
+                if (senzaData.length > 0) {
+                    html += '<div style="font-size:11px; font-weight:800; letter-spacing:0.6px; text-transform:uppercase; color:var(--text-muted); margin:12px 0 2px 0;">Senza data annunciata</div>';
+                    senzaData.forEach(function(r) {
+                        html += '<div style="padding:10px 12px; border:1px solid var(--border-color); border-radius:8px; opacity:0.75;">'
+                            + '<div style="font-weight:700;">' + escapeHtmlLog(r.titolo) + '</div>'
+                            + '<div style="font-size:12px; color:var(--text-muted);">' + escapeHtmlLog(r.dettaglio) + '</div>'
+                            + '</div>';
+                    });
+                }
+            }
+            box.innerHTML = html;
+        }
+
+        // Mappa episodio assoluto AniList -> {stagione, episodio} usando i
+        // totali salvati. Ritorna null se i totali sono ignoti (fallback).
+        function mappaStagioneEpisodioAnime_(epAssoluto, titolo) {
+            const righe = (episodiAnimeList || [])
+                .filter(function(e) { return (e.titolo || '').trim() === String(titolo).trim() && e.tipo === 'Stagione'; })
+                .slice()
+                .sort(function(a, b) { return a.numero - b.numero; });
+            if (righe.length === 0) return null;
+            let resto = parseInt(epAssoluto) || 0;
+            if (resto <= 0) return null;
+            for (let i = 0; i < righe.length; i++) {
+                const tot = parseInt(righe[i].episodiTotali) || 0;
+                if (tot <= 0) return null;
+                if (resto <= tot) return { stagione: righe[i].numero, episodio: resto };
+                resto -= tot;
+            }
+            return null;
+        }
+
+        // Anime in corso: match esatto su titolo (romaji/english) via search
+        // AniList, poi nextAiringEpisode (solo RELEASING, data giapponese).
+        window.apriDrawerAiringAnime = async function() {
+            if (scansioneAiringInCorso) return;
+            const candidati = (animeList || []).filter(function(a) {
+                if (!a || a.abbandonata) return false;
+                const st = String(a.stato || '').trim().toLowerCase();
+                return st === 'in corso' || st === 'manga completo - anime in corso';
+            });
+            apriAiringDrawerBase_('📅 Prossime uscite — Anime');
+            if (candidati.length === 0) {
+                renderAiringDrawer_([], []);
+                return;
+            }
+            scansioneAiringInCorso = true;
+            try {
+                try {
+                    animeList = await getAnimeDataSB_();
+                    episodiAnimeList = await getTuttiEpisodiAnimeSB_();
+                } catch (e) { /* uso i dati già in memoria */ }
+                const conData = [];
+                const senzaData = [];
+                for (let i = 0; i < candidati.length; i++) {
+                    const item = candidati[i];
+                    document.getElementById('airingDrawerList').innerHTML =
+                        '<p style="color:var(--text-muted); padding:8px 4px;">⏳ Leggo AniList... (' + (i + 1) + '/' + candidati.length + ')</p>';
+                    try {
+                        const gql = 'query ($search: String) { Media(search: $search, type: ANIME) {'
+                            + ' id title { romaji english } status episodes'
+                            + ' nextAiringEpisode { airingAt episode } } }';
+                        const json = await eseguireRichiestaAniList_(gql, { search: item.titolo });
+                        const media = json && json.data && json.data.Media;
+                        const normTitolo = normalizzaTestoRicerca(item.titolo || '');
+                        const match = media && (
+                            normalizzaTestoRicerca((media.title && media.title.romaji) || '') === normTitolo ||
+                            normalizzaTestoRicerca((media.title && media.title.english) || '') === normTitolo
+                        );
+                        const airing = match && media.nextAiringEpisode;
+                        if (match && media.status === 'RELEASING' && airing && airing.airingAt) {
+                            const epAssoluto = parseInt(airing.episode) || 0;
+                            const se = mappaStagioneEpisodioAnime_(epAssoluto, item.titolo);
+                            conData.push({
+                                titolo: item.titolo,
+                                dettaglio: se ? ('Stagione ' + se.stagione + ' · Episodio ' + se.episodio) : ('Episodio ' + epAssoluto),
+                                data: dataItalianaDaTimestamp_(airing.airingAt),
+                                countdown: testoCountdownAiring_('', airing.airingAt),
+                                ts: airing.airingAt
+                            });
+                        } else {
+                            senzaData.push({ titolo: item.titolo, dettaglio: match ? 'In corso, data non annunciata' : 'Non trovato su AniList' });
+                        }
+                    } catch (err) {
+                        console.error("Errore airing AniList per '" + item.titolo + "': " + err);
+                        senzaData.push({ titolo: item.titolo, dettaglio: 'Errore di lettura' });
+                    }
+                    await new Promise(function(r) { setTimeout(r, 300); });
+                }
+                conData.sort(function(a, b) { return a.ts - b.ts; });
+                renderAiringDrawer_(conData, senzaData);
+            } finally {
+                scansioneAiringInCorso = false;
+            }
+        };
+
+        // Serie in corso: prossimo episodio dal dettaglio TMDB (campo
+        // prossimoEpisodio aggiunto alla action tv_detail della Edge Function).
+        window.apriDrawerAiringSerieTv = async function() {
+            if (scansioneAiringInCorso) return;
+            const candidati = (serieTvList || []).filter(function(s) {
+                if (!s || s.abbandonata) return false;
+                return String(s.stato || '').trim().toLowerCase() === 'in corso';
+            });
+            apriAiringDrawerBase_('📅 Prossime uscite — Serie TV');
+            if (candidati.length === 0) {
+                renderAiringDrawer_([], []);
+                return;
+            }
+            scansioneAiringInCorso = true;
+            try {
+                try {
+                    serieTvList = await getSerieTvDataSB_();
+                } catch (e) { /* uso i dati già in memoria */ }
+                const conData = [];
+                const senzaData = [];
+                let serveEdgeUpdate = false;
+                for (let i = 0; i < candidati.length; i++) {
+                    const item = candidati[i];
+                    if (!item.tmdbId) {
+                        senzaData.push({ titolo: item.titolo, dettaglio: 'Senza collegamento TMDB' });
+                        continue;
+                    }
+                    document.getElementById('airingDrawerList').innerHTML =
+                        '<p style="color:var(--text-muted); padding:8px 4px;">⏳ Leggo TMDB... (' + (i + 1) + '/' + candidati.length + ')</p>';
+                    try {
+                        const dettaglio = await getDettaglioSerieTvTMDBSB_(item.tmdbId);
+                        if (!dettaglio || dettaglio.prossimoEpisodio === undefined) {
+                            serveEdgeUpdate = true;
+                            senzaData.push({ titolo: item.titolo, dettaglio: 'Dato non disponibile' });
+                            continue;
+                        }
+                        const ne = dettaglio.prossimoEpisodio;
+                        if (ne && ne.data) {
+                            conData.push({
+                                titolo: item.titolo,
+                                dettaglio: 'Stagione ' + (ne.stagione || '?') + ' · Episodio ' + (ne.episodio || '?') + (ne.titolo ? ' · ' + ne.titolo : ''),
+                                data: dataItalianaAiring_(ne.data),
+                                countdown: testoCountdownAiring_(ne.data, 0),
+                                ts: new Date(ne.data + 'T12:00:00').getTime()
+                            });
+                        } else {
+                            senzaData.push({ titolo: item.titolo, dettaglio: 'Data non annunciata' });
+                        }
+                    } catch (err) {
+                        console.error("Errore airing TMDB per '" + item.titolo + "': " + err);
+                        senzaData.push({ titolo: item.titolo, dettaglio: 'Errore di lettura' });
+                    }
+                    await new Promise(function(r) { setTimeout(r, 250); });
+                }
+                conData.sort(function(a, b) { return a.ts - b.ts; });
+                renderAiringDrawer_(conData, senzaData);
+                if (serveEdgeUpdate) {
+                    showToast('Alcune serie non mostrano dati: aggiorna la Edge Function tmdb-proxy (vedi Richiesta 24).', 'error');
+                }
+            } finally {
+                scansioneAiringInCorso = false;
+            }
+        };
+
+
         let cinemaList = [];
         let currentSearchCinema = '';
         // Pannello attivo nello slider del widget "Da Vedere":

@@ -1672,6 +1672,13 @@ Bottone 📊 nelle azioni di riga (solo serie con `tmdb_id`): apre `https://seri
 
 La ricerca AniList nel modale manga ora importa anche il Numero Volumi (`volumes` aggiunto alla query dettaglio, propagato in `applicaDatiPrincipaliAniList_`): se AniList non li conosce (null) lascia il campo e avvisa; se il campo è vuoto/zero lo riempie; se hai già scritto un numero a mano lo rispetta (toast riepilogativo). Aggiunta anche l'importazione dello stato editoriale giapponese (`status`: RELEASING→In corso, FINISHED→Concluso, NOT_YET_RELEASED→In arrivo, CANCELLED→Concluso, HIATUS→In corso), solo lato manga con anteprima nel modale e menu impostato alla conferma; lato anime resta manuale (idea futura). Solo `index.html` (backup `index_backup_pre_volumimanga.html`), niente DB/Edge. Patch notes v1.0.23. Deployati su GitHub `index.html` e `guida_migrazione.md`.
 
+
+## Richiesta 24 — Drawer prossime uscite (anime AniList + serie TMDB)
+
+Bottone 📅 in testata Anime e Serie TV: apre drawer laterale (stesse classi del drawer patch notes) con prossimi episodi ordinati dal più vicino (titolo, S/E, data italiana, countdown oggi/domani/tra N giorni; senza data in fondo). Anime: search AniList per titolo con match esatto romaji/english, `nextAiringEpisode` (solo RELEASING, data JP), S/E calcolato dai totali salvati con fallback assoluto; skip abbandonate. Serie: `prossimoEpisodio` dalla action `tv_detail` (NUOVO CAMPO EDGE, snippet sotto), solo stato In corso non abbandonate con tmdb_id. Solo letture on-demand a drawer aperto (pausa 250-300ms), nessun DB, flag anti-doppio-click. Patch notes v1.0.24. Deployati su GitHub `index.html` e `guida_migrazione.md`.
+
+Snippet Edge Function `tmdb-proxy` (dashboard → incollare in `tv_detail` dopo `statoMappato`, e aggiungere `prossimoEpisodio` all oggetto dettaglio): `let prossimoEpisodio = null; try { const ne = serie.next_episode_to_air; if (ne && ne.air_date) prossimoEpisodio = { stagione: ne.season_number || 0, episodio: ne.episode_number || 0, titolo: ne.name || "", data: String(ne.air_date).substring(0, 10) }; } catch (_e) {}`. Senza questo update il drawer serie mostra "Dato non disponibile" con toast di avviso (distinto dal null = senza data).
+
 # 👥 PARTE 4 — Multi-utente
 
 Obiettivo: condividere il sito con una seconda persona (login separato),
