@@ -34,7 +34,7 @@
             --success: #34d399;
             --warning: #fbbf24;
             --danger: #f87171;
-            --radius: 14px;
+            --radius: 22px;
             --radius-sm: 8px;
         }
 
@@ -57,7 +57,7 @@
                 var(--bg-dark);
             background-attachment: fixed;
             color: var(--text);
-            font-family: 'Inter', 'Segoe UI', system-ui, -apple-system, sans-serif;
+            font-family: 'Trebuchet MS', 'Segoe UI', system-ui, sans-serif;
             margin: 0;
             padding: 0;
             letter-spacing: 0.2px;
@@ -890,6 +890,17 @@
 			}
 		}
 		
+        /* ================================================================
+           💊 TEMA AURORA PILL (Richiesta 24): forme morbide su colori
+           invariati — tutto stondato, font Trebuchet, titoli non maiuscoli.
+           ================================================================ */
+        .btn-nav, .filter-btn, .filter-group,
+        .filter-bar input, .filter-bar select,
+        .log-badge, .ep-log-badge, .status-badge, .patch-ver { border-radius: 999px; }
+        .home-progress-title, .system-log-title, .stats-widget-title {
+            text-transform: none; letter-spacing: 0; font-size: 16px;
+        }
+
 		/* --- STILE PULSANTE TORNA IN ALTO --- */
 #backToTop {
     display: none; /* Inizialmente nascosto, appare solo quando si scorre */
@@ -6895,6 +6906,9 @@ function apriLightbox(url) {
         //   Nuove voci: aggiungere in CIMA all'array.
         // ==========================================
         const PATCH_NOTES = [
+            { v: '1.0.24', titolo: 'Tema Aurora Pill', data: '17/09/2026 · 13:00', punti: [
+                'Forme morbide su colori invariati: tutto stondato, font Trebuchet, titoli non maiuscoli.'
+            ] },
             { v: '1.0.23', titolo: 'Volumi manga da AniList', data: '16/09/2026 · 14:56', punti: [
                 'La ricerca AniList nel modale manga compila anche il Numero Volumi, se li conosce.',
                 'Il tuo numero scritto a mano viene sempre rispettato.',

@@ -1672,6 +1672,11 @@ Bottone 📊 nelle azioni di riga (solo serie con `tmdb_id`): apre `https://seri
 
 La ricerca AniList nel modale manga ora importa anche il Numero Volumi (`volumes` aggiunto alla query dettaglio, propagato in `applicaDatiPrincipaliAniList_`): se AniList non li conosce (null) lascia il campo e avvisa; se il campo è vuoto/zero lo riempie; se hai già scritto un numero a mano lo rispetta (toast riepilogativo). Aggiunta anche l'importazione dello stato editoriale giapponese (`status`: RELEASING→In corso, FINISHED→Concluso, NOT_YET_RELEASED→In arrivo, CANCELLED→Concluso, HIATUS→In corso), solo lato manga con anteprima nel modale e menu impostato alla conferma; lato anime resta manuale (idea futura). Solo `index.html` (backup `index_backup_pre_volumimanga.html`), niente DB/Edge. Patch notes v1.0.23. Deployati su GitHub `index.html` e `guida_migrazione.md`.
 
+
+## Richiesta 24 — Tema Aurora Pill (il 23 delle anteprime)
+
+Restyling morbido a colori invariati, da anteprima `anteprime-temi-tracker.html` n.23 (combo Aurora + Pill Soft). Solo `index.html` (backup `index_backup_pre_aurorapill.html`): `--radius` 14→22px, font base Inter→Trebuchet MS, `border-radius:999px` su bottoni nav/filtri, input/select filtri, badge e status-badge, titoli widget non maiuscoli 16px senza spacing. Patch notes v1.0.24. Deployati su GitHub `index.html` e `guida_migrazione.md`. (Nota: il numero 24 era stato usato dal drawer Prossime uscite poi rimosso; riusato libero.)
+
 # 👥 PARTE 4 — Multi-utente
 
 Obiettivo: condividere il sito con una seconda persona (login separato),
