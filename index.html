@@ -2814,6 +2814,10 @@
                 const isOwner = !!(session && session.user && session.user.id === OWNER_USER_ID);
                 driveBtnEl.style.display = isOwner ? '' : 'none';
             }
+            // Ricarica il widget "In Corso" a ogni login: il caricamento
+            // automatico all'avvio può essere partito senza sessione (la RLS
+            // restituisce liste vuote senza errore) e non si riprenderebbe mai.
+            caricaWidgetInCorso();
         }
 		
         function mostraLogin_() {
