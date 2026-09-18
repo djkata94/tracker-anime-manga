@@ -2505,6 +2505,22 @@
     </div>
 
 
+    <div class="modal-overlay" id="modalOverlayRecapSerieTv">
+        <div class="modal" style="max-width: 560px;">
+            <div class="modal-header">
+                <h2 id="recapSerieTvModalTitle" style="font-size:18px;">📖 Dove eravamo rimasti</h2>
+                <button class="close-modal" onclick="chiudiModaleRecapSerieTv()">&times;</button>
+            </div>
+            <div id="recapSerieTvContesto" style="font-size:12px; color:var(--text-muted); margin-bottom:8px;"></div>
+            <div id="recapSerieTvBody" style="font-size:14px; line-height:1.6; white-space:pre-line; max-height:50vh; overflow-y:auto;"></div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-danger" onclick="chiudiModaleRecapSerieTv()">Chiudi</button>
+                <button type="button" class="btn btn-serietv" id="btnRigeneraRecapSerieTv" onclick="rigeneraRecapSerieTv()" style="display:none;">🔄 Rigenera</button>
+            </div>
+        </div>
+    </div>
+
+
     <div class="modal-overlay" id="modalOverlayStagioniSerieTv">
         <div class="modal" style="max-width: 560px;">
             <div class="modal-header">
@@ -5180,6 +5196,8 @@
                         <span class="vision-box box-${coloreVisione}"></span>
                     </td>
                     <td style="text-align: center; white-space: nowrap;">
+
+                        ${iniziato ? `<button class="action-icon-btn" onclick="apriRecapSerieTv('${safeTitle}')" title="Dove eravamo rimasti">📖</button>` : ''}
                         ${item.tmdbId ? `<button class="action-icon-btn" onclick="apriSeriesGraphSerieTv(${item.tmdbId})" title="Voti episodi su Series Graph">📊</button>` : ''}
                         <button class="action-icon-btn" onclick="aggiornaStagioniSerieTvDaTMDB('${safeTitle}')" title="Rileggi da TMDB: aggiunge eventuali nuove stagioni uscite">🔄</button>
                         <button class="action-icon-btn" onclick="apriModificaSerieTv('${safeTitle}')">✏️</button>
@@ -6345,6 +6363,64 @@
         };
 
 
+        // ==========================================
+        //   📖 RECAP "DOVE ERAVAMO RIMASTI" (via Edge Function groq-proxy)
+        //   Bottone in riga (solo serie con tmdb_id e almeno 1 episodio visto):
+        //   la Edge legge i titoli visti da TMDB e chiede a Groq un riassunto
+        //   in italiano fermo al tuo punto, senza spoiler successivi.
+        // ==========================================
+        let ultimoRecapSerieTvTitolo = null;
+
+        window.chiudiModaleRecapSerieTv = function() {
+            document.getElementById('modalOverlayRecapSerieTv').classList.remove('active');
+        };
+
+        window.apriRecapSerieTv = async function(titolo, rigenera) {
+            const item = (serieTvList || []).find(function(s) { return s.titolo === titolo; });
+            if (!item || !item.tmdbId) {
+                showToast('Recap non disponibile per questa serie.', 'error');
+                return;
+            }
+            ultimoRecapSerieTvTitolo = titolo;
+
+            const righe = (episodiSerieTvList || [])
+                .filter(function(e) { return (e.titolo || '').trim() === String(titolo).trim(); })
+                .map(function(e) { return {
+                    numero: parseInt(e.numero) || 0,
+                    visti: parseInt(e.episodiVisti) || 0,
+                    totali: parseInt(e.episodiTotali) || 0
+                }; });
+
+            document.getElementById('recapSerieTvModalTitle').innerText = '📖 Dove eravamo rimasti — ' + titolo;
+            document.getElementById('recapSerieTvContesto').innerText = '';
+            document.getElementById('recapSerieTvBody').innerHTML =
+                '<p style="color:var(--warning); font-weight:600;">⏳ Scrivo il recap, solo gli episodi che hai visto...</p>';
+            document.getElementById('btnRigeneraRecapSerieTv').style.display = 'none';
+            document.getElementById('modalOverlayRecapSerieTv').classList.add('active');
+
+            try {
+                const { data, error } = await supabaseClient.functions.invoke('groq-proxy', {
+                    body: { task: 'recap-serie', tmdb_id: item.tmdbId, titolo: titolo, stagioni: righe, rigenera: !!rigenera }
+                });
+                if (error) throw new Error('Impossibile contattare il servizio recap. Riprova più tardi.');
+                if (data && data.error) throw new Error(data.error);
+                const punto = (data && data.punto) ? ('Sei a Stagione ' + data.punto.stagione + ' · Episodio ' + data.punto.episodio) : '';
+                document.getElementById('recapSerieTvContesto').innerText =
+                    (punto ? punto + ' — ' : '') + 'riassunto senza spoiler oltre questo punto.';
+                document.getElementById('recapSerieTvBody').innerText = (data && data.recap) || 'Nessun recap ricevuto.';
+                document.getElementById('btnRigeneraRecapSerieTv').style.display = '';
+            } catch (err) {
+                console.error('Errore recap serie TV:', err);
+                document.getElementById('recapSerieTvBody').innerHTML =
+                    '<p style="color:#f87171;">❌ ' + escapeHtmlLog((err && err.message) || err) + '</p>';
+            }
+        };
+
+        window.rigeneraRecapSerieTv = function() {
+            if (ultimoRecapSerieTvTitolo) apriRecapSerieTv(ultimoRecapSerieTvTitolo, true);
+        };
+
+
         // ---- FINE SERIE TV ----
 
 
@@ -6906,6 +6982,10 @@ function apriLightbox(url) {
         //   Nuove voci: aggiungere in CIMA all'array.
         // ==========================================
         const PATCH_NOTES = [
+            { v: '1.0.25', titolo: 'Dove eravamo rimasti', data: '18/09/2026 · 12:31', punti: [
+                'Bottone 📖 nelle Serie TV: recap in italiano fermo al tuo punto, senza spoiler, con Rigenera.',
+                'Richiede la nuova Edge Function groq-proxy (vedi guida).'
+            ] },
             { v: '1.0.24', titolo: 'Tema Aurora Pill', data: '17/09/2026 · 13:00', punti: [
                 'Forme morbide su colori invariati: tutto stondato, font Trebuchet, titoli non maiuscoli.'
             ] },
