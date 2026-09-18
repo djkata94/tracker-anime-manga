@@ -6407,7 +6407,7 @@
                 const punto = (data && data.punto) ? ('Sei a Stagione ' + data.punto.stagione + ' · Episodio ' + data.punto.episodio) : '';
                 document.getElementById('recapSerieTvContesto').innerText =
                     (punto ? punto + ' — ' : '') + 'riassunto senza spoiler oltre questo punto.';
-                document.getElementById('recapSerieTvBody').innerText = (data && data.recap) || 'Nessun recap ricevuto.';
+                document.getElementById('recapSerieTvBody').innerHTML = renderRecapSerieTvTesto_((data && data.recap) || 'Nessun recap ricevuto.');
                 document.getElementById('btnRigeneraRecapSerieTv').style.display = '';
             } catch (err) {
                 console.error('Errore recap serie TV:', err);
@@ -6415,6 +6415,33 @@
                     '<p style="color:#f87171;">❌ ' + escapeHtmlLog((err && err.message) || err) + '</p>';
             }
         };
+
+        // Divide il recap in blocchi per stagione: le righe che iniziano con
+        // "Stagione N:" diventano intestazioni, il resto paragrafi. Se il
+        // formato non c'è, mostra il testo così com'è (fallback).
+        function renderRecapSerieTvTesto_(testo) {
+            const righe = String(testo || '').split('\n');
+            let html = '';
+            let corrente = [];
+            function scaricaParagrafo() {
+                if (corrente.length > 0) {
+                    html += '<p style="margin:0 0 12px 0;">' + corrente.map(function(r) { return escapeHtmlLog(r); }).join('<br>') + '</p>';
+                    corrente = [];
+                }
+            }
+            righe.forEach(function(r) {
+                if (/^\s*Stagione\s+\d+\s*:/i.test(r)) {
+                    scaricaParagrafo();
+                    html += '<div style="font-weight:800; margin:12px 0 4px 0;">' + escapeHtmlLog(r.trim()) + '</div>';
+                } else if (r.trim() === '') {
+                    scaricaParagrafo();
+                } else {
+                    corrente.push(r);
+                }
+            });
+            scaricaParagrafo();
+            return html || escapeHtmlLog(String(testo || ''));
+        }
 
         window.rigeneraRecapSerieTv = function() {
             if (ultimoRecapSerieTvTitolo) apriRecapSerieTv(ultimoRecapSerieTvTitolo, true);
@@ -6982,6 +7009,10 @@ function apriLightbox(url) {
         //   Nuove voci: aggiungere in CIMA all'array.
         // ==========================================
         const PATCH_NOTES = [
+            { v: '1.0.26', titolo: 'Recap per stagioni', data: '18/09/2026 · 12:47', punti: [
+                'Recap senza più tetto di lunghezza, diviso in blocchi Stagione 1, 2, ...',
+                'Richiede la Edge Function groq-proxy aggiornata (vedi guida).'
+            ] },
             { v: '1.0.25', titolo: 'Dove eravamo rimasti', data: '18/09/2026 · 12:31', punti: [
                 'Bottone 📖 nelle Serie TV: recap in italiano fermo al tuo punto, senza spoiler, con Rigenera.',
                 'Richiede la nuova Edge Function groq-proxy (vedi guida).'

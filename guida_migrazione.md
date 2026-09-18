@@ -1682,6 +1682,11 @@ Restyling morbido a colori invariati, da anteprima `anteprime-temi-tracker.html`
 
 Bottone 📖 in riga Serie TV (solo con tmdb_id e almeno 1 episodio visto): overlay con recap italiano max ~150 parole fermo al punto raggiunto + Rigenera. Giro dati: browser manda a `groq-proxy` {task, tmdb_id, stagioni[]} (solo task `recap-serie` accettati); la Edge legge i titoli visti da TMDB (`/season/{n}`, parallelo) e chiama Groq (llama-3.3-70b-versatile, fallback openai/gpt-oss-120b stessa chiave, temp 0.3, max_tokens 400). 1 chiamata Groq per recap. Nessun DB/log. Patch notes v1.0.25. Deployati su GitHub `index.html` e `guida_migrazione.md`. PREREQUISITO: creare la Edge Function `groq-proxy` da dashboard (sotto la procedura click-per-click).
 
+
+## Richiesta 26 — Recap lungo e diviso per stagioni
+
+Il tetto `max_tokens: 400` troncava i recap lunghi (es. 7 stagioni) e il testo era un blocco unico. Ora: `max_tokens: 2000`, prompt senza limiti di lunghezza con ~120-180 parole per stagione, formato imposto `Stagione N:` a inizio blocco; frontend (`renderRecapSerieTvTesto_`) spacca le intestazioni in card con fallback al testo grezzo. Patch notes v1.0.26. Deployati su GitHub `index.html` e `guida_migrazione.md`. PREREQUISITO: aggiornare `groq-proxy` da dashboard (sotto le 3 sostituzioni).
+
 # 👥 PARTE 4 — Multi-utente
 
 Obiettivo: condividere il sito con una seconda persona (login separato),
