@@ -6407,7 +6407,15 @@
                 const punto = (data && data.punto) ? ('Sei a Stagione ' + data.punto.stagione + ' · Episodio ' + data.punto.episodio) : '';
                 document.getElementById('recapSerieTvContesto').innerText =
                     (punto ? punto + ' — ' : '') + 'riassunto senza spoiler oltre questo punto.';
-                document.getElementById('recapSerieTvBody').innerHTML = renderRecapSerieTvTesto_((data && data.recap) || 'Nessun recap ricevuto.');
+                document.getElementById('recapSerieTvBody').innerHTML = (function() {
+                    const testoRecap = String((data && data.recap) || '').trim();
+                    if (testoRecap === '' || testoRecap === 'NON_RICONOSCIUTA') {
+                        document.getElementById('btnRigeneraRecapSerieTv').style.display = 'none';
+                        return '<p style="color:var(--warning);">Non ho riconosciuto con certezza questa serie dai dati TMDB: preferisco non inventare un recap. Verifica il collegamento TMDB della serie e riprova.</p>';
+                    }
+                    document.getElementById('btnRigeneraRecapSerieTv').style.display = '';
+                    return renderRecapSerieTvTesto_(testoRecap);
+                })();
                 document.getElementById('btnRigeneraRecapSerieTv').style.display = '';
             } catch (err) {
                 console.error('Errore recap serie TV:', err);
