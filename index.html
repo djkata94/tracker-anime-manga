@@ -5491,7 +5491,16 @@
                 return;
             }
 
-            let html = `<div class="section-title-label" style="margin:14px 0 10px 0; font-size:12px;">Stagioni</div>`;
+            // Bottone recap visibile solo per serie in visione (celeste) o in
+            // pari (giallo): nascosto per da-iniziare, completate e abbandonate.
+            const serieRecapOverlay = (serieTvList || []).find(function(x) { return (x.titolo || '').trim() === String(stagioniSerieTvOverlayTitoloCorrente).trim(); });
+            const mostraRecapBtnOverlay = !!(serieRecapOverlay && (serieRecapOverlay.coloreVisione === 'celeste' || serieRecapOverlay.coloreVisione === 'giallo'));
+
+            let html = '';
+            if (mostraRecapBtnOverlay) {
+                html += `<div style="text-align:center; margin:4px 0 6px 0;"><button type="button" class="btn btn-serietv" onclick="apriRecapSerieTv('${safeTitle}')">📖 Dove eravamo rimasti</button></div>`;
+            }
+            html += `<div class="section-title-label" style="margin:14px 0 10px 0; font-size:12px;">Stagioni</div>`;
             // Serie abbandonata: i visti sono congelati (banner + controlli
             // disabilitati/nascosti), i totali restano modificabili con ✏️.
             const serieCorrenteOverlay = (serieTvList || []).find(function(x) { return (x.titolo || '').trim() === stagioniSerieTvOverlayTitoloCorrente.trim(); });
@@ -6381,6 +6390,8 @@
                 showToast('Recap non disponibile per questa serie.', 'error');
                 return;
             }
+            // Se chiamato dall'overlay stagioni, chiudilo prima: il recap lo sostituisce.
+            if (window.chiudiModaleStagioniSerieTv) window.chiudiModaleStagioniSerieTv();
             ultimoRecapSerieTvTitolo = titolo;
 
             const righe = (episodiSerieTvList || [])
@@ -7017,6 +7028,9 @@ function apriLightbox(url) {
         //   Nuove voci: aggiungere in CIMA all'array.
         // ==========================================
         const PATCH_NOTES = [
+            { v: '1.0.27', titolo: 'Recap anche da overlay', data: '18/09/2026 · 17:54', punti: [
+                'Bottone 📖 anche in cima all\u2019overlay stagioni, solo per serie in visione o in pari.'
+            ] },
             { v: '1.0.26', titolo: 'Recap per stagioni', data: '18/09/2026 · 12:47', punti: [
                 'Recap senza più tetto di lunghezza, diviso in blocchi Stagione 1, 2, ...',
                 'Richiede la Edge Function groq-proxy aggiornata (vedi guida).'

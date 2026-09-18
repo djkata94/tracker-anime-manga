@@ -1687,6 +1687,11 @@ Bottone 📖 in riga Serie TV (solo con tmdb_id e almeno 1 episodio visto): over
 
 Il tetto `max_tokens: 400` troncava i recap lunghi (es. 7 stagioni) e il testo era un blocco unico. Ora: `max_tokens: 2000`, prompt senza limiti di lunghezza con ~120-180 parole per stagione, formato imposto `Stagione N:` a inizio blocco; frontend (`renderRecapSerieTvTesto_`) spacca le intestazioni in card con fallback al testo grezzo. Patch notes v1.0.26. Deployati su GitHub `index.html` e `guida_migrazione.md`. PREREQUISITO: aggiornare `groq-proxy` da dashboard (sotto le 3 sostituzioni).
 
+
+## Richiesta 27 — Bottone recap dentro overlay stagioni
+
+Bottone 📖 in cima a `renderStagioniSerieTvOverlay`, visibile solo con `coloreVisione` celeste/giallo (nascosto per bianche/verdi/rosse e senza righe). Apre il recap chiudendo prima l overlay (`chiudiModaleStagioniSerieTv` a inizio `apriRecapSerieTv`, no-op dalla riga). Solo `index.html` (backup `index_backup_pre_recapoverlay.html`). Patch notes v1.0.27. Deployati su GitHub `index.html` e `guida_migrazione.md`.
+
 # 👥 PARTE 4 — Multi-utente
 
 Obiettivo: condividere il sito con una seconda persona (login separato),
