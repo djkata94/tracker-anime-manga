@@ -3388,20 +3388,16 @@
                 const titoloLog = nuovoTitoloEffettivo;
                 const nuovaValutazione = dati.valutazione;
                 const nuovoStato = dati.stato || 'In corso';
-                let completamentoGiaLoggato = !!(risultatoProgresso && risultatoProgresso.eventoLoggato === 'COMPLETAMENTO');
 
                 if (nuovaValutazione && String(nuovaValutazione).trim() !== '' &&
                     String(nuovaValutazione).trim() !== String(vecchiaValutazioneLog || '').trim()) {
                     await registraLogSB_(titoloLog, 'ANIME', 'VOTO', vecchiaValutazioneLog || 'N/D', nuovaValutazione);
                 }
                 if (String(nuovoStato).trim() !== String(vecchioStatoLog).trim()) {
-                    const eraConcluso = String(vecchioStatoLog).trim().toLowerCase().includes('conclus');
-                    const oraConcluso = String(nuovoStato).trim().toLowerCase().includes('conclus');
-                    if (oraConcluso && !eraConcluso) {
-                        if (!completamentoGiaLoggato) await registraLogSB_(titoloLog, 'ANIME', 'COMPLETAMENTO', vecchioStatoLog, nuovoStato);
-                    } else {
-                        await registraLogSB_(titoloLog, 'ANIME', 'CAMBIO_STATO', vecchioStatoLog, nuovoStato);
-                    }
+                    // Il passaggio a Concluso indica fine distribuzione dell'opera,
+                    // non fine visione: si logga sempre come semplice cambio stato.
+                    // Il completamento vero resta quello del ricalcolo episodi.
+                    await registraLogSB_(titoloLog, 'ANIME', 'CAMBIO_STATO', vecchioStatoLog, nuovoStato);
                 }
                 const eraAbbandonataLogAnime = !!vecchiaRiga.abbandonata;
                 const oraAbbandonataLogAnime = !!dati.abbandonata;
