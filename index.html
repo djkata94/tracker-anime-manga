@@ -6416,6 +6416,7 @@
                 if (error) throw new Error('Impossibile contattare il servizio recap. Riprova più tardi.');
                 if (data && data.error) throw new Error(data.error);
                 const punto = (data && data.punto) ? ('Sei a Stagione ' + data.punto.stagione + ' · Episodio ' + data.punto.episodio) : '';
+                if (data && data.debug) console.log('Recap: identificativi TMDB inviati al modello:', data.debug);
                 document.getElementById('recapSerieTvContesto').innerText =
                     (punto ? punto + ' — ' : '') + 'riassunto senza spoiler oltre questo punto.';
                 document.getElementById('recapSerieTvBody').innerHTML = (function() {
