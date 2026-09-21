@@ -4928,16 +4928,10 @@
             try {
                 const titoloLog = nuovoTitoloEffettivo;
                 const nuovoStato = dati.stato || 'In corso';
-                let completamentoGiaLoggato = !!(risultatoProgresso && risultatoProgresso.eventoLoggato === 'COMPLETAMENTO');
 
                 if (String(nuovoStato).trim() !== String(vecchioStatoLog).trim()) {
-                    const eraConcluso = String(vecchioStatoLog).trim().toLowerCase().includes('conclus');
-                    const oraConcluso = String(nuovoStato).trim().toLowerCase().includes('conclus');
-                    if (oraConcluso && !eraConcluso) {
-                        if (!completamentoGiaLoggato) await registraLogSB_(titoloLog, 'SERIE_TV', 'COMPLETAMENTO', vecchioStatoLog, nuovoStato);
-                    } else {
-                        await registraLogSB_(titoloLog, 'SERIE_TV', 'CAMBIO_STATO', vecchioStatoLog, nuovoStato);
-                    }
+                    // Come negli anime: fine distribuzione, non fine visione.
+                    await registraLogSB_(titoloLog, 'SERIE_TV', 'CAMBIO_STATO', vecchioStatoLog, nuovoStato);
                 }
                 const eraAbbandonataLog = !!vecchiaRiga.abbandonata;
                 const oraAbbandonataLog = !!dati.abbandonata;
@@ -6431,13 +6425,8 @@
             try {
                 const titoloLogManga = dati.titolo || vecchioTitolo;
                 if (String(statoNuovo).trim() !== String(vecchioStatoLogManga).trim()) {
-                    const eraConcluso = String(vecchioStatoLogManga).trim().toLowerCase().includes('conclus');
-                    const oraConcluso = String(statoNuovo).trim().toLowerCase().includes('conclus');
-                    if (oraConcluso && !eraConcluso) {
-                        await registraLogSB_(titoloLogManga, 'MANGA', 'COMPLETAMENTO', vecchioStatoLogManga, statoNuovo);
-                    } else {
-                        await registraLogSB_(titoloLogManga, 'MANGA', 'CAMBIO_STATO', vecchioStatoLogManga, statoNuovo);
-                    }
+                    // Come negli anime: fine pubblicazione, non fine lettura.
+                    await registraLogSB_(titoloLogManga, 'MANGA', 'CAMBIO_STATO', vecchioStatoLogManga, statoNuovo);
                 }
                 if (String(acquistatoNuovo).trim() !== String(vecchioAcquistatoLogManga).trim() && acquistatoNuovo === 'Sì') {
                     await registraLogSB_(titoloLogManga, 'MANGA', 'ACQUISTO', vecchioAcquistatoLogManga, acquistatoNuovo);
