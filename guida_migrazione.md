@@ -1678,19 +1678,9 @@ La ricerca AniList nel modale manga ora importa anche il Numero Volumi (`volumes
 Restyling morbido a colori invariati, da anteprima `anteprime-temi-tracker.html` n.23 (combo Aurora + Pill Soft). Solo `index.html` (backup `index_backup_pre_aurorapill.html`): `--radius` 14→22px, font base Inter→Trebuchet MS, `border-radius:999px` su bottoni nav/filtri, input/select filtri, badge e status-badge, titoli widget non maiuscoli 16px senza spacing. Patch notes v1.0.24. Deployati su GitHub `index.html` e `guida_migrazione.md`. (Nota: il numero 24 era stato usato dal drawer Prossime uscite poi rimosso; riusato libero.)
 
 
-## Richiesta 25 — Recap "Dove eravamo rimasti" via Groq
+## Richiesta 28 — Rimozione recap Serie TV
 
-Bottone 📖 in riga Serie TV (solo con tmdb_id e almeno 1 episodio visto): overlay con recap italiano max ~150 parole fermo al punto raggiunto + Rigenera. Giro dati: browser manda a `groq-proxy` {task, tmdb_id, stagioni[]} (solo task `recap-serie` accettati); la Edge legge i titoli visti da TMDB (`/season/{n}`, parallelo) e chiama Groq (llama-3.3-70b-versatile, fallback openai/gpt-oss-120b stessa chiave, temp 0.3, max_tokens 400). 1 chiamata Groq per recap. Nessun DB/log. Patch notes v1.0.25. Deployati su GitHub `index.html` e `guida_migrazione.md`. PREREQUISITO: creare la Edge Function `groq-proxy` da dashboard (sotto la procedura click-per-click).
-
-
-## Richiesta 26 — Recap lungo e diviso per stagioni
-
-Il tetto `max_tokens: 400` troncava i recap lunghi (es. 7 stagioni) e il testo era un blocco unico. Ora: `max_tokens: 2000`, prompt senza limiti di lunghezza con ~120-180 parole per stagione, formato imposto `Stagione N:` a inizio blocco; frontend (`renderRecapSerieTvTesto_`) spacca le intestazioni in card con fallback al testo grezzo. Patch notes v1.0.26. Deployati su GitHub `index.html` e `guida_migrazione.md`. PREREQUISITO: aggiornare `groq-proxy` da dashboard (sotto le 3 sostituzioni).
-
-
-## Richiesta 27 — Bottone recap dentro overlay stagioni
-
-Bottone 📖 in cima a `renderStagioniSerieTvOverlay`, visibile solo con `coloreVisione` celeste/giallo (nascosto per bianche/verdi/rosse e senza righe). Apre il recap chiudendo prima l overlay (`chiudiModaleStagioniSerieTv` a inizio `apriRecapSerieTv`, no-op dalla riga). Solo `index.html` (backup `index_backup_pre_recapoverlay.html`). Patch notes v1.0.27. Deployati su GitHub `index.html` e `guida_migrazione.md`.
+Rimosso tutto il recap (R25-27: bottone riga, bottone overlay, modale, logica, patch 1.0.25/26/27): troppi bug concatenati (quota org condivisa con betting, compound fragile, cutoff modelli, churn nomi, overload) e test su produzione non accettabile. Codice pre-rimozione in `index_backup_pre_norecap.html`. Patch notes v1.0.28. L idea passa alle richieste future da ristudiare.
 
 # 👥 PARTE 4 — Multi-utente
 

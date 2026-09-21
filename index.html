@@ -2505,21 +2505,6 @@
     </div>
 
 
-    <div class="modal-overlay" id="modalOverlayRecapSerieTv">
-        <div class="modal" style="max-width: 560px;">
-            <div class="modal-header">
-                <h2 id="recapSerieTvModalTitle" style="font-size:18px;">📖 Dove eravamo rimasti</h2>
-                <button class="close-modal" onclick="chiudiModaleRecapSerieTv()">&times;</button>
-            </div>
-            <div id="recapSerieTvContesto" style="font-size:12px; color:var(--text-muted); margin-bottom:8px;"></div>
-            <div id="recapSerieTvBody" style="font-size:14px; line-height:1.6; white-space:pre-line; max-height:50vh; overflow-y:auto;"></div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-danger" onclick="chiudiModaleRecapSerieTv()">Chiudi</button>
-                <button type="button" class="btn btn-serietv" id="btnRigeneraRecapSerieTv" onclick="rigeneraRecapSerieTv()" style="display:none;">🔄 Rigenera</button>
-            </div>
-        </div>
-    </div>
-
 
     <div class="modal-overlay" id="modalOverlayStagioniSerieTv">
         <div class="modal" style="max-width: 560px;">
@@ -5197,7 +5182,6 @@
                     </td>
                     <td style="text-align: center; white-space: nowrap;">
 
-                        ${iniziato ? `<button class="action-icon-btn" onclick="apriRecapSerieTv('${safeTitle}')" title="Dove eravamo rimasti">📖</button>` : ''}
                         ${item.tmdbId ? `<button class="action-icon-btn" onclick="apriSeriesGraphSerieTv(${item.tmdbId})" title="Voti episodi su Series Graph">📊</button>` : ''}
                         <button class="action-icon-btn" onclick="aggiornaStagioniSerieTvDaTMDB('${safeTitle}')" title="Rileggi da TMDB: aggiunge eventuali nuove stagioni uscite">🔄</button>
                         <button class="action-icon-btn" onclick="apriModificaSerieTv('${safeTitle}')">✏️</button>
@@ -5491,15 +5475,7 @@
                 return;
             }
 
-            // Bottone recap visibile solo per serie in visione (celeste) o in
-            // pari (giallo): nascosto per da-iniziare, completate e abbandonate.
-            const serieRecapOverlay = (serieTvList || []).find(function(x) { return (x.titolo || '').trim() === String(stagioniSerieTvOverlayTitoloCorrente).trim(); });
-            const mostraRecapBtnOverlay = !!(serieRecapOverlay && (serieRecapOverlay.coloreVisione === 'celeste' || serieRecapOverlay.coloreVisione === 'giallo'));
-
-            let html = '';
-            if (mostraRecapBtnOverlay) {
-                html += `<div style="text-align:center; margin:4px 0 6px 0;"><button type="button" class="btn btn-serietv" onclick="apriRecapSerieTv('${safeTitle}')">📖 Dove eravamo rimasti</button></div>`;
-            }
+            let html = `<div class="section-title-label" style="margin:14px 0 10px 0; font-size:12px;">Stagioni</div>`;
             html += `<div class="section-title-label" style="margin:14px 0 10px 0; font-size:12px;">Stagioni</div>`;
             // Serie abbandonata: i visti sono congelati (banner + controlli
             // disabilitati/nascosti), i totali restano modificabili con ✏️.
@@ -6372,100 +6348,6 @@
         };
 
 
-        // ==========================================
-        //   📖 RECAP "DOVE ERAVAMO RIMASTI" (via Edge Function groq-proxy)
-        //   Bottone in riga (solo serie con tmdb_id e almeno 1 episodio visto):
-        //   la Edge legge i titoli visti da TMDB e chiede a Groq un riassunto
-        //   in italiano fermo al tuo punto, senza spoiler successivi.
-        // ==========================================
-        let ultimoRecapSerieTvTitolo = null;
-
-        window.chiudiModaleRecapSerieTv = function() {
-            document.getElementById('modalOverlayRecapSerieTv').classList.remove('active');
-        };
-
-        window.apriRecapSerieTv = async function(titolo, rigenera) {
-            const item = (serieTvList || []).find(function(s) { return s.titolo === titolo; });
-            if (!item || !item.tmdbId) {
-                showToast('Recap non disponibile per questa serie.', 'error');
-                return;
-            }
-            // Se chiamato dall'overlay stagioni, chiudilo prima: il recap lo sostituisce.
-            if (window.chiudiModaleStagioniSerieTv) window.chiudiModaleStagioniSerieTv();
-            ultimoRecapSerieTvTitolo = titolo;
-
-            const righe = (episodiSerieTvList || [])
-                .filter(function(e) { return (e.titolo || '').trim() === String(titolo).trim(); })
-                .map(function(e) { return {
-                    numero: parseInt(e.numero) || 0,
-                    visti: parseInt(e.episodiVisti) || 0,
-                    totali: parseInt(e.episodiTotali) || 0
-                }; });
-
-            document.getElementById('recapSerieTvModalTitle').innerText = '📖 Dove eravamo rimasti — ' + titolo;
-            document.getElementById('recapSerieTvContesto').innerText = '';
-            document.getElementById('recapSerieTvBody').innerHTML =
-                '<p style="color:var(--warning); font-weight:600;">⏳ Scrivo il recap, solo gli episodi che hai visto...</p>';
-            document.getElementById('btnRigeneraRecapSerieTv').style.display = 'none';
-            document.getElementById('modalOverlayRecapSerieTv').classList.add('active');
-
-            try {
-                const { data, error } = await supabaseClient.functions.invoke('groq-proxy', {
-                    body: { task: 'recap-serie', tmdb_id: item.tmdbId, titolo: titolo, stagioni: righe, rigenera: !!rigenera }
-                });
-                if (error) throw new Error('Impossibile contattare il servizio recap. Riprova più tardi.');
-                if (data && data.error) throw new Error(data.error);
-                const punto = (data && data.punto) ? ('Sei a Stagione ' + data.punto.stagione + ' · Episodio ' + data.punto.episodio) : '';
-                if (data && data.debug) console.log('Recap: identificativi TMDB inviati al modello:', data.debug);
-                document.getElementById('recapSerieTvContesto').innerText =
-                    (punto ? punto + ' — ' : '') + 'riassunto senza spoiler oltre questo punto.';
-                document.getElementById('recapSerieTvBody').innerHTML = (function() {
-                    const testoRecap = String((data && data.recap) || '').trim();
-                    if (testoRecap === '' || testoRecap === 'NON_RICONOSCIUTA') {
-                        document.getElementById('btnRigeneraRecapSerieTv').style.display = 'none';
-                        return '<p style="color:var(--warning);">Non ho riconosciuto con certezza questa serie dai dati TMDB: preferisco non inventare un recap. Verifica il collegamento TMDB della serie e riprova.</p>';
-                    }
-                    document.getElementById('btnRigeneraRecapSerieTv').style.display = '';
-                    return renderRecapSerieTvTesto_(testoRecap);
-                })();
-                document.getElementById('btnRigeneraRecapSerieTv').style.display = '';
-            } catch (err) {
-                console.error('Errore recap serie TV:', err);
-                document.getElementById('recapSerieTvBody').innerHTML =
-                    '<p style="color:#f87171;">❌ ' + escapeHtmlLog((err && err.message) || err) + '</p>';
-            }
-        };
-
-        // Divide il recap in blocchi per stagione: le righe che iniziano con
-        // "Stagione N:" diventano intestazioni, il resto paragrafi. Se il
-        // formato non c'è, mostra il testo così com'è (fallback).
-        function renderRecapSerieTvTesto_(testo) {
-            const righe = String(testo || '').split('\n');
-            let html = '';
-            let corrente = [];
-            function scaricaParagrafo() {
-                if (corrente.length > 0) {
-                    html += '<p style="margin:0 0 12px 0;">' + corrente.map(function(r) { return escapeHtmlLog(r); }).join('<br>') + '</p>';
-                    corrente = [];
-                }
-            }
-            righe.forEach(function(r) {
-                if (/^\s*Stagione\s+\d+\s*:/i.test(r)) {
-                    scaricaParagrafo();
-                    html += '<div style="font-weight:800; margin:12px 0 4px 0;">' + escapeHtmlLog(r.trim()) + '</div>';
-                } else if (r.trim() === '') {
-                    scaricaParagrafo();
-                } else {
-                    corrente.push(r);
-                }
-            });
-            scaricaParagrafo();
-            return html || escapeHtmlLog(String(testo || ''));
-        }
-
-        window.rigeneraRecapSerieTv = function() {
-            if (ultimoRecapSerieTvTitolo) apriRecapSerieTv(ultimoRecapSerieTvTitolo, true);
-        };
 
 
         // ---- FINE SERIE TV ----
@@ -7029,16 +6911,8 @@ function apriLightbox(url) {
         //   Nuove voci: aggiungere in CIMA all'array.
         // ==========================================
         const PATCH_NOTES = [
-            { v: '1.0.27', titolo: 'Recap anche da overlay', data: '18/09/2026 · 17:54', punti: [
-                'Bottone 📖 anche in cima all\u2019overlay stagioni, solo per serie in visione o in pari.'
-            ] },
-            { v: '1.0.26', titolo: 'Recap per stagioni', data: '18/09/2026 · 12:47', punti: [
-                'Recap senza più tetto di lunghezza, diviso in blocchi Stagione 1, 2, ...',
-                'Richiede la Edge Function groq-proxy aggiornata (vedi guida).'
-            ] },
-            { v: '1.0.25', titolo: 'Dove eravamo rimasti', data: '18/09/2026 · 12:31', punti: [
-                'Bottone 📖 nelle Serie TV: recap in italiano fermo al tuo punto, senza spoiler, con Rigenera.',
-                'Richiede la nuova Edge Function groq-proxy (vedi guida).'
+            { v: '1.0.28', titolo: 'Recap rimosso', data: '21/09/2026 · 14:53', punti: [
+                'Funzione recap Serie TV rimossa temporaneamente: presentava troppi bug, verrà riprogettata.'
             ] },
             { v: '1.0.24', titolo: 'Tema Aurora Pill', data: '17/09/2026 · 13:00', punti: [
                 'Forme morbide su colori invariati: tutto stondato, font Trebuchet, titoli non maiuscoli.'
