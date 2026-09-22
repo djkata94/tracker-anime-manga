@@ -3805,7 +3805,7 @@
                     String(item.valutazione).trim() !== '' && item.valutazione !== '-';
                 const votoCellHTML = haVotoGiaAssegnato
                     ? `<button class="action-icon-btn" style="font-weight:bold; color:var(--primary); font-size:15px;" onclick="apriModificaAnime('${safeTitle}')" title="Modifica voto dalla scheda">${item.valutazione}</button>`
-                    : `<button class="btn btn-anime" style="padding:4px 16px; font-size:12px; border-radius:999px;" onclick="apriVotoAnime('${safeTitle}')" title="Assegna voto">Vota</button>`;
+                    : `<button class="filter-btn active" style="font-size:12px; border-radius:999px;" onclick="apriVotoAnime('${safeTitle}')" title="Assegna voto">Vota</button>`;
 
                 // Definizione dinamica di classe e icona della stella per l'Anime
                 const starClass = item.preferito ? 'action-icon-btn is-favorite' : 'action-icon-btn';
