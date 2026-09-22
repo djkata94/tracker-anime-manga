@@ -890,6 +890,12 @@
 			}
 		}
 		
+        /* Griglia voto anime 0.5-10 (overlay dedicato, hover luminoso) */
+        #votoAnimeGrid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; margin: 6px 0 4px 0; }
+        #votoAnimeGrid button { background: var(--surface); color: var(--text-muted); border: 1px solid var(--border-color); border-radius: 999px; padding: 10px 0; font-size: 14px; font-weight: 700; cursor: pointer; font-family: 'Courier New', monospace; transition: all .12s; }
+        #votoAnimeGrid button:hover { background: var(--surface-hover); color: #fff; border-color: var(--primary); box-shadow: 0 0 12px var(--primary-glow); transform: translateY(-2px); }
+        #votoAnimeGrid button.sel { background: linear-gradient(135deg, #2f6fed, #38bdf8); color: #fff; border-color: transparent; }
+
         /* ================================================================
            💊 TEMA AURORA PILL (Richiesta 24): forme morbide su colori
            invariati — tutto stondato, font Trebuchet, titoli non maiuscoli.
@@ -2523,6 +2529,24 @@
     </div>
 
 
+    <div class="modal-overlay" id="modalOverlayVotoAnime">
+        <div class="modal" style="max-width: 420px;">
+            <div class="modal-header">
+                <h2 id="votoAnimeModalTitle" style="font-size:18px;">⭐ Assegna voto</h2>
+                <button class="close-modal" onclick="chiudiModaleVotoAnime()">&times;</button>
+            </div>
+            <div id="votoAnimeGrid"></div>
+            <div style="display:flex; align-items:baseline; gap:10px; margin:12px 0;">
+                <span style="font-size:34px; font-weight:800; color:var(--primary); font-family:'Courier New',monospace;" id="votoAnimeValore">–</span>
+                <span style="color:var(--text-muted); font-size:12px;">tocca un valore da 0.5 a 10, poi conferma</span>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-danger" onclick="chiudiModaleVotoAnime()">Annulla</button>
+                <button type="button" class="btn btn-anime" id="btnConfermaVotoAnime" onclick="confermaVotoAnime()" disabled>Conferma voto</button>
+            </div>
+        </div>
+    </div>
+
     <div class="modal-overlay" id="modalOverlayAnime">
         <div class="modal">
             <div class="modal-header">
@@ -3461,6 +3485,90 @@
             if (error) throw error;
         }
 		
+        // ==========================================
+        //   ⭐ VOTO ANIME (overlay griglia 0.5-10)
+        //   Si apre dal pill "Vota" in lista (solo senza voto: se votato apre
+        //   la modale di modifica) e in automatico al + che completa tutto
+        //   l'anime Concluso mai votato. Salvataggio via impostaVotoAnimeSB_
+        //   (stesse regole: 0-10, un solo voto, log VOTO).
+        // ==========================================
+        let votoAnimeTargetTitolo = null;
+        let votoAnimeSelezionato = 0;
+
+        function disegnaGrigliaVotoAnime_() {
+            const grid = document.getElementById('votoAnimeGrid');
+            if (!grid) return;
+            grid.innerHTML = '';
+            for (let i = 1; i <= 20; i++) {
+                (function(valore) {
+                    const b = document.createElement('button');
+                    b.type = 'button';
+                    b.textContent = (Math.round(valore * 2) / 2).toFixed(1);
+                    if (valore === votoAnimeSelezionato) b.classList.add('sel');
+                    b.onclick = function() {
+                        votoAnimeSelezionato = valore;
+                        document.getElementById('votoAnimeValore').textContent = (Math.round(valore * 2) / 2).toFixed(1);
+                        document.getElementById('btnConfermaVotoAnime').disabled = false;
+                        grid.querySelectorAll('button').forEach(function(x) { x.classList.remove('sel'); });
+                        b.classList.add('sel');
+                    };
+                    grid.appendChild(b);
+                })(i / 2);
+            }
+        }
+
+        window.apriVotoAnime = function(titolo) {
+            const item = (animeList || []).find(function(a) { return a.titolo === titolo; });
+            if (!item) return;
+            const v = item.valutazione;
+            if (v !== undefined && v !== null && String(v).trim() !== '' && v !== '-') {
+                apriModificaAnime(titolo);
+                return;
+            }
+            votoAnimeTargetTitolo = titolo;
+            votoAnimeSelezionato = 0;
+            disegnaGrigliaVotoAnime_();
+            document.getElementById('votoAnimeValore').textContent = '–';
+            document.getElementById('btnConfermaVotoAnime').disabled = true;
+            document.getElementById('votoAnimeModalTitle').innerText = '⭐ Vota — ' + titolo;
+            document.getElementById('modalOverlayVotoAnime').classList.add('active');
+        };
+
+        window.chiudiModaleVotoAnime = function() {
+            document.getElementById('modalOverlayVotoAnime').classList.remove('active');
+            votoAnimeTargetTitolo = null;
+            votoAnimeSelezionato = 0;
+        };
+
+        window.confermaVotoAnime = function() {
+            if (!votoAnimeTargetTitolo || !votoAnimeSelezionato) {
+                showToast('Scegli un voto da 0.5 a 10.', 'error');
+                return;
+            }
+            const btn = document.getElementById('btnConfermaVotoAnime');
+            btn.innerText = 'Salvataggio...';
+            impostaVotoAnimeSB_(votoAnimeTargetTitolo, votoAnimeSelezionato)
+                .then(function(res) {
+                    btn.innerText = 'Conferma voto';
+                    if (res && res.errore) {
+                        showToast(res.errore, 'error');
+                        return;
+                    }
+                    const votoAppenaDato = votoAnimeSelezionato;
+                    return getAnimeDataSB_().then(function(data) {
+                        animeList = data || [];
+                        renderListAnime();
+                        chiudiModaleVotoAnime();
+                        showToast('Voto registrato: ' + votoAppenaDato, 'success');
+                    });
+                })
+                .catch(function(err) {
+                    btn.innerText = 'Conferma voto';
+                    showToast('❌ Errore salvataggio voto: ' + err.message, 'error');
+                });
+        };
+
+
         function caricaDatiAnime() {
             document.getElementById('loadingAnime').style.display = 'block';
             document.getElementById('animeTable').style.display = 'none';
@@ -3691,19 +3799,13 @@
                     genresHTML = `<div class="genre-tags-list" style="color: var(--primary);">🎭 ${item.generi}</div>`;
                 }
 
-                // Cella Voto: se un voto è già presente viene mostrato in sola lettura (la
-                // modifica o cancellazione è possibile solo dalla modale di modifica). Se non
-                // è ancora presente, mostra un piccolo campo per inserirlo direttamente dalla lista.
+                // Cella Voto: pill "Vota" che apre l'overlay griglia; se già votato
+                // mostra il voto e apre la modale di modifica (unica via di modifica).
                 const haVotoGiaAssegnato = item.valutazione !== undefined && item.valutazione !== null &&
                     String(item.valutazione).trim() !== '' && item.valutazione !== '-';
                 const votoCellHTML = haVotoGiaAssegnato
-                    ? `${item.valutazione}`
-                    : `<div style="display:flex; align-items:center; justify-content:center; gap:4px;">
-                            <input type="number" min="0" max="10" step="0.5" placeholder="-" title="Inserisci voto"
-                                style="width:46px; text-align:center; padding:2px 4px; border:1px solid var(--border-color); border-radius:4px; background:transparent; color:inherit; font-size:13px;"
-                                onkeypress="if(event.key==='Enter'){ event.preventDefault(); impostaVotoAnimeLista('${safeTitle}', this); }">
-                            <button class="action-icon-btn" style="font-size:12px;" title="Salva voto" onclick="impostaVotoAnimeLista('${safeTitle}', this.previousElementSibling)">✔️</button>
-                        </div>`;
+                    ? `<button class="action-icon-btn" style="font-weight:bold; color:var(--primary); font-size:15px;" onclick="apriModificaAnime('${safeTitle}')" title="Modifica voto dalla scheda">${item.valutazione}</button>`
+                    : `<button class="btn btn-anime" style="padding:4px 16px; font-size:12px; border-radius:999px;" onclick="apriVotoAnime('${safeTitle}')" title="Assegna voto">Vota</button>`;
 
                 // Definizione dinamica di classe e icona della stella per l'Anime
                 const starClass = item.preferito ? 'action-icon-btn is-favorite' : 'action-icon-btn';
@@ -4221,6 +4323,7 @@
         }
 		
         window.incrementaEpisodio = function(titolo, tipo, numero, delta) {
+            const colorePrimaAutoVoto = ((animeList || []).find(function(a) { return a.titolo === titolo; }) || {}).coloreVisione || null;
             updateEpisodioVistiSB_(titolo, tipo, numero, delta)
                 .then(function(result) {
                     if (result && result.errore) {
@@ -4234,6 +4337,17 @@
                     aggiornaLogEpisodiSeVisibile();
                     if (document.getElementById('homeProgressList')) {
                         renderWidgetInCorso();
+                    }
+                    // Auto-voto: solo + che completa TUTTO l'anime Concluso
+                    // (verde) mai votato. Niente ✅/🔢/matita, niente singole
+                    // stagioni, niente modale flag.
+                    if (parseInt(delta) > 0 && colorePrimaAutoVoto !== 'verde') {
+                        const itemDopo = (animeList || []).find(function(a) { return a.titolo === titolo; });
+                        const votoDopo = itemDopo ? itemDopo.valutazione : null;
+                        const senzaVoto = votoDopo === undefined || votoDopo === null || String(votoDopo).trim() === '' || votoDopo === '-';
+                        if (itemDopo && itemDopo.coloreVisione === 'verde' && senzaVoto) {
+                            apriVotoAnime(titolo);
+                        }
                     }
                 })
                 .catch(function(err) {
@@ -6895,6 +7009,10 @@ function apriLightbox(url) {
         //   Nuove voci: aggiungere in CIMA all'array.
         // ==========================================
         const PATCH_NOTES = [
+            { v: '1.0.29', titolo: 'Voto con overlay', data: '22/09/2026 · 15:08', punti: [
+                'Griglia voto 0.5-10 con overlay dedicato e pill Vota in lista.',
+                'Auto-apertura al + che completa un anime Concluso mai votato.'
+            ] },
             { v: '1.0.28', titolo: 'Recap rimosso', data: '21/09/2026 · 14:53', punti: [
                 'Funzione recap Serie TV rimossa temporaneamente: presentava troppi bug, verrà riprogettata.'
             ] },

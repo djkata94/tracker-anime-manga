@@ -1682,6 +1682,11 @@ Restyling morbido a colori invariati, da anteprima `anteprime-temi-tracker.html`
 
 Rimosso tutto il recap (R25-27: bottone riga, bottone overlay, modale, logica, patch 1.0.25/26/27): troppi bug concatenati (quota org condivisa con betting, compound fragile, cutoff modelli, churn nomi, overload) e test su produzione non accettabile. Codice pre-rimozione in `index_backup_pre_norecap.html`. Patch notes v1.0.28. L idea passa alle richieste future da ristudiare.
 
+
+## Richiesta 29 — Overlay voto anime con griglia
+
+Overlay dedicato `modalOverlayVotoAnime` con griglia 20 bottoni 0.5-10 (hover luminoso, prototipo B scelto da demo). Pill "Vota" in lista al posto di input+spunta (se votato apre modale modifica). Auto-apertura solo dal + che completa TUTTO anime Concluso mai votato (colore prima/dopo, niente ✅/🔢/matita/flag/modale). Salvataggio via `impostaVotoAnimeSB_` invariata. Solo `index.html` (backup `index_backup_pre_votooverlay.html`). Patch notes v1.0.29. Deployati su GitHub `index.html` e `guida_migrazione.md`.
+
 # 👥 PARTE 4 — Multi-utente
 
 Obiettivo: condividere il sito con una seconda persona (login separato),
