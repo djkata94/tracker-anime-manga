@@ -1687,6 +1687,11 @@ Rimosso tutto il recap (R25-27: bottone riga, bottone overlay, modale, logica, p
 
 Overlay dedicato `modalOverlayVotoAnime` con griglia 20 bottoni 0.5-10 (hover luminoso, prototipo B scelto da demo). Pill "Vota" in lista al posto di input+spunta (se votato apre modale modifica). Auto-apertura solo dal + che completa TUTTO anime Concluso mai votato (colore prima/dopo, niente ✅/🔢/matita/flag/modale). Salvataggio via `impostaVotoAnimeSB_` invariata. Solo `index.html` (backup `index_backup_pre_votooverlay.html`). Patch notes v1.0.29. Deployati su GitHub `index.html` e `guida_migrazione.md`.
 
+
+## Richiesta 30 — App installabile (PWA minima)
+
+Installazione come app (standalone, icona joystick, niente barra): `manifest.json` (start_url/scope relativi `.` per sottopercorso Pages), `sw.js` (SOLO installabilità + cache locandine TMDB max 150 e librerie jsdelivr stale-while-revalidate; MAI cache di index.html/API Supabase/TMDB), icone `icon-192/512.png` + `apple-touch-icon.png` generate dal favicon SVG via canvas headless, meta mobile-web-app + apple + theme-color, registrazione SW con catch silenzioso. Su Android prompt automatico, su iPhone Aggiungi a Home manuale. Solo file statici nuovi + 6 righe head + script registrazione; niente DB/Edge. Patch notes v1.0.30. Deployati su GitHub `index.html`, `manifest.json`, `sw.js`, icone e `guida_migrazione.md`.
+
 # 👥 PARTE 4 — Multi-utente
 
 Obiettivo: condividere il sito con una seconda persona (login separato),
