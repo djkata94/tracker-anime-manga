@@ -1692,6 +1692,28 @@ Overlay dedicato `modalOverlayVotoAnime` con griglia 20 bottoni 0.5-10 (hover lu
 
 Installazione come app (standalone, icona joystick, niente barra): `manifest.json` (start_url/scope relativi `.` per sottopercorso Pages), `sw.js` (SOLO installabilità + cache locandine TMDB max 150 e librerie jsdelivr stale-while-revalidate; MAI cache di index.html/API Supabase/TMDB), icone `icon-192/512.png` + `apple-touch-icon.png` generate dal favicon SVG via canvas headless, meta mobile-web-app + apple + theme-color, registrazione SW con catch silenzioso. Su Android prompt automatico, su iPhone Aggiungi a Home manuale. Solo file statici nuovi + 6 righe head + script registrazione; niente DB/Edge. Patch notes v1.0.30. Deployati su GitHub `index.html`, `manifest.json`, `sw.js`, icone e `guida_migrazione.md`.
 
+
+## Richiesta 31 — Streaming come film veri (patch v1.0.32)
+
+I film in streaming non sono più promemoria: segnati come visti restano archiviati (data + COMPLETAMENTO con marcatore [streaming] nel valore, frase log dedicata) invece di essere eliminati. Widget Visti sdoppiato come Da Vedere (slider sala/streaming con switch, stato, testata, pillola, altezze indipendenti via `currentFilterModalitaCinemaVisti`). Log CREAZIONE ed eliminazioni anche per streaming. Rimosse `confermaVisioneStreamingCinemaSB_/Lista` (unificate in toggle con prompt data e testi per-streaming). Solo `index.html` (backup `index_backup_pre_streaming.html`). Patch notes v1.0.32.
+
+## Richiesta 32 — Badge patch non lette per utente (patch v1.0.32)
+
+Pallino rosso con conteggio su Patch notes (9+ oltre 9), azzerato aprendo le note. Persistenza per utente in nuova tabella `patch_lette(user_id, versione PK, letto_il)` con RLS proprie-righe (SQL sotto, eseguire PRIMA di testare il badge: senza tabella resta nascosto senza errori). Upsert onConflict user_id+versione. Solo `index.html`, niente Edge. Patch notes v1.0.32.
+
+```sql
+CREATE TABLE IF NOT EXISTS patch_lette (
+    user_id UUID NOT NULL DEFAULT auth.uid() REFERENCES auth.users(id),
+    versione TEXT NOT NULL,
+    letto_il TIMESTAMPTZ NOT NULL DEFAULT now(),
+    PRIMARY KEY (user_id, versione)
+);
+ALTER TABLE patch_lette ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "solo le proprie righe" ON patch_lette
+    FOR ALL TO authenticated USING (user_id = auth.uid()) WITH CHECK (user_id = auth.uid());
+GRANT SELECT, INSERT, UPDATE ON patch_lette TO authenticated;
+```
+
 # 👥 PARTE 4 — Multi-utente
 
 Obiettivo: condividere il sito con una seconda persona (login separato),

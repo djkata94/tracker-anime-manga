@@ -632,7 +632,7 @@
         .cinema-visione-btn.visto { color: var(--success); border-color: rgba(52, 211, 153, 0.35); background: rgba(52, 211, 153, 0.1); }
         .cinema-data-visione { font-size: 12px; color: var(--text-muted); cursor: pointer; border-bottom: 1px dashed var(--border-color); font-family: 'Courier New', monospace; }
         .cinema-data-visione:hover { color: var(--text); border-bottom-color: var(--text); }
-        /* Badge "S" per i film da vedere in streaming (promemoria) */
+        /* Badge "S" per i film in streaming */
         .cinema-badge-streaming {
             display: inline-flex; align-items: center; justify-content: center;
             width: 19px; height: 19px; border-radius: 5px;
@@ -954,7 +954,9 @@
 .patch-drawer { position: fixed; top: 0; left: 0; bottom: 0; width: min(400px, 88vw); background: #14162a; border-right: 1px solid var(--border-color); z-index: 2001; transform: translateX(-105%); transition: transform 0.3s ease; display: flex; flex-direction: column; box-shadow: 24px 0 60px rgba(0,0,0,0.5); }
 .patch-drawer.open { transform: translateX(0); }
 .patch-drawer-header { display: flex; justify-content: space-between; align-items: center; padding: 16px 18px; border-bottom: 1px solid var(--border-color); font-size: 16px; }
-.patch-drawer-list { overflow-y: auto; padding: 10px; display: flex; flex-direction: column; gap: 8px; }
+        .patch-drawer-list { overflow-y: auto; padding: 10px; display: flex; flex-direction: column; gap: 8px; }
+        /* Pallino rosso col conteggio patch non lette (nascosto a zero) */
+        .patch-badge { display: inline-flex; align-items: center; justify-content: center; min-width: 20px; height: 20px; padding: 0 6px; border-radius: 999px; background: #ef4444; color: #fff; font-size: 11px; font-weight: 800; box-shadow: 0 0 8px rgba(239, 68, 68, 0.5); margin-left: 6px; }
 .patch-item { text-align: left; background: rgba(255,255,255,0.03); border: 1px solid var(--border-color); border-radius: 10px; padding: 10px 12px; cursor: pointer; color: var(--text); display: flex; gap: 10px; align-items: flex-start; width: 100%; font-family: inherit; }
 .patch-item:hover { border-color: var(--primary); }
 .patch-ver { flex-shrink: 0; font-size: 11px; font-weight: 800; color: var(--primary); background: rgba(124,108,255,0.12); border: 1px solid rgba(124,108,255,0.4); border-radius: 6px; padding: 2px 7px; font-family: 'Courier New', monospace; }
@@ -1779,7 +1781,7 @@
         <button id="nav-serietv" class="btn btn-nav" onclick="switchView('serietv')">📡 Serie TV</button>
         <button id="nav-manga" class="btn btn-nav" onclick="switchView('manga')">📚 Manga</button>
         <button id="nav-cinema" class="btn btn-nav" onclick="switchView('cinema')">🎬 Cinema</button>
-        <button id="btnPatchNotes" class="btn btn-nav" style="margin-left:auto;" onclick="apriPatchNotes()" title="Note di versione">📝 Patch notes</button>
+        <button id="btnPatchNotes" class="btn btn-nav" style="margin-left:auto;" onclick="apriPatchNotes()" title="Note di versione">📝 Patch notes<span id="patchNotesBadge" class="patch-badge" style="display:none;">0</span></button>
         <span id="loggedUserEmail" style="color: var(--text-muted); font-size:13px; display:flex; align-items:center; gap:6px;"></span>
         <button id="btnLogout" class="btn btn-nav" onclick="handleLogout()" title="Esci">🚪 Esci</button>
     </div>
@@ -2392,7 +2394,7 @@
                                             <tbody id="cinemaTableBodyStreaming"></tbody>
                                         </table>
                                     </div>
-                                    <div id="cinemaEmptyStreaming" style="display:none; color:var(--text-muted); padding: 14px 4px; font-size:13px;">Nessun promemoria streaming in lista. Aggiungine uno con "+ Nuovo Film" spuntando l'opzione streaming.</div>
+                                    <div id="cinemaEmptyStreaming" style="display:none; color:var(--text-muted); padding: 14px 4px; font-size:13px;">Nessun film da vedere in streaming. Aggiungine uno con "+ Nuovo Film" spuntando l'opzione streaming.</div>
                                 </div>
 
                             </div>
@@ -2401,40 +2403,77 @@
                 </div>
             </div>
 
-            <!-- ✅ WIDGET "VISTI" — chiuso di default -->
+            <!-- ✅ WIDGET "VISTI" — chiuso di default, con slider sala/streaming -->
             <div class="stats-widget cinema-widget collapsed" id="cinemaWidgetVisti">
                 <div class="stats-widget-header" onclick="toggleStatsWidget('cinemaWidgetVisti')">
                     <div class="stats-widget-title-wrap">
                         <span class="stats-widget-title">✅ Visti</span>
-                        <span class="stats-widget-subtitle">Lo storico dei film già visti in sala, dal più recente.</span>
+                        <span class="stats-widget-subtitle" id="cinemaWidgetVistiSub">Lo storico dei film già visti in sala, dal più recente.</span>
                     </div>
                     <div class="cinema-widget-header-right">
                         <span class="home-progress-count" id="cinemaWidgetVistiCount"></span>
+                        <div class="cinema-mode-switch" id="cinemaModeSwitchVisti" data-modalita="cinema" onclick="event.stopPropagation();">
+                            <button type="button" class="cinema-mode-opt active" data-modalita="cinema" title="Mostra i film visti al cinema">🎬 Sala</button>
+                            <button type="button" class="cinema-mode-opt" data-modalita="streaming" title="Mostra i film visti in streaming">📺 Streaming</button>
+                        </div>
                         <span class="stats-widget-toggle-icon">▾</span>
                     </div>
                 </div>
                 <div class="stats-widget-body">
                     <div class="stats-widget-body-inner">
-                        <div class="table-container cinema-scroll-area" id="cinemaScrollVisti">
-                            <table class="cinema-table">
-                                <colgroup>
-                                    <col>
-                                    <col style="width:120px;">
-                                    <col style="width:132px;">
-                                    <col style="width:142px;">
-                                </colgroup>
-                                <thead>
-                                    <tr>
-                                        <th>Film</th>
-                                        <th>Data Visione</th>
-                                        <th style="text-align:center;">Visione</th>
-                                        <th style="text-align:center;">Azioni</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="cinemaTableBodyVisti"></tbody>
-                            </table>
+                        <div class="cinema-slider-viewport" id="cinemaSliderViewportVisti">
+                            <div class="cinema-slider-track" id="cinemaSliderTrackVisti" data-modalita="cinema">
+
+                                <!-- Pannello 1: film visti AL CINEMA -->
+                                <div class="cinema-slider-pane" id="cinemaPaneVistiSala" data-modalita="cinema">
+                                    <div class="table-container cinema-scroll-area" id="cinemaScrollVistiSala">
+                                        <table class="cinema-table">
+                                            <colgroup>
+                                                <col>
+                                                <col style="width:120px;">
+                                                <col style="width:132px;">
+                                                <col style="width:142px;">
+                                            </colgroup>
+                                            <thead>
+                                                <tr>
+                                                    <th>Film</th>
+                                                    <th>Data Visione</th>
+                                                    <th style="text-align:center;">Visione</th>
+                                                    <th style="text-align:center;">Azioni</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody id="cinemaTableBodyVistiSala"></tbody>
+                                        </table>
+                                    </div>
+                                    <div id="cinemaEmptyVistiSala" style="display:none; color:var(--text-muted); padding: 14px 4px; font-size:13px;">Nessun film visto al cinema registrato.</div>
+                                </div>
+
+                                <!-- Pannello 2: film visti IN STREAMING -->
+                                <div class="cinema-slider-pane" id="cinemaPaneVistiStreaming" data-modalita="streaming" inert>
+                                    <div class="table-container cinema-scroll-area" id="cinemaScrollVistiStreaming">
+                                        <table class="cinema-table">
+                                            <colgroup>
+                                                <col>
+                                                <col style="width:120px;">
+                                                <col style="width:132px;">
+                                                <col style="width:142px;">
+                                            </colgroup>
+                                            <thead>
+                                                <tr>
+                                                    <th>Film</th>
+                                                    <th>Data Visione</th>
+                                                    <th style="text-align:center;">Visione</th>
+                                                    <th style="text-align:center;">Azioni</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody id="cinemaTableBodyVistiStreaming"></tbody>
+                                        </table>
+                                    </div>
+                                    <div id="cinemaEmptyVistiStreaming" style="display:none; color:var(--text-muted); padding: 14px 4px; font-size:13px;">Nessun film visto in streaming registrato.</div>
+                                </div>
+
+                            </div>
                         </div>
-                        <div id="cinemaEmptyVisti" style="display:none; color:var(--text-muted); padding: 14px 4px; font-size:13px;">Nessun film visto ancora registrato.</div>
                     </div>
                 </div>
             </div>
@@ -2863,6 +2902,7 @@
             caricaWidgetInCorso();
             caricaWidgetCinemaProssimi();
             caricaLogAttivita();
+            aggiornaBadgePatchNotes();
         }
 		
         function mostraLogin_() {
@@ -7016,6 +7056,10 @@ function apriLightbox(url) {
         //   Nuove voci: aggiungere in CIMA all'array.
         // ==========================================
         const PATCH_NOTES = [
+            { v: '1.0.32', titolo: 'Streaming vero + badge patch', data: '06/10/2026 · 09:11', punti: [
+                'Film in streaming archiviati tra i Visti con data e log, separati col pill Sala/Streaming.',
+                'Pallino rosso sulle patch notes con le versioni ancora da leggere (per utente).'
+            ] },
             { v: '1.0.30', titolo: 'App installabile', data: '28/09/2026 · 09:25', punti: [
                 'Installa il sito come app da mobile: icona joystick, niente barra indirizzi.',
                 'Su Android prompt automatico, su iPhone da Condividi > Aggiungi a Home.'
@@ -7132,6 +7176,7 @@ function apriLightbox(url) {
 
         window.apriPatchNotes = function() {
             renderPatchNotesList();
+            segnaPatchComeLette_().then(function() { aggiornaBadgePatchNotes(); });
             document.getElementById('patchDrawerBackdrop').classList.add('active');
             document.getElementById('patchDrawer').classList.add('open');
         };
@@ -7139,6 +7184,42 @@ function apriLightbox(url) {
             document.getElementById('patchDrawerBackdrop').classList.remove('active');
             document.getElementById('patchDrawer').classList.remove('open');
         };
+
+        // Badge patch non lette, per utente (tabella patch_lette).
+        // Se la tabella non esiste ancora (SQL non eseguito) resta nascosto.
+        async function versioniPatchNonLette_() {
+            try {
+                const res = await supabaseClient.from('patch_lette').select('versione');
+                if (res.error) throw res.error;
+                const lette = new Set((res.data || []).map(function(r) { return r.versione; }));
+                return PATCH_NOTES.filter(function(p) { return !lette.has('v' + p.v); }).map(function(p) { return 'v' + p.v; });
+            } catch (err) {
+                console.warn('Badge patch notes disabilitato: ' + err);
+                return [];
+            }
+        }
+
+        async function aggiornaBadgePatchNotes() {
+            const badge = document.getElementById('patchNotesBadge');
+            if (!badge) return;
+            const mancanti = await versioniPatchNonLette_();
+            if (mancanti.length > 0) {
+                badge.innerText = mancanti.length > 9 ? '9+' : String(mancanti.length);
+                badge.style.display = '';
+            } else {
+                badge.style.display = 'none';
+            }
+        }
+
+        async function segnaPatchComeLette_() {
+            try {
+                const righe = PATCH_NOTES.map(function(p) { return { versione: 'v' + p.v }; });
+                const res = await supabaseClient.from('patch_lette').upsert(righe, { onConflict: 'user_id,versione' });
+                if (res.error) throw res.error;
+            } catch (err) {
+                console.warn('Salvataggio patch lette fallito: ' + err);
+            }
+        }
         window.apriPatchDetail = function(idx) {
             const p = PATCH_NOTES[idx];
             if (!p) return;
@@ -7154,8 +7235,10 @@ function apriLightbox(url) {
         let cinemaList = [];
         let currentSearchCinema = '';
         // Pannello attivo nello slider del widget "Da Vedere":
-        // 'cinema' (default, film in sala) oppure 'streaming' (promemoria streaming).
+        // 'cinema' (default, film in sala) oppure 'streaming'.
         let currentFilterModalitaCinema = 'cinema';
+        // Pannello attivo nello slider del widget "Visti" (indipendente da sopra)
+        let currentFilterModalitaCinemaVisti = 'cinema';
 
 		        // ==========================================
         //   FASE 11 — GRUPPO CINEMA (Supabase diretto)
@@ -7202,7 +7285,7 @@ function apriLightbox(url) {
                 trama: dati.trama || '', generi: dati.generi || ''
             }]);
             if (error) throw error;
-            if (!isStreaming) await registraLogSB_(dati.titolo, 'CINEMA', 'CREAZIONE', 'N/D', 'Da vedere');
+            await registraLogSB_(dati.titolo, 'CINEMA', 'CREAZIONE', 'N/D', isStreaming ? 'Da vedere (streaming)' : 'Da vedere');
             return getCinemaDataSB_();
         }
 
@@ -7216,16 +7299,12 @@ function apriLightbox(url) {
             const riga = righe[0];
             const vecchioStato = riga.visione ? 'Sì' : 'No';
 
-            if (riga.streaming) {
-                throw new Error('I film in streaming non vengono archiviati: usa la conferma di visione per rimuoverli dalla lista.');
-            }
-
             if (nuovoStato) {
                 const dataFinale = formattaDataCinemaISO_(dataVisioneISO || '') || null;
                 const { error: errUpd } = await supabaseClient.from('cinema')
                     .update({ data_visione: dataFinale, visione: true }).eq('titolo', titoloTrim);
                 if (errUpd) throw errUpd;
-                await registraLogSB_(titolo, 'CINEMA', 'COMPLETAMENTO', vecchioStato, 'Sì (' + (dataFinale || '') + ')');
+                await registraLogSB_(titolo, 'CINEMA', 'COMPLETAMENTO', vecchioStato, 'Sì (' + (dataFinale || '') + ')' + (riga.streaming ? ' [streaming]' : ''));
                 return { visione: 'Sì', dataVisione: dataFinale || '' };
             } else {
                 const { error: errUpd } = await supabaseClient.from('cinema').update({ visione: false }).eq('titolo', titoloTrim);
@@ -7235,19 +7314,6 @@ function apriLightbox(url) {
             }
         }
 
-        async function confermaVisioneStreamingCinemaSB_(titolo) {
-            const titoloTrim = String(titolo).trim();
-            const { data: righe, error: errSel } = await supabaseClient.from('cinema').select('streaming').eq('titolo', titoloTrim);
-            if (errSel) throw errSel;
-            if (!righe || righe.length === 0) return getCinemaDataSB_();
-
-            if (!righe[0].streaming) throw new Error('Questo film non è contrassegnato come streaming.');
-
-            const { error: errDel } = await supabaseClient.from('cinema').delete().eq('titolo', titoloTrim);
-            if (errDel) throw errDel;
-            return getCinemaDataSB_();
-        }
-
         async function trasformaCinemaInStreamingSB_(titolo) {
             const titoloTrim = String(titolo).trim();
             const { data: righe, error: errSel } = await supabaseClient.from('cinema').select('visione,streaming').eq('titolo', titoloTrim);
@@ -7255,7 +7321,7 @@ function apriLightbox(url) {
             if (!righe || righe.length === 0) return getCinemaDataSB_();
 
             const riga = righe[0];
-            if (riga.visione) throw new Error('Questo film è già stato segnato come visto, non può diventare un promemoria streaming.');
+            if (riga.visione) throw new Error('Questo film è già stato segnato come visto, non può tornare in streaming.');
             if (riga.streaming) return getCinemaDataSB_();
 
             const { error: errUpd } = await supabaseClient.from('cinema').update({ streaming: true }).eq('titolo', titoloTrim);
@@ -7287,7 +7353,7 @@ function apriLightbox(url) {
             const { error: errDel } = await supabaseClient.from('cinema').delete().eq('titolo', titoloTrim);
             if (errDel) throw errDel;
 
-            if (!riga.streaming) await registraLogSB_(titolo, 'CINEMA', 'CAMBIO_STATO', 'Da vedere', 'ELIMINATO');
+            await registraLogSB_(titolo, 'CINEMA', 'CAMBIO_STATO', 'Da vedere', 'ELIMINATO');
 
             return getCinemaDataSB_();
         }
@@ -7330,11 +7396,13 @@ function apriLightbox(url) {
         function renderListCinema() {
             const tbodyDaVedere = document.getElementById('cinemaTableBodyDaVedere');
             const tbodyStreaming = document.getElementById('cinemaTableBodyStreaming');
-            const tbodyVisti = document.getElementById('cinemaTableBodyVisti');
-            if (!tbodyDaVedere || !tbodyStreaming || !tbodyVisti) return;
+            const tbodyVistiSala = document.getElementById('cinemaTableBodyVistiSala');
+            const tbodyVistiStreaming = document.getElementById('cinemaTableBodyVistiStreaming');
+            if (!tbodyDaVedere || !tbodyStreaming || !tbodyVistiSala || !tbodyVistiStreaming) return;
             tbodyDaVedere.innerHTML = '';
             tbodyStreaming.innerHTML = '';
-            tbodyVisti.innerHTML = '';
+            tbodyVistiSala.innerHTML = '';
+            tbodyVistiStreaming.innerHTML = '';
 
             const termineRicerca = (currentSearchCinema || '').toLowerCase();
             let filtered = cinemaList.filter(item => item && (item.titolo || '').toLowerCase().includes(termineRicerca));
@@ -7349,12 +7417,14 @@ function apriLightbox(url) {
                 });
             }
 
-            // I film in streaming non vengono mai archiviati: stanno solo tra i "Da Vedere"
+            // I film in streaming sono film veri: da visti restano archiviati
             const daVedereTutti = filtered.filter(item => item.visione !== 'Sì');
-            const visti = filtered.filter(item => item.visione === 'Sì' && !item.streaming);
+            const vistiTutti = filtered.filter(item => item.visione === 'Sì');
 
             const daVedereCinema = daVedereTutti.filter(item => !item.streaming);
             const daVedereStreaming = daVedereTutti.filter(item => item.streaming);
+            const vistiSala = vistiTutti.filter(item => !item.streaming);
+            const vistiStreaming = vistiTutti.filter(item => item.streaming);
 
             // Film al cinema: ordinati per data di uscita crescente (dalla più vicina
             // alla più lontana). Quelli senza data di uscita nota vanno in coda.
@@ -7375,7 +7445,14 @@ function apriLightbox(url) {
             });
 			
             // "Visti" ordinati per data di visione decrescente (i più recenti in cima).
-            visti.sort((a, b) => {
+            // Stesso ordinamento per sala e streaming (pannelli separati).
+            vistiSala.sort((a, b) => {
+                if (!a.dataVisione && !b.dataVisione) return (a.titolo || '').localeCompare(b.titolo || '');
+                if (!a.dataVisione) return 1;
+                if (!b.dataVisione) return -1;
+                return b.dataVisione.localeCompare(a.dataVisione);
+            });
+            vistiStreaming.sort((a, b) => {
                 if (!a.dataVisione && !b.dataVisione) return (a.titolo || '').localeCompare(b.titolo || '');
                 if (!a.dataVisione) return 1;
                 if (!b.dataVisione) return -1;
@@ -7386,39 +7463,49 @@ function apriLightbox(url) {
             // (danno il quadro completo a colpo d'occhio)
             document.getElementById('statCinemaDaVedere').innerText = daVedereCinema.length;
             document.getElementById('statCinemaStreaming').innerText = daVedereStreaming.length;
-            document.getElementById('statCinemaVisti').innerText = visti.length;
+            document.getElementById('statCinemaVisti').innerText = vistiSala.length + vistiStreaming.length;
 
-            // I due pannelli dello slider vengono popolati entrambi: lo switch si
-            // limita a far scorrere il track, senza ricostruire nulla.
+            // I pannelli degli slider vengono popolati tutti: gli switch si
+            // limitano a far scorrere i track, senza ricostruire nulla.
             daVedereCinema.forEach(item => tbodyDaVedere.appendChild(costruisciRigaCinema_(item, false)));
             daVedereStreaming.forEach(item => tbodyStreaming.appendChild(costruisciRigaCinema_(item, false)));
-            visti.forEach(item => tbodyVisti.appendChild(costruisciRigaCinema_(item, true)));
+            vistiSala.forEach(item => tbodyVistiSala.appendChild(costruisciRigaCinema_(item, true)));
+            vistiStreaming.forEach(item => tbodyVistiStreaming.appendChild(costruisciRigaCinema_(item, true)));
 
             document.getElementById('cinemaEmptyDaVedere').style.display = daVedereCinema.length === 0 ? 'block' : 'none';
             document.getElementById('cinemaEmptyStreaming').style.display = daVedereStreaming.length === 0 ? 'block' : 'none';
-            document.getElementById('cinemaEmptyVisti').style.display = visti.length === 0 ? 'block' : 'none';
+            document.getElementById('cinemaEmptyVistiSala').style.display = vistiSala.length === 0 ? 'block' : 'none';
+            document.getElementById('cinemaEmptyVistiStreaming').style.display = vistiStreaming.length === 0 ? 'block' : 'none';
 
-            // Contatori nelle testate dei due widget
+            // Contatori nelle testate dei due widget (pannello attivo)
             const isStreamingMode = currentFilterModalitaCinema === 'streaming';
             const countDaVedereEl = document.getElementById('cinemaWidgetDaVedereCount');
             if (countDaVedereEl) {
                 const n = isStreamingMode ? daVedereStreaming.length : daVedereCinema.length;
                 countDaVedereEl.textContent = n + (n === 1 ? ' film' : ' film');
             }
+            const isStreamingModeVisti = currentFilterModalitaCinemaVisti === 'streaming';
             const countVistiEl = document.getElementById('cinemaWidgetVistiCount');
-            if (countVistiEl) countVistiEl.textContent = visti.length + ' film';
+            if (countVistiEl) {
+                const n = isStreamingModeVisti ? vistiStreaming.length : vistiSala.length;
+                countVistiEl.textContent = n + ' film';
+            }
 
-            const mostrati = (isStreamingMode ? daVedereStreaming.length : daVedereCinema.length) + visti.length;
+            const mostrati = (isStreamingMode ? daVedereStreaming.length : daVedereCinema.length)
+                + (isStreamingModeVisti ? vistiStreaming.length : vistiSala.length);
             document.getElementById('countCinema').textContent = mostrati + ' di ' + cinemaList.length + ' film';
 
             aggiornaTestataWidgetDaVedere_();
+            aggiornaTestataWidgetVisti_();
 
-            // Altezza massima delle aree scorrevoli (5 righe) e altezza dello slider:
-            // vanno ricalcolate a ogni render perché dipendono dalle righe appena create.
+            // Altezza massima delle aree scorrevoli (5 righe, 15 storico) e altezze
+            // degli slider: ricalcolate a ogni render perché dipendono dalle righe.
             applicaScrollCinema_(document.getElementById('cinemaScrollDaVedere'));
             applicaScrollCinema_(document.getElementById('cinemaScrollStreaming'));
-            applicaScrollCinema_(document.getElementById('cinemaScrollVisti'), CINEMA_MAX_RIGHE_VISTI);
+            applicaScrollCinema_(document.getElementById('cinemaScrollVistiSala'), CINEMA_MAX_RIGHE_VISTI);
+            applicaScrollCinema_(document.getElementById('cinemaScrollVistiStreaming'), CINEMA_MAX_RIGHE_VISTI);
             aggiornaAltezzaSliderCinema_();
+            aggiornaAltezzaSliderCinemaVisti_();
         }
 
         // ----------------------------------------------------------
@@ -7502,7 +7589,7 @@ function apriLightbox(url) {
             const subEl = document.getElementById('cinemaWidgetDaVedereSub');
             if (subEl) {
                 subEl.innerText = isStreaming
-                    ? 'I promemoria dei film da recuperare in streaming, dal più recente.'
+                    ? 'I film da recuperare in streaming, dal più recente.'
                     : "I film che ti aspettano in sala, dal più vicino all'uscita.";
             }
 
@@ -7537,9 +7624,9 @@ function apriLightbox(url) {
                 posterHTML = `<div class="cinema-poster"></div>`;
             }
 
-            // Marcatore "S" a inizio riga per riconoscere i film in streaming
+            // Marcatore "S" a inizio riga per riconoscere i film visti/da vedere in streaming
             const badgeStreaming = isStreaming
-                ? `<span class="cinema-badge-streaming" title="Da vedere in streaming (promemoria)">S</span>`
+                ? `<span class="cinema-badge-streaming" title="Film in streaming">S</span>`
                 : '';
 
             // Generi sotto al titolo, come nelle altre viste (l'overlay ℹ️ resta per la trama)
@@ -7563,14 +7650,9 @@ function apriLightbox(url) {
             const dataVisioneCol = `<td><span class="cinema-data-visione" onclick="modificaDataVisioneCinemaLista('${safeTitle}')" title="Clicca per correggere la data">${formattaDataItalianaCinema_(item.dataVisione)}</span></td>`;
 
             let visioneBtn;
-            if (isStreaming) {
-                // Nessuna data di visione: solo conferma, poi il film viene eliminato dalla lista
-                visioneBtn = `<button class="cinema-visione-btn da-vedere" onclick="confermaVisioneStreamingCinemaLista('${safeTitle}')" title="Conferma la visione: il film verrà rimosso dalla lista">☐ Da vedere</button>`;
-            } else {
-                visioneBtn = isVisto
-                    ? `<button class="cinema-visione-btn visto" onclick="toggleVisioneCinemaLista('${safeTitle}', false)" title="Segna come da vedere">✅ Visto</button>`
-                    : `<button class="cinema-visione-btn da-vedere" onclick="toggleVisioneCinemaLista('${safeTitle}', true)" title="Segna come visto">☐ Da vedere</button>`;
-            }
+            visioneBtn = isVisto
+                ? `<button class="cinema-visione-btn visto" onclick="toggleVisioneCinemaLista('${safeTitle}', false)" title="Segna come da vedere">✅ Visto</button>`
+                : `<button class="cinema-visione-btn da-vedere" onclick="toggleVisioneCinemaLista('${safeTitle}', true)" title="Segna come visto">☐ Da vedere</button>`;
 
                         const streamingBtn = (!isStreaming && !isVisto)
                 ? `<button class="action-icon-btn" onclick="trasformaCinemaInStreamingLista('${safeTitle}')" title="Sposta tra i film da vedere in streaming">📺</button>`
@@ -7657,13 +7739,13 @@ function apriLightbox(url) {
             const item = cinemaList.find(x => x.titolo === titolo);
             if (!item) return;
 
-            // I film in streaming non vengono archiviati: si confermano e si eliminano
-            if (item.streaming) { confermaVisioneStreamingCinemaLista(titolo); return; }
-
             let dataVisioneISO = item.dataVisione || '';
 
             if (nuovoStato) {
-                const inputData = prompt('Inserisci la data in cui hai visto "' + titolo + '" (dal biglietto), formato GG/MM/AAAA:', formattaDataItalianaCinema_(item.dataVisione) !== '-' ? formattaDataItalianaCinema_(item.dataVisione) : '');
+                const domanda = item.streaming
+                    ? 'Quando hai visto "' + titolo + '" in streaming? (GG/MM/AAAA):'
+                    : 'Inserisci la data in cui hai visto "' + titolo + '" (dal biglietto), formato GG/MM/AAAA:';
+                const inputData = prompt(domanda, formattaDataItalianaCinema_(item.dataVisione) !== '-' ? formattaDataItalianaCinema_(item.dataVisione) : '');
                 if (inputData === null) return; // Annullato dall'utente
                 const parsed = parseDataItalianaCinema_(inputData);
                 if (!parsed) {
@@ -7678,7 +7760,7 @@ function apriLightbox(url) {
                     item.visione = nuovoStato ? 'Sì' : 'No';
                     if (nuovoStato) item.dataVisione = dataVisioneISO;
                     renderListCinema();
-                    showToast(nuovoStato ? '🎬 Film segnato come visto' : 'Film rimesso tra i "Da vedere"', 'success');
+                    showToast(nuovoStato ? (item.streaming ? '📺 Film visto in streaming' : '🎬 Film segnato come visto') : 'Film rimesso tra i "Da vedere"', 'success');
                 })
                 .catch(function(err) {
                     console.error('Errore aggiornamento visione Cinema: ', err);
@@ -7686,27 +7768,9 @@ function apriLightbox(url) {
                 });
         }
 
-        // === NUOVO: conferma visione di un promemoria STREAMING ===
-        // Non chiede la data: chiede solo conferma e, se accettata, elimina il film
-        // dalla lista (e dal foglio). Non viene archiviato tra i "Visti".
-        function confermaVisioneStreamingCinemaLista(titolo) {
-            if (!confirm('Confermi di aver visto "' + titolo + '" in streaming?\n\nIl film verrà rimosso definitivamente dalla lista.')) return;
-
-            confermaVisioneStreamingCinemaSB_(titolo)
-                .then(function(data) {
-                    cinemaList = data || [];
-                    renderListCinema();
-                    showToast('📺 Visione confermata, promemoria rimosso', 'success');
-                })
-                .catch(function(err) {
-                    console.error('Errore conferma visione streaming: ', err);
-                    alert('❌ ' + (err && err.message ? err.message : 'Errore durante la conferma della visione.'));
-                });
-        }
-
-                // Sposta un film "da vedere al cinema" tra i promemoria streaming
+                // Sposta un film "da vedere al cinema" tra i film in streaming
         function trasformaCinemaInStreamingLista(titolo) {
-            if (!confirm('Spostare "' + titolo + '" tra i film da vedere in streaming?\n\nUscirà dalla lista "Al cinema" e diventerà un promemoria streaming.')) return;
+            if (!confirm('Spostare "' + titolo + '" tra i film da vedere in streaming?\n\nUscirà dalla lista "Al cinema" e finirà nella lista streaming.')) return;
 
             trasformaCinemaInStreamingSB_(titolo)
                 .then(function(data) {
@@ -7741,6 +7805,92 @@ function apriLightbox(url) {
             if (widget && widget.classList.contains('collapsed')) toggleStatsWidget('cinemaWidgetDaVedere');
         }
 
+        // Imposta la modalità del widget "Visti" (cinema / streaming).
+        // Stesso meccanismo dello slider "Da Vedere", con stato indipendente.
+        function impostaModalitaCinemaVisti_(valore, riRenderizza) {
+            const modalita = valore === 'streaming' ? 'streaming' : 'cinema';
+            if (modalita === currentFilterModalitaCinemaVisti && riRenderizza === false) return;
+            currentFilterModalitaCinemaVisti = modalita;
+
+            if (riRenderizza !== false) {
+                renderListCinema(); // aggiorna anche testata, switch, track e altezze
+            } else {
+                aggiornaTestataWidgetVisti_();
+                aggiornaAltezzaSliderCinemaVisti_();
+            }
+
+            const widgetVisti = document.getElementById('cinemaWidgetVisti');
+            if (widgetVisti && widgetVisti.classList.contains('collapsed')) toggleStatsWidget('cinemaWidgetVisti');
+        }
+
+        // Titolo, sottotitolo e stato del pulsantino di switch nella testata Visti
+        function aggiornaTestataWidgetVisti_() {
+            const isStreaming = currentFilterModalitaCinemaVisti === 'streaming';
+
+            const subEl = document.getElementById('cinemaWidgetVistiSub');
+            if (subEl) {
+                subEl.innerText = isStreaming
+                    ? 'Lo storico dei film già visti in streaming, dal più recente.'
+                    : 'Lo storico dei film già visti in sala, dal più recente.';
+            }
+
+            const switchEl = document.getElementById('cinemaModeSwitchVisti');
+            if (switchEl) {
+                switchEl.setAttribute('data-modalita', currentFilterModalitaCinemaVisti);
+                switchEl.querySelectorAll('.cinema-mode-opt').forEach(function(btn) {
+                    btn.classList.toggle('active', btn.getAttribute('data-modalita') === currentFilterModalitaCinemaVisti);
+                });
+                aggiornaPillolaSwitchCinemaVisti_();
+            }
+
+            const track = document.getElementById('cinemaSliderTrackVisti');
+            if (track) track.setAttribute('data-modalita', currentFilterModalitaCinemaVisti);
+
+            const paneCinema = document.getElementById('cinemaPaneVistiSala');
+            const paneStreaming = document.getElementById('cinemaPaneVistiStreaming');
+            if (paneCinema) paneCinema.inert = isStreaming;
+            if (paneStreaming) paneStreaming.inert = !isStreaming;
+        }
+
+        // Allinea la pillola dello switch Visti al segmento attivo (stessa
+        // tecnica dello switch Da Vedere, con flag dedicato per il primo giro)
+        let pillolaSwitchCinemaVistiInizializzata = false;
+        function aggiornaPillolaSwitchCinemaVisti_() {
+            const sw = document.getElementById('cinemaModeSwitchVisti');
+            if (!sw) return;
+            const attivo = sw.querySelector('.cinema-mode-opt.active');
+            if (!attivo) return;
+
+            const rettSwitch = sw.getBoundingClientRect();
+            const rettAttivo = attivo.getBoundingClientRect();
+            if (!rettAttivo.width) return;
+
+            const bordoSx = parseFloat(getComputedStyle(sw).borderLeftWidth) || 0;
+
+            if (!pillolaSwitchCinemaVistiInizializzata) {
+                pillolaSwitchCinemaVistiInizializzata = true;
+                sw.classList.add('senza-transizione');
+                requestAnimationFrame(function() {
+                    requestAnimationFrame(function() { sw.classList.remove('senza-transizione'); });
+                });
+            }
+
+            sw.style.setProperty('--pill-x', (rettAttivo.left - rettSwitch.left - bordoSx) + 'px');
+            sw.style.setProperty('--pill-w', rettAttivo.width + 'px');
+        }
+
+        // Il track dello slider Visti è alto quanto il pannello più alto
+        function aggiornaAltezzaSliderCinemaVisti_() {
+            const viewport = document.getElementById('cinemaSliderViewportVisti');
+            if (!viewport) return;
+            const paneAttivo = document.getElementById(
+                currentFilterModalitaCinemaVisti === 'streaming' ? 'cinemaPaneVistiStreaming' : 'cinemaPaneVistiSala'
+            );
+            if (!paneAttivo) return;
+            const altezza = paneAttivo.offsetHeight;
+            viewport.style.height = altezza > 0 ? altezza + 'px' : '';
+        }
+
         function resetFiltriCinema() {
             currentSearchCinema = '';
             const searchEl = document.getElementById('searchInpCinema');
@@ -7750,6 +7900,7 @@ function apriLightbox(url) {
             const badgeCinemaGeneri = document.getElementById('badgeGenresCinemaCount');
             if (badgeCinemaGeneri) badgeCinemaGeneri.innerText = '0';
             impostaModalitaCinema_('cinema');
+            impostaModalitaCinemaVisti_('cinema');
             showToast('Filtri Cinema azzerati', 'success');
         }
 
@@ -7827,6 +7978,14 @@ function apriLightbox(url) {
                 };
             });
 
+            // Pulsantino di switch Sala / Streaming nella testata del widget "Visti"
+            document.querySelectorAll('#cinemaModeSwitchVisti .cinema-mode-opt').forEach(function(btn) {
+                btn.onclick = function(e) {
+                    e.stopPropagation(); // non deve aprire/chiudere il widget
+                    impostaModalitaCinemaVisti_(btn.getAttribute('data-modalita'));
+                };
+            });
+
             // Le altezze delle aree scorrevoli dipendono dalla larghezza disponibile
             // (i titoli lunghi vanno a capo): al resize vanno ricalcolate.
             let timerResizeCinema = null;
@@ -7836,9 +7995,12 @@ function apriLightbox(url) {
                 timerResizeCinema = setTimeout(function() {
                     applicaScrollCinema_(document.getElementById('cinemaScrollDaVedere'));
                     applicaScrollCinema_(document.getElementById('cinemaScrollStreaming'));
-                    applicaScrollCinema_(document.getElementById('cinemaScrollVisti'), CINEMA_MAX_RIGHE_VISTI);
+                    applicaScrollCinema_(document.getElementById('cinemaScrollVistiSala'), CINEMA_MAX_RIGHE_VISTI);
+                    applicaScrollCinema_(document.getElementById('cinemaScrollVistiStreaming'), CINEMA_MAX_RIGHE_VISTI);
                     aggiornaPillolaSwitchCinema_();
+                    aggiornaPillolaSwitchCinemaVisti_();
                     aggiornaAltezzaSliderCinema_();
+                    aggiornaAltezzaSliderCinemaVisti_();
                 }, 150);
             });
 
@@ -7870,7 +8032,7 @@ function apriLightbox(url) {
                         <span>📺 Da vedere in streaming (non al cinema)</span>
                     </label>
                     <small style="color: var(--text-muted); display:block; margin-top:4px;">
-                        I film in streaming sono semplici promemoria: non vengono registrati nel log attività, sono nascosti di default nella lista (attiva il filtro "📺 Streaming" per vederli) e quando confermi la visione vengono eliminati invece di finire tra i "Visti".
+                        I film in streaming sono film veri: restano archiviati tra i "Visti" con data e log, separati dalla sala con lo switch.
                     </small>
                 </div>
                 <div id="cinemaCandidatiWrapper"></div>
@@ -8035,14 +8197,14 @@ function apriLightbox(url) {
                     cinemaList = data || [];
                     ultimoDettaglioCinemaTMDB = null;
                     document.getElementById('modalOverlayCinema').classList.remove('active');
-                    // Se ho appena salvato un promemoria streaming attivo il filtro
-                    // corrispondente, altrimenti il film risulterebbe invisibile.
+                    // Se ho appena salvato un film in streaming attivo il pannello
+                    // corrispondente, altrimenti risulterebbe invisibile.
                     if (eraStreaming && currentFilterModalitaCinema === 'cinema') {
                         impostaModalitaCinema_('streaming');
                     } else {
                         renderListCinema();
                     }
-                    showToast(eraStreaming ? '📺 Promemoria streaming aggiunto' : '🎬 Film aggiunto alla lista', 'success');
+                    showToast(eraStreaming ? '📺 Film in streaming aggiunto' : '🎬 Film aggiunto alla lista', 'success');
                 })
                 .catch(function(err) {
                     console.error('Errore salvataggio Cinema: ', err);
@@ -9559,9 +9721,13 @@ function renderLogAttivita(logs, filtriAttivi) {
                 }
                 break;
             case 'COMPLETAMENTO':
-                frase = isCinema
-                    ? '🍿 <span class="log-value-highlight">VISTO!</span> Hai visto ' + titoloHtml + ' al cinema! 🎬'
-                    : '🏆 <span class="log-value-highlight">COMPLETATO!</span> Hai finito ' + titoloHtml + '! ✨';
+                if (isCinema && String(log.valoreNuovo || '').includes('[streaming]')) {
+                    frase = '🍿 <span class="log-value-highlight">VISTO!</span> Hai visto ' + titoloHtml + ' in streaming! 📺';
+                } else {
+                    frase = isCinema
+                        ? '🍿 <span class="log-value-highlight">VISTO!</span> Hai visto ' + titoloHtml + ' al cinema! 🎬'
+                        : '🏆 <span class="log-value-highlight">COMPLETATO!</span> Hai finito ' + titoloHtml + '! ✨';
+                }
                 break;
             case 'IN_PARI':
                 frase = '✅ Sei in pari con ' + titoloHtml + ': ' + valoreNuovoHtml + '!';
@@ -10380,8 +10546,8 @@ function sottotitoloRisultatoRicercaGlobale(item) {
         return escapeHtmlLog(item.stato) + vol + acquisto;
     }
     // cinema
-    if (item.visione === 'Sì') return 'Visto' + (item.dataVisione ? ' il ' + item.dataVisione : '');
-    if (item.streaming) return 'Promemoria streaming';
+    if (item.visione === 'Sì') return 'Visto' + (item.streaming ? ' in streaming' : '') + (item.dataVisione ? ' il ' + item.dataVisione : '');
+    if (item.streaming) return 'Da vedere in streaming';
     return item.dataUscita ? 'Al cinema dal ' + item.dataUscita : 'Da vedere al cinema';
 }
 
