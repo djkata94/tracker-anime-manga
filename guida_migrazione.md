@@ -1714,6 +1714,11 @@ CREATE POLICY "solo le proprie righe" ON patch_lette
 GRANT SELECT, INSERT, UPDATE ON patch_lette TO authenticated;
 ```
 
+
+## Richiesta 33 — Restyle integrato (hero + tabs + muri + timeline)
+
+Nuova pelle senza toccare logica né id: hero con contatori live (da renderWidgetInCorso), tabs con sync in switchView, cataloghi Anime/Serie/Manga da tabelle a muri di locandine (solo HTML generato riscritto, filtri/ordinamenti/contatori/logica identici), In Corso a muro (creaProgressCard), log Home in stile timeline via CSS, modali con blur. Cinema/log/tabelle e tutti gli overlay invariati. Solo `index.html` (backup `index_backup_pre_restyle.html`). Patch notes v1.0.33. Deployati su GitHub `index.html` e `guida_migrazione.md`.
+
 # 👥 PARTE 4 — Multi-utente
 
 Obiettivo: condividere il sito con una seconda persona (login separato),
