@@ -1225,38 +1225,13 @@
     display: flex;
     align-items: flex-start;
     gap: 10px;
-    padding: 10px 12px 10px 26px;
+    padding: 10px 12px;
     background: rgba(255, 255, 255, 0.02);
     border: 1px solid var(--border-color);
     border-left: 3px solid var(--accent);
     border-radius: 8px;
     animation: logFadeIn 0.4s ease-out both;
     transition: background 0.2s ease, transform 0.2s ease;
-    position: relative;
-}
-.system-log-item::before {
-    content: '';
-    position: absolute;
-    left: 9px;
-    top: 16px;
-    width: 9px;
-    height: 9px;
-    border-radius: 50%;
-    background: var(--primary);
-    box-shadow: 0 0 8px var(--primary-glow);
-    flex-shrink: 0;
-}
-.system-log-item::after {
-    content: '';
-    position: absolute;
-    left: 13px;
-    top: 30px;
-    bottom: -10px;
-    width: 2px;
-    background: var(--border-color);
-}
-.system-log-item:last-child::after {
-    display: none;
 }
 
 .system-log-item:hover {
@@ -1761,62 +1736,6 @@
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: var(--border-color); border-radius: 10px; }
 ::-webkit-scrollbar-thumb:hover { background: var(--primary); }
-
-        /* ================================================================
-           ✨ NUOVA PELLE (restyle integrato: hero + tabs + wall + timeline).
-           Solo presentazione: nessun id rimosso, nessuna logica toccata.
-           ================================================================ */
-        .hero {
-            background: radial-gradient(900px 320px at 15% 0%, #2b1b4d 0%, transparent 60%),
-                        radial-gradient(800px 300px at 90% 10%, #0e3a4d 0%, transparent 60%), var(--bg);
-            border-bottom: 1px solid var(--border-color);
-            padding: 34px 24px 58px 24px;
-            text-align: center;
-        }
-        .hero .logo-big { font-size: 12px; letter-spacing: 5px; font-weight: 800; color: var(--primary); margin-bottom: 8px; }
-        .hero h1 { font-size: 30px; margin: 0 0 6px 0; font-weight: 300; color: #fff; }
-        .hero p { color: var(--text-muted); margin: 0 0 18px 0; font-size: 14px; }
-        .hero-numbers { display: flex; gap: 30px; justify-content: center; flex-wrap: wrap; }
-        .hero-numbers b { font-size: 26px; font-family: 'Courier New', monospace; color: var(--primary); display: block; }
-        .hero-numbers span { font-size: 10px; text-transform: uppercase; letter-spacing: 2px; color: var(--text-muted); }
-        .skin-tabs { display: flex; gap: 6px; max-width: 1100px; margin: 14px auto 0 auto; padding: 0 22px; position: relative; z-index: 5; }
-        .skin-tabs button { flex: 1; border: 1px solid var(--border-color); background: var(--surface-solid); color: var(--text-muted); border-radius: 14px; padding: 12px 0; font-size: 13.5px; font-weight: 700; cursor: pointer; font-family: inherit; }
-        .skin-tabs button.on { background: var(--primary); border-color: var(--primary); color: #fff; }
-        .wall-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 16px; }
-        .wall-card { border-radius: 14px; overflow: hidden; background: var(--surface); border: 1px solid var(--border-color); cursor: default; transition: transform .15s; display: flex; flex-direction: column; }
-        .wall-card:hover { transform: translateY(-3px); }
-        .wall-art { height: 150px; position: relative; background-size: cover; background-position: center; }
-        .wall-rate { position: absolute; top: 8px; right: 8px; background: rgba(0,0,0,.65); border-radius: 8px; padding: 3px 8px; font-size: 12px; font-weight: 800; font-family: 'Courier New',monospace; color: #fbbf24; }
-        .wall-badge { position: absolute; top: 8px; left: 8px; font-size: 10px; font-weight: 800; letter-spacing: .5px; padding: 3px 8px; border-radius: 8px; }
-        .wall-dot { position: absolute; bottom: 8px; left: 8px; width: 14px; height: 14px; border-radius: 50%; border: 2px solid rgba(0,0,0,.5); }
-        .wall-meta { padding: 10px 12px; display: flex; flex-direction: column; gap: 3px; flex: 1; }
-        .wall-title { font-size: 13.5px; font-weight: 700; display: flex; align-items: center; gap: 6px; }
-        .wall-sub { font-size: 11.5px; color: var(--text-muted); font-family: 'Courier New',monospace; }
-        .wall-genres { font-size: 11px; color: var(--primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-        .wall-art[style*="background-image"] { cursor: zoom-in; }
-        .wall-note { font-size: 11.5px; color: var(--text-muted); font-style: italic; white-space: normal; }
-        .wall-progress { height: 5px; background: var(--surface-hover); border-radius: 99px; overflow: hidden; margin-top: 2px; }
-        .wall-progress i { display: block; height: 100%; background: linear-gradient(90deg, var(--primary), var(--accent)); }
-        .wall-actions { display: flex; gap: 2px; justify-content: center; padding: 6px 4px 8px 4px; border-top: 1px solid var(--border-color); margin-top: 4px; }
-        .wall-star { position: absolute; top: 6px; left: 6px; background: rgba(0,0,0,.55); border: none; border-radius: 8px; cursor: pointer; color: var(--warning); font-size: 17px; padding: 2px 8px; }
-        .wall-star.off { color: var(--text-muted); opacity: .55; }
-        .feed-day { font-size: 11px; text-transform: uppercase; letter-spacing: 2px; color: var(--primary); margin: 18px 0 4px 0; font-weight: 800; }
-        .feed-ev { display: flex; gap: 14px; padding: 10px 0; }
-        .feed-rail { display: flex; flex-direction: column; align-items: center; }
-        .feed-dot { width: 12px; height: 12px; border-radius: 50%; background: var(--primary); box-shadow: 0 0 10px var(--primary-glow); flex-shrink: 0; margin-top: 3px; }
-        .feed-line { width: 2px; flex: 1; background: var(--border-color); margin-top: 6px; min-height: 22px; }
-        .feed-card { flex: 1; background: var(--surface); border: 1px solid var(--border-color); border-radius: 12px; padding: 12px 14px; font-size: 13.5px; }
-        .feed-when { font-size: 11px; color: var(--text-muted); font-family: 'Courier New',monospace; margin-top: 4px; }
-        .modal { background: var(--surface-solid); backdrop-filter: blur(18px); -webkit-backdrop-filter: blur(18px); }
-        #homeProgressList { display: flex; gap: 16px; overflow-x: auto; overflow-y: hidden; padding-bottom: 10px; }
-        #homeProgressList .wall-card { flex: 0 0 172px; }
-        @media (max-width: 640px) {
-            .hero h1 { font-size: 24px; }
-            .hero-numbers { gap: 18px; }
-            .wall-grid { grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 12px; }
-            .skin-tabs button { font-size: 12px; padding: 10px 0; }
-        }
-
     </style>
 </head>
 <body>
@@ -1867,15 +1786,13 @@
         <button id="btnLogout" class="btn btn-nav" onclick="handleLogout()" title="Esci">🚪 Esci</button>
     </div>
 
-        <div class="skin-tabs" id="skinTabs">
-            <button class="on" data-view="home" onclick="switchView('home')">🏠 Home</button>
-            <button data-view="anime" onclick="switchView('anime')">📺 Anime</button>
-            <button data-view="serietv" onclick="switchView('serietv')">📡 Serie TV</button>
-            <button data-view="manga" onclick="switchView('manga')">📚 Manga</button>
-            <button data-view="cinema" onclick="switchView('cinema')">🎬 Cinema</button>
-        </div>
     <div id="homeView" class="view-container home-dashboard">
-        <div style="display:flex; align-items:flex-start; justify-content:flex-end; gap:16px; flex-wrap:wrap;">
+        <div style="display:flex; align-items:flex-start; justify-content:space-between; gap:16px; flex-wrap:wrap;">
+            <div>
+                <h1 style="margin:0 0 6px 0; color:#fff; font-size: 28px; font-weight: 700;">Hub Centrale di Controllo</h1>
+                <p style="color:var(--text-muted); margin:0; font-size: 15px;">Monitora la tua evoluzione culturale, gestisci le liste e tieni traccia dei film visti al cinema.</p>
+            </div>
+
             <!-- ============================================================
                  📁 Apri il Google Sheet collegato: su desktop apre una nuova
                  scheda del browser, su mobile l'OS intercetta il link e apre
@@ -1909,23 +1826,11 @@
             <div class="global-search-results" id="globalSearchResults" style="display:none;"></div>
         </div>
 
-
-        <div class="menu-grid" style="display:none;">
+        <div class="menu-grid">
             <button class="btn btn-anime" style="height:100px; font-size:16px; border-radius: 12px;" onclick="switchView('anime')">📺 Catalogo Anime</button>
             <button class="btn btn-serietv" style="height:100px; font-size:16px; border-radius: 12px;" onclick="switchView('serietv')">📡 Catalogo Serie TV</button>
             <button class="btn btn-manga" style="height:100px; font-size:16px; border-radius: 12px;" onclick="switchView('manga')">📚 Archivio Manga / LN</button>
             <button class="btn btn-cinema" style="height:100px; font-size:16px; border-radius: 12px;" onclick="switchView('cinema')">🎬 Film al Cinema</button>
-        </div>
-
-        <div class="hero">
-            <div class="logo-big">🎮 NERD.TRACKER</div>
-            <h1>Il tuo universo nerd, a colpo d'occhio</h1>
-            <p id="heroSub">Monitora la tua evoluzione culturale, gestisci le liste e tieni traccia dei film visti al cinema.</p>
-            <div class="hero-numbers">
-                <div><b id="heroEpVisti">–</b><span>Episodi visti</span></div>
-                <div><b id="heroInCorso">–</b><span>In visione ora</span></div>
-                <div><b id="heroCompletati">–</b><span>Completati</span></div>
-            </div>
         </div>
 
         <!-- ================================================================
@@ -2088,19 +1993,12 @@
 				<button class="filter-btn" data-vision="rosso">⛔ Abbandonati</button>
 			</div>
 
-            <div class="filter-group" id="vistaSwitchAnime">
-                <button class="filter-btn active" data-modo="cards" title="Vista a card">🎴</button>
-                <button class="filter-btn" data-modo="lista" title="Vista a lista">📋</button>
-            </div>
-
-
             <button type="button" id="btnResetFiltriAnime" class="btn-reset-filters">↺ Reset Filtri</button>
             <span id="countAnime" class="filter-count"></span>
         </div>
 
         <div id="loadingAnime" style="color:var(--warning); padding:20px; font-weight:600;">Caricamento dati dal server...</div>
-
-        <div id="animeTableWrap" style="display:none;">
+        
         <div class="table-container">
             <table id="animeTable" style="display:none;">
                 <thead>
@@ -2116,9 +2014,6 @@
                 <tbody id="animeTableBody"></tbody>
             </table>
         </div>
-        </div>
-        <div class="wall-grid" id="animeWall" style="display:none;"></div>
-        <div id="animeEmpty" class="system-log-empty" style="display:none; text-align:left; padding:16px 4px;">Nessun anime con questi filtri. 🎬</div>
         </div>
         <!-- fine #animePaneLista -->
 
@@ -2241,19 +2136,12 @@
 				<button class="filter-btn" data-vision="rosso">⛔ Abbandonate</button>
 			</div>
 
-            <div class="filter-group" id="vistaSwitchSerieTv">
-                <button class="filter-btn active" data-modo="cards" title="Vista a card">🎴</button>
-                <button class="filter-btn" data-modo="lista" title="Vista a lista">📋</button>
-            </div>
-
-
             <button type="button" id="btnResetFiltriSerieTv" class="btn-reset-filters">↺ Reset Filtri</button>
             <span id="countSerieTv" class="filter-count"></span>
         </div>
 
         <div id="loadingSerieTv" style="color:var(--warning); padding:20px; font-weight:600;">Caricamento dati dal server...</div>
 
-        <div id="serietvTableWrap" style="display:none;">
         <div class="table-container">
             <table id="serietvTable" style="display:none;">
                 <thead>
@@ -2268,9 +2156,6 @@
                 <tbody id="serietvTableBody"></tbody>
             </table>
         </div>
-        </div>
-        <div class="wall-grid" id="serietvWall" style="display:none;"></div>
-        <div id="serietvEmpty" class="system-log-empty" style="display:none; text-align:left; padding:16px 4px;">Nessuna serie TV con questi filtri. 📡</div>
         </div>
         <!-- fine #serietvPaneLista -->
 
@@ -2377,19 +2262,12 @@
                 <button class="filter-btn" data-read="verde">Letto</button>
             </div>
 
-            <div class="filter-group" id="vistaSwitchManga">
-                <button class="filter-btn active" data-modo="cards" title="Vista a card">🎴</button>
-                <button class="filter-btn" data-modo="lista" title="Vista a lista">📋</button>
-            </div>
-
-
             <button type="button" id="btnResetFiltriManga" class="btn-reset-filters">↺ Reset Filtri</button>
             <span id="countManga" class="filter-count"></span>
         </div>
 
         <div id="loadingManga" style="color:var(--warning); padding:20px; font-weight:600;">Caricamento dati dal server...</div>
-
-        <div id="mangaTableWrap" style="display:none;">
+        
         <div class="table-container">
             <table id="mangaTable" style="display:none;">
                 <thead>
@@ -2408,9 +2286,6 @@
                 <tbody id="mangaTableBody"></tbody>
             </table>
         </div>
-        </div>
-        <div class="wall-grid" id="mangaWall" style="display:none;"></div>
-        <div id="mangaEmpty" class="system-log-empty" style="display:none; text-align:left; padding:16px 4px;">Nessun manga con questi filtri. 📚</div>
     </div>
 
     <div id="cinemaView" class="view-container" style="display: none;">
@@ -3168,49 +3043,6 @@
             return episodiAnimeList.some(e => (e.titolo || '').trim() === titoloTrim && (parseInt(e.episodiVisti) || 0) > 0);
         }
         
-        // Switch Card/Lista per catalogo: preferenza salvata, default card.
-        // La modalità lista riusa i render tabella originali (Tabella),
-        // quella card i render muro. Tutti i richiami esistenti passano da
-        // renderList* che smista da solo: niente altro da toccare.
-        let modoVistaAnime = 'cards';
-        let modoVistaSerieTv = 'cards';
-        let modoVistaManga = 'cards';
-        try {
-            if (localStorage.getItem('vistaAnime') === 'lista') modoVistaAnime = 'lista';
-            if (localStorage.getItem('vistaSerieTv') === 'lista') modoVistaSerieTv = 'lista';
-            if (localStorage.getItem('vistaManga') === 'lista') modoVistaManga = 'lista';
-        } catch (e) { /* localStorage non disponibile: resta cards */ }
-        function agganciaVistaSwitch_(groupId, chiave, get, set, render) {
-            const g = document.getElementById(groupId);
-            if (!g) return;
-            const btns = g.querySelectorAll('.filter-btn');
-            function ridisegna() {
-                const cur = get();
-                btns.forEach(function(b) { b.classList.toggle('active', b.getAttribute('data-modo') === cur); });
-            }
-            btns.forEach(function(b) {
-                b.onclick = function() {
-                    set(b.getAttribute('data-modo'));
-                    try { localStorage.setItem(chiave, b.getAttribute('data-modo')); } catch (e) { /* ignora */ }
-                    ridisegna();
-                    render();
-                };
-            });
-            ridisegna();
-        }
-        agganciaVistaSwitch_('vistaSwitchAnime', 'vistaAnime',
-            function() { return modoVistaAnime; },
-            function(v) { modoVistaAnime = (v === 'lista') ? 'lista' : 'cards'; },
-            function() { renderListAnime(); });
-        agganciaVistaSwitch_('vistaSwitchSerieTv', 'vistaSerieTv',
-            function() { return modoVistaSerieTv; },
-            function(v) { modoVistaSerieTv = (v === 'lista') ? 'lista' : 'cards'; },
-            function() { renderListSerieTv(); });
-        agganciaVistaSwitch_('vistaSwitchManga', 'vistaManga',
-            function() { return modoVistaManga; },
-            function(v) { modoVistaManga = (v === 'lista') ? 'lista' : 'cards'; },
-            function() { renderListManga(); });
-
         let currentFilterStatoAnime = 'all'; 
         let currentFilterVisioneAnime = 'all'; 
         let currentSearchAnime = '';
@@ -3306,8 +3138,6 @@
             
             // Togli illuminazione da tutti i bottoni navbar
             document.querySelectorAll('.navbar .btn-nav').forEach(btn => btn.classList.remove('active-view'));
-            // Sincronizza le tabs della nuova pelle (se presenti)
-            document.querySelectorAll('.skin-tabs button').forEach(function(b) { b.classList.toggle('on', b.getAttribute('data-view') === viewName); });
             if (viewName === 'home') {
                 document.getElementById('homeView').style.display = 'flex';
                 document.getElementById('nav-home').classList.add('active-view');
@@ -3788,8 +3618,7 @@
 
         function caricaDatiAnime() {
             document.getElementById('loadingAnime').style.display = 'block';
-            document.getElementById('animeWall').style.display = 'none';
-            document.getElementById('animeTableWrap').style.display = 'none';
+            document.getElementById('animeTable').style.display = 'none';
 
             getAnimeDataSB_()
                 .then(function(data) {
@@ -3799,7 +3628,7 @@
                 .then(function(epData) {
                     episodiAnimeList = epData || [];
                     document.getElementById('loadingAnime').style.display = 'none';
-                    if (modoVistaAnime !== 'lista') document.getElementById('animeWall').style.display = '';
+                    document.getElementById('animeTable').style.display = 'table';
                     renderListAnime();
                 })
                 .catch(function(err) {
@@ -3810,282 +3639,6 @@
         }
 
         function renderListAnime() {
-            if (modoVistaAnime === 'lista') { renderListAnimeTabella(); return; }
-            document.getElementById('animeTableWrap').style.display = 'none';
-            const wall = document.getElementById('animeWall');
-            if (!wall) return;
-            wall.innerHTML = '';
-            
-            let animeVistiCount = 0;
-            let animeTotaliCount = 0;
-            let stagioniVisteTotali = 0;
-            let stagioniTotaliGlobali = 0;
-            let filmVistiTotali = 0;
-            let filmTotaliGlobali = 0;
-            animeList.forEach(item => {
-                if (!item) return;
-                animeTotaliCount++;
-                const sVis = parseInt(item.stagioniViste) || 0;
-                const sTot = parseInt(item.stagioniTotali) || 0;
-                const fVis = parseInt(item.filmVisti) || 0;
-                const fTot = parseInt(item.filmTotali) || 0;
-
-                stagioniVisteTotali += sVis;
-                stagioniTotaliGlobali += sTot;
-                filmVistiTotali += fVis;
-                filmTotaliGlobali += fTot;
-
-                if (sVis > 0 || fVis > 0) {
-                    animeVistiCount++;
-                }
-            });
-            document.getElementById('statAnimeVisti').innerText = `${animeVistiCount} / ${animeTotaliCount}`;
-            document.getElementById('statStagioniViste').innerText = `${stagioniVisteTotali} / ${stagioniTotaliGlobali}`;
-            document.getElementById('statFilmVisti').innerText = `${filmVistiTotali} / ${filmTotaliGlobali}`;
-
-            // NUOVO: contatore globale episodi visti / episodi totali (da episodiAnimeList)
-            let episodiVistiGlobali = 0;
-            let episodiTotaliGlobali = 0;
-            episodiAnimeList.forEach(ep => {
-                episodiVistiGlobali += parseInt(ep.episodiVisti) || 0;
-                episodiTotaliGlobali += parseInt(ep.episodiTotali) || 0;
-            });
-            const statEpEl = document.getElementById('statEpisodiVisti');
-            if (statEpEl) statEpEl.innerText = `${episodiVistiGlobali} / ${episodiTotaliGlobali}`;
-            
-            const votoMinVal = document.getElementById('numFilterAnimeVotoMin').value;
-            const stagioniExactVal = document.getElementById('numFilterAnimeStagioniEsatte').value;
-            
-            let filtered = animeList.filter(item => {
-                if (!item) return false;
-                
-				const titoloOriginale = item.titolo || '';
-				// Cerca sia nel titolo che nelle note (gestendo eventuali note vuote)
-				let notaTestoAnime = "";
-				if (item.note && typeof item.note === "string") {
-					notaTestoAnime = item.note.toLowerCase();
-				} else if (item.note) {
-					notaTestoAnime = String(item.note).toLowerCase();
-				}
-				
-				// Convertiamo in minuscolo anche il testo cercato dall'utente per renderlo case-insensitive
-				const termineRicerca = (currentSearchAnime || '').toLowerCase();
-				const matchesSearch = (item.titolo || '').toLowerCase().includes(termineRicerca) || notaTestoAnime.includes(termineRicerca);
-                
-                const statoOriginale = item.stato || 'In corso';
-                const statoClean = statoOriginale.trim().toLowerCase();
-                let matchesStato = false;
-                if (currentFilterStatoAnime === 'all') {
-                    matchesStato = true;
-                } else if (currentFilterStatoAnime === 'Altro') {
-                    matchesStato = (statoClean !== 'in corso' && statoClean !== 'concluso');
-                } else {
-                    matchesStato = (statoClean === currentFilterStatoAnime.toLowerCase());
-                }
-                
-                const stagioniTotali = parseInt(item.stagioniTotali) || 0;
-                const stagioniViste = parseInt(item.stagioniViste) || 0;
-                const filmTotali = parseInt(item.filmTotali) || 0;
-                const filmVisti = parseInt(item.filmVisti) || 0;
-                
-                let coloreVisione = 'bianco';
-
-					const completato =
-						stagioniViste === stagioniTotali &&
-						filmVisti === filmTotali;
-					
-					const iniziato =
-						stagioniViste > 0 ||
-						filmVisti > 0 ||
-						haProgressoEpisodiParziale(item.titolo);
-					
-					if (!iniziato) {
-					
-						coloreVisione = 'bianco';
-					
-					} else if (!completato) {
-					
-						coloreVisione = 'celeste';
-					
-					} else {
-					
-					if (statoClean === 'concluso') {
-						coloreVisione = 'verde';
-					} else {
-						coloreVisione = 'giallo';
-					}
-				}
-                if (item.abbandonata) coloreVisione = 'rosso';
-
-                const matchesVisione = (currentFilterVisioneAnime === 'all' || coloreVisione === currentFilterVisioneAnime);
-                let matchesVoto = true;
-                if (votoMinVal !== '') {
-                    const itemVoto = parseFloat(item.valutazione);
-                    if (isNaN(itemVoto)) matchesVoto = false; 
-                    else matchesVoto = itemVoto >= parseFloat(votoMinVal);
-                }
-                
-                let matchesStagioni = true;
-                if (stagioniExactVal !== '') {
-                    matchesStagioni = (stagioniTotali === parseInt(stagioniExactVal));
-                }
-
-                // COMBO DI FILTRAGGIO GENRE AVANZATO (Logica AND)
-                let matchesGenres = true;
-                if (selectedGenresAnime.length > 0) {
-                    const itemGenres = item.generi ? item.generi.split(',').map(g => g.trim()) : [];
-                    matchesGenres = selectedGenresAnime.every(g => itemGenres.includes(g));
-                }
-                
-                // Controllo filtro preferiti Anime
-                let matchesFav = true;
-                if (typeof currentFavFilterAnime !== 'undefined' && currentFavFilterAnime === 'yes') {
-                    matchesFav = (item.preferito === true);
-                }
-                
-                return matchesSearch && matchesStato && matchesVisione && matchesVoto && matchesStagioni && matchesGenres && matchesFav;
-            });
-
-            const countAnimeEl = document.getElementById('countAnime');
-            if (countAnimeEl) countAnimeEl.textContent = filtered.length + ' di ' + animeList.length + ' anime';
-
-            const sortVal = document.getElementById('sortSelAnime').value;
-            filtered.sort((a, b) => {
-                // NUOVO: le opere contrassegnate come prioritarie (📌) vengono sempre
-                // mostrate per prime, indipendentemente dal criterio di ordinamento scelto
-                const pA = a.priorita ? 1 : 0;
-                const pB = b.priorita ? 1 : 0;
-                if (pA !== pB) return pB - pA;
-
-                const tA = a.titolo || '';
-                const tB = b.titolo || '';
-                if (sortVal === 'title-asc') return tA.localeCompare(tB);
-                if (sortVal === 'title-desc') return tB.localeCompare(tA);
-                if (sortVal === 'rating-desc') {
-                    const rA = parseFloat(a.valutazione) || 0;
-                    const rB = parseFloat(b.valutazione) || 0;
-                    return rB - rA;
-                }
-                return tA.localeCompare(tB); // Fallback: alfabetico
-            });
-            filtered.forEach(item => {
-                const tr = document.createElement('tr');
-                const statoOriginale = item.stato || '';
-                const statoClean = statoOriginale.trim().toLowerCase();
-                let statusClass = 'status-altro-anime';
-                if (statoClean === 'in corso') statusClass = 'status-in-corso';
-                else if (statoClean === 'concluso') statusClass = 'status-concluso';
-                
-                const stagioniTotali = parseInt(item.stagioniTotali) || 0;
-                const stagioniViste = parseInt(item.stagioniViste) || 0;
-                const filmTotali = parseInt(item.filmTotali) || 0;
-                const filmVisti = parseInt(item.filmVisti) || 0;
-                
-              let coloreVisione = 'bianco';
-
-				const completato =
-					stagioniViste === stagioniTotali &&
-					filmVisti === filmTotali;
-				
-				const iniziato =
-					stagioniViste > 0 ||
-					filmVisti > 0 ||
-					haProgressoEpisodiParziale(item.titolo);
-				
-				if (!iniziato) {
-				
-					coloreVisione = 'bianco';
-				
-				} else if (!completato) {
-				
-					coloreVisione = 'celeste';
-				
-				} else {
-				
-					if (statoClean === 'concluso') {
-						coloreVisione = 'verde';
-					} else {
-						coloreVisione = 'giallo';
-					}
-				
-				}
-                if (item.abbandonata) coloreVisione = 'rosso';
-                
-                const safeTitle = (item.titolo || '').replace(/'/g, "\\'").replace(/"/g, '\\"');
-                
-                // Renderizzazione Generi sotto alle informazioni stagioni/film
-                let genresHTML = '';
-                if (item.generi && item.generi.trim() !== '') {
-                    genresHTML = `<div class="genre-tags-list" style="color: var(--primary);">🎭 ${item.generi}</div>`;
-                }
-
-                // Cella Voto: pill "Vota" che apre l'overlay griglia; se già votato
-                // mostra il voto e apre la modale di modifica (unica via di modifica).
-                const haVotoGiaAssegnato = item.valutazione !== undefined && item.valutazione !== null &&
-                    String(item.valutazione).trim() !== '' && item.valutazione !== '-';
-                const votoCellHTML = haVotoGiaAssegnato
-                    ? `<button class="action-icon-btn" style="font-weight:bold; color:var(--primary); font-size:15px;" onclick="apriModificaAnime('${safeTitle}')" title="Modifica voto dalla scheda">${item.valutazione}</button>`
-                    : `<button class="filter-btn active" style="font-size:12px; border-radius:999px;" onclick="apriVotoAnime('${safeTitle}')" title="Assegna voto">Vota</button>`;
-
-                // Definizione dinamica di classe e icona della stella per l'Anime
-                const starClass = item.preferito ? 'action-icon-btn is-favorite' : 'action-icon-btn';
-                const starIcon = item.preferito ? '★' : '☆';
-
-                // NUOVO: Definizione dinamica di classe e titolo per il pin di priorità (📌)
-                const pinClass = item.priorita ? 'pin-btn is-priority' : 'pin-btn';
-                const pinTitle = item.priorita ? 'Rimuovi dalle priorità' : 'Contrassegna come prioritario';
-
-                // --- Copertina muro (foto o gradiente) ---
-                let wallArtStyle = '';
-                if (item.immagine && item.immagine.trim() !== '') {
-                    const safeImgUrl = item.immagine.trim().replace(/'/g, "\\'");
-                    wallArtStyle = `background-image:url('${safeImgUrl}');`;
-                } else {
-                    wallArtStyle = 'background:linear-gradient(160deg,#1a2a6c,#b21f1f);';
-                }
-
-                const totaleOpere = stagioniTotali + filmTotali;
-                const visteOpere = stagioniViste + filmVisti;
-                const pctAvanzamento = totaleOpere > 0 ? Math.round(visteOpere / totaleOpere * 100) : 0;
-                const votoBadge = haVotoGiaAssegnato ? `<span class="wall-rate">★ ${item.valutazione}</span>` : '';
-
-                const card = document.createElement('div');
-                card.className = 'wall-card';
-                card.innerHTML = `
-                    <div class="wall-art" style="${wallArtStyle}">
-                        <button class="wall-star ${item.preferito ? 'is-favorite' : 'off'}" onclick="toggleFavoriteAnime('${safeTitle}', this)" title="Preferito">${starIcon}</button>
-                        <button class="${pinClass}" style="position:absolute; top:8px; left:44px; background:rgba(0,0,0,.55); border:none; border-radius:8px; padding:3px 8px; font-size:12px; cursor:pointer;" onclick="togglePinAnime('${safeTitle}', this, event)" title="${pinTitle}">📌</button>
-                        ${votoBadge}
-                        <span class="vision-box box-${coloreVisione}" style="position:absolute; bottom:8px; left:8px;"></span>
-                    </div>
-                    <div class="wall-progress"><i style="width:${pctAvanzamento}%;"></i></div>
-                    <div class="wall-meta">
-                        <div class="wall-title"><span>${item.titolo || 'Senza Titolo'}</span>
-                            <button class="action-icon-btn" style="font-size:13px; padding:0; background:none; border:none; cursor:pointer;" onclick="mostraSinossi('${safeTitle}', 'anime')" title="Visualizza Sinossi">ℹ️</button>
-                            <button class="action-icon-btn" style="font-size:13px; padding:0; background:none; border:none; cursor:pointer;" onclick="apriGestioneEpisodi('${safeTitle}')" title="Gestisci Episodi">📺</button>
-                        </div>
-                        <div class="wall-sub">Stagioni ${stagioniViste}/${stagioniTotali} · Film ${filmVisti}/${filmTotali}${item.abbandonata ? ' · ⛔' : ''}</div>
-                        <div class="wall-sub"><span class="status-badge ${statusClass}">${item.stato || '-'}</span></div>
-                        ${genresHTML ? `<div class="wall-genres">🎭 ${(item.generi || '').trim()}</div>` : ''}
-                        <div class="wall-note">${item.note && String(item.note).trim() !== '' ? String(item.note).replace(/<[^>]*>/g, '') : '-'}</div>
-                        <div class="wall-actions">
-                            ${votoCellHTML}
-                            <button class="action-icon-btn" onclick="apriModificaAnime('${safeTitle}')" title="Modifica">✏️</button>
-                            <button class="action-icon-btn" onclick="rimuoviAnime('${safeTitle}')" title="Elimina">🗑️</button>
-                            <button class="action-icon-btn" style="${item.abbandonata ? '' : 'opacity:0.45;'}" onclick="toggleAbbandonataAnime('${safeTitle}')" title="${item.abbandonata ? 'Riprendi l\'anime' : 'Abbandona l\'anime'}">⛔</button>
-                        </div>
-                    </div>
-                `;
-                wall.appendChild(card);
-            });
-            const animeEmptyEl = document.getElementById('animeEmpty');
-            if (animeEmptyEl) animeEmptyEl.style.display = filtered.length === 0 ? 'block' : 'none';
-        }
-		
-		// Gestione del consiglio casuale (Dice Button)
-        function renderListAnimeTabella() {
-            document.getElementById('animeWall').style.display = 'none';             const animeTableWrapEmpty = document.getElementById('animeEmpty');             if (animeTableWrapEmpty) animeTableWrapEmpty.style.display = 'none';             document.getElementById('animeTableWrap').style.display = '';
-            document.getElementById('animeTable').style.display = 'table';
             const tbody = document.getElementById('animeTableBody');
             if (!tbody) return;
             tbody.innerHTML = '';
@@ -4354,6 +3907,8 @@
                 tbody.appendChild(tr);
             });
         }
+		
+		// Gestione del consiglio casuale (Dice Button)
         document.getElementById('btnNuovoAnime').onclick = function() {
             targetEditTitleAnime = null;
             sinossiPendenteAnime = null; // <--- NUOVO: azzera eventuale sinossi AniList in sospeso
@@ -5590,8 +5145,7 @@
 
         function caricaDatiSerieTv() {
             document.getElementById('loadingSerieTv').style.display = 'block';
-            document.getElementById('serietvWall').style.display = 'none';
-            document.getElementById('serietvTableWrap').style.display = 'none';
+            document.getElementById('serietvTable').style.display = 'none';
 
             getSerieTvDataSB_()
                 .then(function(data) {
@@ -5601,7 +5155,7 @@
                 .then(function(epData) {
                     episodiSerieTvList = epData || [];
                     document.getElementById('loadingSerieTv').style.display = 'none';
-                    if (modoVistaSerieTv !== 'lista') document.getElementById('serietvWall').style.display = '';
+                    document.getElementById('serietvTable').style.display = 'table';
                     renderListSerieTv();
                 })
                 .catch(function(err) {
@@ -5612,188 +5166,6 @@
         }
 
         function renderListSerieTv() {
-            const wall = document.getElementById('serietvWall');
-            if (!wall) return;
-            if (modoVistaSerieTv === 'lista') { renderListSerieTvTabella(); return; }
-            document.getElementById('serietvTableWrap').style.display = 'none';
-            wall.innerHTML = '';
-
-            // Contatori sopra i filtri: iniziate / stagioni viste / episodi visti / completate (verdi)
-            let serieIniziateCount = 0;
-            let serieTotaliCount = 0;
-            let stagioniVisteTotali = 0;
-            let stagioniTotaliGlobali = 0;
-            let serieCompletateCount = 0;
-            serieTvList.forEach(item => {
-                if (!item) return;
-                serieTotaliCount++;
-                const sVis = parseInt(item.stagioniViste) || 0;
-                const sTot = parseInt(item.stagioniTotali) || 0;
-                stagioniVisteTotali += sVis;
-                stagioniTotaliGlobali += sTot;
-                if (sVis > 0 || haProgressoStagioniParzialeSerieTv(item.titolo)) serieIniziateCount++;
-                if (item.coloreVisione === 'verde') serieCompletateCount++;
-            });
-            document.getElementById('statSerieTvIniziate').innerText = `${serieIniziateCount} / ${serieTotaliCount}`;
-            document.getElementById('statSerieTvStagioniViste').innerText = `${stagioniVisteTotali} / ${stagioniTotaliGlobali}`;
-            document.getElementById('statSerieTvCompletate').innerText = `${serieCompletateCount} / ${serieTotaliCount}`;
-
-            let episodiVistiGlobali = 0;
-            let episodiTotaliGlobali = 0;
-            episodiSerieTvList.forEach(ep => {
-                episodiVistiGlobali += parseInt(ep.episodiVisti) || 0;
-                episodiTotaliGlobali += parseInt(ep.episodiTotali) || 0;
-            });
-            const statEpEl = document.getElementById('statSerieTvEpisodiVisti');
-            if (statEpEl) statEpEl.innerText = `${episodiVistiGlobali} / ${episodiTotaliGlobali}`;
-
-            let filtered = serieTvList.filter(item => {
-                if (!item) return false;
-
-                const titoloOriginale = item.titolo || '';
-                let notaTestoSerie = "";
-                if (item.note && typeof item.note === "string") {
-                    notaTestoSerie = item.note.toLowerCase();
-                } else if (item.note) {
-                    notaTestoSerie = String(item.note).toLowerCase();
-                }
-
-                const termineRicerca = (currentSearchSerieTv || '').toLowerCase();
-                const matchesSearch = (item.titolo || '').toLowerCase().includes(termineRicerca) || notaTestoSerie.includes(termineRicerca);
-
-                const statoOriginale = item.stato || 'In corso';
-                const statoClean = statoOriginale.trim().toLowerCase();
-                let matchesStato = false;
-                if (currentFilterStatoSerieTv === 'all') {
-                    matchesStato = true;
-                } else if (currentFilterStatoSerieTv === 'Altro') {
-                    matchesStato = (statoClean !== 'in corso' && statoClean !== 'concluso');
-                } else {
-                    matchesStato = (statoClean === currentFilterStatoSerieTv.toLowerCase());
-                }
-
-                const stagioniTotali = parseInt(item.stagioniTotali) || 0;
-                const stagioniViste = parseInt(item.stagioniViste) || 0;
-
-                let coloreVisione = 'bianco';
-                const completato = (stagioniViste === stagioniTotali);
-                const iniziato = (stagioniViste > 0) || haProgressoStagioniParzialeSerieTv(item.titolo);
-                if (!iniziato) {
-                    coloreVisione = 'bianco';
-                } else if (!completato) {
-                    coloreVisione = 'celeste';
-                } else {
-                    coloreVisione = (statoClean === 'concluso') ? 'verde' : 'giallo';
-                }
-                if (item.abbandonata) coloreVisione = 'rosso';
-
-                const matchesVisione = (currentFilterVisioneSerieTv === 'all' || coloreVisione === currentFilterVisioneSerieTv);
-
-                // Filtro generi TMDB (logica AND, come il Cinema)
-                let matchesGenres = true;
-                if (selectedGenresSerieTv.length > 0) {
-                    const itemGenres = item.generi ? item.generi.split(',').map(g => g.trim()) : [];
-                    matchesGenres = selectedGenresSerieTv.every(g => itemGenres.includes(g));
-                }
-
-                let matchesFav = true;
-                if (typeof currentFavFilterSerieTv !== 'undefined' && currentFavFilterSerieTv === 'yes') {
-                    matchesFav = (item.preferito === true);
-                }
-
-                return matchesSearch && matchesStato && matchesVisione && matchesGenres && matchesFav;
-            });
-
-            const countEl = document.getElementById('countSerieTv');
-            if (countEl) countEl.textContent = filtered.length + ' di ' + serieTvList.length + ' serie TV';
-
-            const sortVal = document.getElementById('sortSelSerieTv').value;
-            filtered.sort((a, b) => {
-                const tA = a.titolo || '';
-                const tB = b.titolo || '';
-                if (sortVal === 'title-desc') return tB.localeCompare(tA);
-                return tA.localeCompare(tB); // default: alfabetico A-Z
-            });
-
-            filtered.forEach(item => {
-                const tr = document.createElement('tr');
-                const statoOriginale = item.stato || '';
-                const statoClean = statoOriginale.trim().toLowerCase();
-                let statusClass = 'status-altro-anime';
-                if (statoClean === 'in corso') statusClass = 'status-in-corso';
-                else if (statoClean === 'concluso') statusClass = 'status-concluso';
-
-                const stagioniTotali = parseInt(item.stagioniTotali) || 0;
-                const stagioniViste = parseInt(item.stagioniViste) || 0;
-
-                let coloreVisione = 'bianco';
-                const completato = (stagioniViste === stagioniTotali);
-                const iniziato = (stagioniViste > 0) || haProgressoStagioniParzialeSerieTv(item.titolo);
-                if (!iniziato) {
-                    coloreVisione = 'bianco';
-                } else if (!completato) {
-                    coloreVisione = 'celeste';
-                } else {
-                    coloreVisione = (statoClean === 'concluso') ? 'verde' : 'giallo';
-                }
-                if (item.abbandonata) coloreVisione = 'rosso';
-
-                const safeTitle = (item.titolo || '').replace(/'/g, "\\'").replace(/"/g, '\\"');
-
-                let genresHTML = '';
-                if (item.generi && item.generi.trim() !== '') {
-                    genresHTML = `<div class="genre-tags-list" style="color: var(--primary);">🎭 ${item.generi}</div>`;
-                }
-
-                const starClass = item.preferito ? 'action-icon-btn is-favorite' : 'action-icon-btn';
-                const starIcon = item.preferito ? '★' : '☆';
-
-                // --- Copertina muro (foto o gradiente) ---
-                let wallArtStyle = '';
-                if (item.immagine && item.immagine.trim() !== '') {
-                    const safeImgUrl = item.immagine.trim().replace(/'/g, "\\'");
-                    wallArtStyle = `background-image:url('${safeImgUrl}');`;
-                } else {
-                    wallArtStyle = 'background:linear-gradient(160deg,#0f2027,#2c5364);';
-                }
-
-                const pctAvanzamento = stagioniTotali > 0 ? Math.round(stagioniViste / stagioniTotali * 100) : 0;
-
-                const card = document.createElement('div');
-                card.className = 'wall-card';
-                card.innerHTML = `
-                    <div class="wall-art" style="${wallArtStyle}">
-                        <button class="wall-star ${item.preferito ? 'is-favorite' : 'off'}" onclick="toggleFavoriteSerieTv('${safeTitle}', this)" title="Preferito">${starIcon}</button>
-                        <span class="vision-box box-${coloreVisione}" style="position:absolute; bottom:8px; left:8px;"></span>
-                    </div>
-                    <div class="wall-progress"><i style="width:${pctAvanzamento}%;"></i></div>
-                    <div class="wall-meta">
-                        <div class="wall-title"><span>${item.titolo || 'Senza Titolo'}</span>
-                            <button class="action-icon-btn" style="font-size: 13px; padding: 0; background: none; border: none; cursor: pointer;" onclick="mostraSinossi('${safeTitle}', 'serietv')" title="Visualizza Trama">ℹ️</button>
-                            <button class="action-icon-btn" style="font-size: 13px; padding: 0; background: none; border: none; cursor: pointer;" onclick="apriGestioneStagioniSerieTv('${safeTitle}')" title="Gestisci Stagioni">📺</button>
-                        </div>
-                        <div class="wall-sub">Stagioni ${stagioniViste}/${stagioniTotali}${item.abbandonata ? ' · ⛔' : ''}</div>
-                        <div class="wall-sub"><span class="status-badge ${statusClass}">${item.stato || '-'}</span></div>
-                        ${genresHTML ? `<div class="wall-genres">🎭 ${(item.generi || '').trim()}</div>` : ''}
-                        <div class="wall-note">${item.note && String(item.note).trim() !== '' ? String(item.note).replace(/<[^>]*>/g, '') : '-'}</div>
-                        <div class="wall-actions">
-                            ${item.tmdbId ? `<button class="action-icon-btn" onclick="apriSeriesGraphSerieTv(${item.tmdbId})" title="Voti episodi su Series Graph">📊</button>` : ''}
-                            <button class="action-icon-btn" onclick="aggiornaStagioniSerieTvDaTMDB('${safeTitle}')" title="Rileggi da TMDB: aggiunge eventuali nuove stagioni uscite">🔄</button>
-                            <button class="action-icon-btn" onclick="apriModificaSerieTv('${safeTitle}')" title="Modifica">✏️</button>
-                            <button class="action-icon-btn" onclick="rimuoviSerieTv('${safeTitle}')" title="Elimina">🗑️</button>
-                            <button class="action-icon-btn" style="${item.abbandonata ? '' : 'opacity:0.45;'}" onclick="toggleAbbandonataSerieTv('${safeTitle}')" title="${item.abbandonata ? 'Riprendi la serie' : 'Abbandona la serie'}">⛔</button>
-                        </div>
-                    </div>
-                `;
-                wall.appendChild(card);
-            });
-            const serietvEmptyEl = document.getElementById('serietvEmpty');
-            if (serietvEmptyEl) serietvEmptyEl.style.display = filtered.length === 0 ? 'block' : 'none';
-        }
-
-        function renderListSerieTvTabella() {
-            document.getElementById('serietvWall').style.display = 'none';             const serietvTableWrapEmpty = document.getElementById('serietvEmpty');             if (serietvTableWrapEmpty) serietvTableWrapEmpty.style.display = 'none';             document.getElementById('serietvTableWrap').style.display = '';
-            document.getElementById('serietvTable').style.display = 'table';
             const tbody = document.getElementById('serietvTableBody');
             if (!tbody) return;
             tbody.innerHTML = '';
@@ -5971,6 +5343,7 @@
                 tbody.appendChild(tr);
             });
         }
+
         document.getElementById('btnNuovaSerieTv').onclick = function() {
             targetEditTitleSerieTv = null;
             sinossiPendenteSerieTv = null;
@@ -7308,14 +6681,13 @@
 		
         function caricaDatiManga() {
             document.getElementById('loadingManga').style.display = 'block';
-            document.getElementById('mangaWall').style.display = 'none';
-            document.getElementById('mangaTableWrap').style.display = 'none';
+            document.getElementById('mangaTable').style.display = 'none';
             
                     getMangaDataSB_().then(function(data) {
-                    mangaList = data || [];
-                    document.getElementById('loadingManga').style.display = 'none';
-                    if (modoVistaManga !== 'lista') document.getElementById('mangaWall').style.display = '';
-                    renderListManga();
+                mangaList = data || [];
+                document.getElementById('loadingManga').style.display = 'none';
+                document.getElementById('mangaTable').style.display = 'table';
+                renderListManga();
             }).catch(function(err) {
                 console.error('Errore caricamento dati Manga da Supabase:', err);
                 document.getElementById('loadingManga').style.display = 'none';
@@ -7324,224 +6696,6 @@
         }
 
         function renderListManga() {
-            const wall = document.getElementById('mangaWall');
-            if (!wall) return;
-            if (modoVistaManga === 'lista') { renderListMangaTabella(); return; }
-            document.getElementById('mangaTableWrap').style.display = 'none';
-            wall.innerHTML = '';
-            
-            let mangaLettiCount = 0;
-            let mangaAcquistatiCount = 0; // <--- NUOVO: Inizializza il contatore delle opere acquistate
-            let volumiLettiTotali = 0;
-            let volumiAcquistatiTotali = 0;
-            mangaList.forEach(item => {
-                if (!item) return;
-                const coloreLettura = item.coloreLettura || 'bianco';
-                const volumi = parseInt(item.volumi) || 0;
-                const volumiLetti = parseInt(item.volumiLetti) || 0;
-
-                if (coloreLettura === 'verde') {
-                    mangaLettiCount++;
-                }
-                // MODIFICATO: il contatore ora somma i volumi letti effettivi di TUTTE le opere
-                // (non solo quelle con il flag Lettura verde attivo)
-                volumiLettiTotali += volumiLetti;
-
-                if (item.acquistato === 'Sì') {
-                    mangaAcquistatiCount++; // <--- NUOVO: Incrementa se l'opera ha acquistato su "Sì"
-                    volumiAcquistatiTotali += volumi;
-                }
-            });
-
-            // MODIFICATO: Mostra il contatore nel formato Opere Lette / Opere Acquistate
-            document.getElementById('statMangaLetti').innerText = `${mangaLettiCount} / ${mangaAcquistatiCount}`;
-            document.getElementById('statVolumiLetti').innerText = `${volumiLettiTotali} / ${volumiAcquistatiTotali}`;
-            
-            const volumiMinVal = document.getElementById('numFilterMangaVolumiMin').value;
-            const volumiMaxVal = document.getElementById('numFilterMangaVolumiMax').value;
-            
-            let filtered = mangaList.filter(item => {
-                if (!item) return false;
-                
-                const titoloOriginale = item.titolo || '';
-                // Cerca sia nel titolo che nelle note (gestendo eventuali note vuote)
-                let notaTestoManga = "";
-                if (item.note && typeof item.note === "string") {
-                    notaTestoManga = item.note.toLowerCase();
-                } else if (item.note) {
-                    notaTestoManga = String(item.note).toLowerCase();
-                }
-                
-                // Convertiamo in minuscolo anche il testo cercato dall'utente per renderlo case-insensitive
-                const termineRicercaManga = (currentSearchManga || '').toLowerCase();
-                const matchesSearch = (item.titolo || '').toLowerCase().includes(termineRicercaManga) || notaTestoManga.includes(termineRicercaManga);
-                
-                const tipologia = item.tipologia || 'Manga';
-                let matchesType = currentFilterTipologiaManga === 'all' || tipologia === currentFilterTipologiaManga;
-                
-                const statoOriginale = item.stato || '';
-                let matchesStato = currentFilterStatoManga === 'all' || statoOriginale.toLowerCase() === currentFilterStatoManga.toLowerCase();
-                
-                const acquistato = item.acquistato || 'No';
-                let matchesBuy = currentFilterAcquistatoManga === 'all' || acquistato === currentFilterAcquistatoManga;
-                
-                const coloreLettura = item.coloreLettura || 'bianco';
-                let matchesRead = currentFilterLetturaManga === 'all' || coloreLettura === currentFilterLetturaManga;
-                
-                const itemVolumi = parseInt(item.volumi) || 0;
-                let matchesVolumiMin = true;
-                if (volumiMinVal !== '') matchesVolumiMin = itemVolumi >= parseInt(volumiMinVal);
-                
-                let matchesVolumiMax = true;
-                if (volumiMaxVal !== '') matchesVolumiMax = itemVolumi <= parseInt(volumiMaxVal);
-
-                // COMBO DI FILTRAGGIO GENRE AVANZATO (Logica AND)
-                let matchesGenres = true;
-                if (selectedGenresManga.length > 0) {
-                    const itemGenres = item.generi ? item.generi.split(',').map(g => g.trim()) : [];
-                    matchesGenres = selectedGenresManga.every(g => itemGenres.includes(g));
-                }
-                
-                // --- NUOVO FILTRO INTERRUTTORE PREFERITI ---
-                let matchesPreferito = true;
-                if (typeof currentFavFilterManga !== 'undefined' && currentFavFilterManga === 'yes') {
-                    matchesPreferito = (item.preferito === true);
-                }
-                
-                return matchesSearch && matchesType && matchesStato && matchesBuy && matchesRead && matchesVolumiMin && matchesVolumiMax && matchesGenres && matchesPreferito;
-            });
-
-            const countMangaEl = document.getElementById('countManga');
-            if (countMangaEl) countMangaEl.textContent = filtered.length + ' di ' + mangaList.length + ' manga';
-
-const sortVal = document.getElementById('sortSelManga').value;
-filtered.sort((a, b) => {
-    // NUOVO: le opere contrassegnate come prioritarie (📌) vengono sempre
-    // mostrate per prime, indipendentemente dal criterio di ordinamento scelto
-    const pA = a.priorita ? 1 : 0;
-    const pB = b.priorita ? 1 : 0;
-    if (pA !== pB) return pB - pA;
-
-    const tA = a.titolo || '';
-    const tB = b.titolo || '';
-    if (sortVal === 'title-asc') return tA.localeCompare(tB);
-    if (sortVal === 'title-desc') return tB.localeCompare(tA);
-    
-    // Nuova opzione: Volumi crescenti (dal più piccolo al più grande)
-    if (sortVal === 'volumes-asc') {
-        const vA = parseInt(a.volumi) || 0;
-        const vB = parseInt(b.volumi) || 0;
-        return vA - vB; 
-    }
-    
-    if (sortVal === 'volumes-desc') {
-        const vA = parseInt(a.volumi) || 0;
-        const vB = parseInt(b.volumi) || 0;
-        return vB - vA;
-    }
-    return tA.localeCompare(tB); // Fallback: alfabetico
-});
-            filtered.forEach(item => {
-                const tr = document.createElement('tr');
-                const statoOriginale = item.stato || 'In corso';
-                const statoClean = statoOriginale.toLowerCase();
-                let badgeClass = 'status-in-arrivo';
-                if (statoClean === 'in corso') badgeClass = 'status-in-corso';
-                else if (statoClean === 'concluso') badgeClass = 'status-concluso';
-                
-                const safeTitle = (item.titolo || '').replace(/'/g, "\\'").replace(/"/g, '\\"');
-
-                // Se non ancora acquistato, il badge diventa un pulsante cliccabile che permette
-                // di flaggare l'acquisto direttamente dalla lista (senza aprire la modale).
-                // Lo "spegnimento" del flag, invece, resta possibile solo dalla modale di modifica.
-                let buyText = (item.acquistato === 'Sì')
-                    ? '<span style="color:var(--success); font-weight:700;">✅ Sì</span>'
-                    : `<button class="action-icon-btn" style="font-size:12px; color:var(--text-muted); border:1px solid var(--border-color); border-radius:5px; padding:2px 7px; background:none; cursor:pointer;" title="Segna come acquistato" onclick="flagAcquistoManga('${safeTitle}', this)">❌ No</button>`;
-    
-                const coloreLettura = item.coloreLettura || 'bianco';
-                
-                // Renderizzazione Generi sotto alle informazioni titolo del Manga
-                let genresHTML = '';
-                if (item.generi && item.generi.trim() !== '') {
-                    genresHTML = `<div class="genre-tags-list" style="color: var(--accent);">🎭 ${item.generi}</div>`;
-                }
-
-                // --- CONFIGURAZIONE INTERFACCIA STELLINA PREFERITI ---
-                let starClass = item.preferito ? 'star-btn is-favorite' : 'star-btn';
-                let starIcon = item.preferito ? '★' : '☆';
-
-                // NUOVO: Definizione dinamica di classe e titolo per il pin di priorità (📌)
-                let pinClass = item.priorita ? 'pin-btn is-priority' : 'pin-btn';
-                let pinTitle = item.priorita ? 'Rimuovi dalle priorità' : 'Contrassegna come prioritario';
-
-                // --- Copertina muro (foto o gradiente) ---
-                let wallArtStyle = '';
-                if (item.immagine && item.immagine.trim() !== '') {
-                    const safeImgUrl = item.immagine.trim().replace(/'/g, "\\'");
-                    wallArtStyle = `background-image:url('${safeImgUrl}');`;
-                } else {
-                    wallArtStyle = 'background:linear-gradient(160deg,#f97316,#7c2d12);';
-                }
-
-                const volumiTotali = parseInt(item.volumi) || 0;
-                const volumiLettiNum = parseInt(item.volumiLetti) || 0;
-                const pctAvanzamento = volumiTotali > 0 ? Math.round(volumiLettiNum / volumiTotali * 100) : 0;
-
-                const card = document.createElement('div');
-                card.className = 'wall-card';
-                card.innerHTML = `
-                    <div class="wall-art" style="${wallArtStyle}">
-                        <button class="wall-star ${item.preferito ? 'is-favorite' : 'off'}" onclick="toggleFavoriteManga('${safeTitle}', this)" title="Preferito">${starIcon}</button>
-                        <button class="${pinClass}" style="position:absolute; top:8px; left:44px; background:rgba(0,0,0,.55); border:none; border-radius:8px; padding:3px 8px; font-size:12px; cursor:pointer;" onclick="togglePinManga('${safeTitle}', this, event)" title="${pinTitle}">📌</button>
-                        <span class="vision-box box-${coloreLettura}" style="position:absolute; bottom:8px; left:8px;"></span>
-                    </div>
-                    <div class="wall-progress"><i style="width:${pctAvanzamento}%;"></i></div>
-                    <div class="wall-meta">
-                        <div class="wall-title"><span>${item.titolo || 'Senza Titolo'}</span>
-                            <button class="action-icon-btn" style="font-size: 13px; padding: 0; background: none; border: none; cursor: pointer;" onclick="mostraSinossi('${safeTitle}', 'manga')" title="Visualizza Sinossi">ℹ️</button>
-                        </div>
-                        <div class="wall-sub">${item.tipologia || 'Manga'} · Volumi ${volumiLettiNum}/${volumiTotali}</div>
-                        <div class="wall-sub"><span class="status-badge ${badgeClass}">${item.stato || 'In corso'}</span> ${buyText}</div>
-                        ${genresHTML ? `<div class="wall-genres">🎭 ${(item.generi || '').trim()}</div>` : ''}
-                        <div class="wall-note">${item.note && String(item.note).trim() !== '' ? String(item.note).replace(/<[^>]*>/g, '') : '-'}</div>
-                        <div class="wall-actions">
-                            <button class="action-icon-btn" style="font-size: 13px;" onclick="modificaVolumiLettiManga('${safeTitle}', -1)" title="Diminuisci volumi letti">➖</button>
-                            <button class="action-icon-btn" style="font-size: 13px;" onclick="modificaVolumiLettiManga('${safeTitle}', 1)" title="Aumenta volumi letti">➕</button>
-                            <button class="action-icon-btn" onclick="apriModificaManga('${safeTitle}')" title="Modifica">✏️</button>
-                            <button class="action-icon-btn" onclick="rimuoviManga('${safeTitle}')" title="Elimina">🗑️</button>
-                        </div>
-                    </div>
-                `;
-                wall.appendChild(card);
-            });
-            const mangaEmptyEl = document.getElementById('mangaEmpty');
-            if (mangaEmptyEl) mangaEmptyEl.style.display = filtered.length === 0 ? 'block' : 'none';
-        }
-
-		
-        // Click sulla locandina di una card (home + cataloghi): apre l'immagine
-        // intera nel lightbox. Solo click diretto sull'art (non sui bottoni
-        // sopra) e solo se c'è una foto (i gradienti non hanno url).
-        document.addEventListener('click', function(e) {
-            const art = (e.target && e.target.closest) ? e.target.closest('.wall-art') : null;
-            if (!art || e.target !== art) return;
-            const bg = art.style.backgroundImage || '';
-            const m = bg.match(/url\(['"]?(.*?)['"]?\)/);
-            if (m && m[1]) apriLightbox(m[1]);
-        });
-
-// FUNZIONE DI SUPPORTO PER APRIRE IL LIGHTBOX (Puoi lasciarla subito sotto le funzioni di render)
-function apriLightbox(url) {
-    const overlay = document.getElementById('lightboxOverlay');
-    const img = document.getElementById('lightboxImg');
-    if (overlay && img) {
-        img.src = url;
-        overlay.style.display = 'flex';
-    }
-}
-        function renderListMangaTabella() {
-            document.getElementById('mangaWall').style.display = 'none';             const mangaTableWrapEmpty = document.getElementById('mangaEmpty');             if (mangaTableWrapEmpty) mangaTableWrapEmpty.style.display = 'none';             document.getElementById('mangaTableWrap').style.display = '';
-            document.getElementById('mangaTable').style.display = 'table';
             const tbody = document.getElementById('mangaTableBody');
             if (!tbody) return;
             tbody.innerHTML = '';
@@ -7735,6 +6889,16 @@ filtered.sort((a, b) => {
                 tbody.appendChild(tr);
             });
         }
+		
+// FUNZIONE DI SUPPORTO PER APRIRE IL LIGHTBOX (Puoi lasciarla subito sotto le funzioni di render)
+function apriLightbox(url) {
+    const overlay = document.getElementById('lightboxOverlay');
+    const img = document.getElementById('lightboxImg');
+    if (overlay && img) {
+        img.src = url;
+        overlay.style.display = 'flex';
+    }
+}
         document.getElementById('btnNuovoManga').onclick = function() {
             targetEditTitleManga = null;
             sinossiPendenteManga = null; // <--- NUOVO: azzera eventuale sinossi AniList in sospeso
@@ -7892,14 +7056,6 @@ filtered.sort((a, b) => {
         //   Nuove voci: aggiungere in CIMA all'array.
         // ==========================================
         const PATCH_NOTES = [
-            { v: '1.0.34', titolo: 'Ritocchi restyle', data: '07/10/2026 · 13:11', punti: [
-                'Widget In Corso a riga singola con scorrimento, locandine cliccabili e note intere.',
-                'Switch Card/Lista nei cataloghi Anime, Serie TV e Manga con preferenza salvata.'
-            ] },
-            { v: '1.0.33', titolo: 'Nuova veste grafica', data: '07/10/2026 · 12:34', punti: [
-                'Home con hero, tabs e muro locandine; cataloghi Anime/Serie/Manga a muro con stesse funzioni.',
-                'Log di sistema in stile timeline. Logica e pulsanti invariati.'
-            ] },
             { v: '1.0.32', titolo: 'Streaming vero + badge patch', data: '06/10/2026 · 09:11', punti: [
                 'Film in streaming archiviati tra i Visti con data e log, separati col pill Sala/Streaming.',
                 'Pallino rosso sulle patch notes con le versioni ancora da leggere (per utente).'
@@ -9415,14 +8571,12 @@ function toggleFavoriteManga(titolo, btn) {
     let isFav = btn.classList.contains("is-favorite");
     let nuovoStato = !isFav;
     
-    // Aggiornamento grafico istantaneo (interfaccia reattiva, anche stile muro)
+    // Aggiornamento grafico istantaneo (interfaccia reattiva)
     if (nuovoStato) {
         btn.classList.add("is-favorite");
-        btn.classList.remove("off");
         btn.innerHTML = "★";
     } else {
         btn.classList.remove("is-favorite");
-        btn.classList.add("off");
         btn.innerHTML = "☆";
     }
     
@@ -9517,14 +8671,12 @@ function toggleFavoriteAnime(titolo, btn) {
     let isFav = btn.classList.contains("is-favorite");
     let nuovoStato = !isFav;
     
-    // Aggiornamento grafico istantaneo (interfaccia reattiva, anche stile muro)
+    // Aggiornamento grafico istantaneo (interfaccia reattiva)
     if (nuovoStato) {
         btn.classList.add("is-favorite");
-        btn.classList.remove("off");
         btn.innerHTML = "★";
     } else {
         btn.classList.remove("is-favorite");
-        btn.classList.add("off");
         btn.innerHTML = "☆";
     }
     
@@ -10897,30 +10049,6 @@ function renderWidgetInCorso() {
 
     if (countEl) countEl.textContent = combinati.length + (combinati.length === 1 ? ' opera' : ' opere');
 
-    // Numeri dell'hero: episodi/volumi visti, in visione ora, completati
-    (function aggiornaHeroInCorso_() {
-        if (!document.getElementById('heroEpVisti')) return;
-        let visti = 0, completati = 0;
-        (animeList || []).forEach(function(a) {
-            if (!a) return;
-            if (a.coloreVisione === 'verde') completati++;
-        });
-        (episodiAnimeList || []).forEach(function(e) { visti += parseInt(e.episodiVisti) || 0; });
-        (serieTvList || []).forEach(function(s) {
-            if (!s) return;
-            if (s.coloreVisione === 'verde') completati++;
-        });
-        (episodiSerieTvList || []).forEach(function(e) { visti += parseInt(e.episodiVisti) || 0; });
-        (mangaList || []).forEach(function(m) {
-            if (!m) return;
-            visti += parseInt(m.volumiLetti) || 0;
-            if (m.coloreLettura === 'verde') completati++;
-        });
-        document.getElementById('heroEpVisti').innerText = visti;
-        document.getElementById('heroInCorso').innerText = combinati.length;
-        document.getElementById('heroCompletati').innerText = completati;
-    })();
-
     if (combinati.length === 0) {
         if (emptyEl) emptyEl.style.display = 'block';
         return;
@@ -10937,58 +10065,48 @@ function creaProgressCard(tipo, item, idx) {
     const isAnime = (tipo === 'anime');
     const isSerieTv = (tipo === 'serietv');
     const card = document.createElement('div');
-    card.className = 'wall-card';
+    card.className = 'progress-card';
+    card.style.animationDelay = (idx * 0.04) + 's';
     card.title = item.titolo || '';
 
-    // --- Copertina (foto o gradiente per tipo) ---
-    let artStyle = '';
+    // --- Banner (stessa immagine mostrata a inizio riga nelle rispettive viste) ---
+    let bannerHTML = '';
     if (item.immagine && item.immagine.trim() !== '') {
         const safeImg = item.immagine.trim().replace(/'/g, "\\'").replace(/"/g, '&quot;');
-        artStyle = `background-image:url('${safeImg}');`;
-    } else if (isSerieTv) {
-        artStyle = 'background:linear-gradient(160deg,#0f2027,#2c5364);';
-    } else if (isAnime) {
-        artStyle = 'background:linear-gradient(160deg,#1a2a6c,#b21f1f);';
+        bannerHTML = `<img class="progress-card-banner" src="${safeImg}" alt="Banner" loading="lazy" onerror="this.style.display='none';">`;
     } else {
-        artStyle = 'background:linear-gradient(160deg,#f97316,#7c2d12);';
+        bannerHTML = `<div class="progress-card-banner-placeholder">${isAnime ? '📺' : '📚'}</div>`;
     }
 
-    // --- Avanzamento attuale + percentuale barra ---
+    // --- Avanzamento attuale ---
     let progressoHTML = '';
-    let pct = 0;
     if (isAnime) {
         const sVis = parseInt(item.stagioniViste) || 0;
         const sTot = parseInt(item.stagioniTotali) || 0;
         const fVis = parseInt(item.filmVisti) || 0;
         const fTot = parseInt(item.filmTotali) || 0;
         progressoHTML = `🎞️ ${sVis}/${sTot} stagioni`;
-        if (fTot > 0) progressoHTML += ` · 🎬 ${fVis}/${fTot} film`;
-        if ((sTot + fTot) > 0) pct = Math.round((sVis + fVis) / (sTot + fTot) * 100);
-    } else if (isSerieTv) {
-        const sVis = parseInt(item.stagioniViste) || 0;
-        const sTot = parseInt(item.stagioniTotali) || 0;
-        progressoHTML = `🎞️ ${sVis}/${sTot} stagioni`;
-        if (sTot > 0) pct = Math.round(sVis / sTot * 100);
+        if (fTot > 0) progressoHTML += `<br>🎬 ${fVis}/${fTot} film`;
     } else {
         const vLetti = parseInt(item.volumiLetti) || 0;
         const vTot = parseInt(item.volumi) || 0;
         progressoHTML = `📖 ${vLetti}/${vTot} volumi`;
-        if (vTot > 0) pct = Math.round(vLetti / vTot * 100);
+    }
+    if (isSerieTv) {
+        const sVis = parseInt(item.stagioniViste) || 0;
+        const sTot = parseInt(item.stagioniTotali) || 0;
+        progressoHTML = `🎞️ ${sVis}/${sTot} stagioni`;
     }
 
     const badgeClass = isSerieTv ? 'log-badge-serietv' : (isAnime ? 'log-badge-anime' : 'log-badge-manga');
     const badgeLabel = isSerieTv ? 'SERIE TV' : (isAnime ? 'ANIME' : (item.tipologia || 'Manga'));
-    const votoBadge = (isAnime && item.valutazione && item.valutazione !== '-') ? `<span class="wall-rate">★ ${item.valutazione}</span>` : '';
 
     card.innerHTML = `
-        <div class="wall-art" style="${artStyle}">
-            <span class="wall-badge ${badgeClass}">${escapeHtmlLog(badgeLabel)}</span>
-            ${votoBadge}
-        </div>
-        <div class="wall-progress"><i style="width:${pct}%;"></i></div>
-        <div class="wall-meta">
-            <div class="wall-title">${escapeHtmlLog(item.titolo || 'Senza Titolo')}</div>
-            <div class="wall-sub">${progressoHTML}</div>
+        ${bannerHTML}
+        <div class="progress-card-body">
+            <span class="progress-card-badge ${badgeClass}">${escapeHtmlLog(badgeLabel)}</span>
+            <div class="progress-card-title">${escapeHtmlLog(item.titolo || 'Senza Titolo')}</div>
+            <div class="progress-card-progress">${progressoHTML}</div>
         </div>
     `;
 
