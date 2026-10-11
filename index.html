@@ -2315,7 +2315,7 @@
          Stessa struttura della view Manga, semplificata come deciso:
          niente pagine/voto/acquistato, solo stati Da leggere / Letto /
          Abbandonato + saga Livello 1 (saga_nome + saga_numero a mano,
-         con suggerimento semi-automatico da Google Books quando noto).
+         con suggerimento automatico da Hardcover quando noto).
          ================================================================ -->
     <div id="libriView" class="view-container" style="display: none;">
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 10px;">
@@ -2862,7 +2862,7 @@
 
     <!-- ================================================================
          📗 MODALE LIBRO (Richiesta 35)
-         Titolo + ricerca Google Books (copertina/trama/generi/autore/anno
+         Titolo + ricerca Hardcover (copertina/trama/generi/autore/anno/saga
          + suggerimento saga quando noto), stato lettura a 3 valori, saga
          Livello 1 sempre modificabile a mano, generi dalla stessa lista
          dei manga, note e immagine. Niente voto/pagine/acquistato.
@@ -2878,7 +2878,7 @@
                     <label>Titolo *</label>
                     <div style="display:flex; gap:6px;">
                         <input type="search" id="inpTitoloLibri" required style="flex:1;">
-                        <button type="button" class="btn" style="padding:0 12px; white-space:nowrap;" onclick="apriRicercaGoogleBooks()" title="Cerca copertina, trama e metadati online (Google Books, con fallback Open Library se non risponde)">🔎 Google Books</button>
+                        <button type="button" class="btn" style="padding:0 12px; white-space:nowrap;" onclick="apriRicercaHardcover()" title="Cerca copertina, trama, generi, autore, anno e saga su Hardcover">🔎 Hardcover</button>
                     </div>
                 </div>
                 <div id="libriCandidatiWrapper"></div>
@@ -2906,7 +2906,7 @@
                     <label>Saga (numero volume)</label>
                     <input type="number" id="inpSagaNumeroLibri" placeholder="Es. 1" step="0.5" min="0">
                     <small style="color: var(--text-muted); display:block; margin-top:4px;">
-                        Google Books lo suggerisce solo quando lo conosce (spesso vuoto sui romanzi): resta sempre modificabile a mano. Ammessi mezzi numeri per spin-off (es. 1.5).
+                        Hardcover conosce quasi sempre la saga (nome + numero): verifica comunque e correggi a mano se serve. Ammessi mezzi numeri per spin-off (es. 1.5).
                     </small>
                 </div>
 
@@ -2916,7 +2916,7 @@
                 </div>
 
                 <div class="form-group"><label>Note</label><textarea id="inpNoteLibri" rows="2"></textarea></div>
-                <div class="form-group"><label>URL Immagine / Copertina</label><input type="url" id="inpImmagineLibri" placeholder="Compilato da Google Books, modificabile (es. https://...)"></div>
+                <div class="form-group"><label>URL Immagine / Copertina</label><input type="url" id="inpImmagineLibri" placeholder="Compilato da Hardcover, modificabile (es. https://...)"></div>
 
                 <div class="modal-footer">
                     <button type="button" class="btn btn-danger" onclick="chiudiModale('Libri')">Annulla</button>
@@ -2994,13 +2994,10 @@
         const SUPABASE_URL = 'https://jcclzcyezqbhmxptlnoo.supabase.co';
         const SUPABASE_ANON_KEY = 'sb_publishable_YsZNPRv7TVA39DoOi1P5cg_VJds36b5';
 
-        // --- Chiave API Google Books (opzionale, Richiesta 37) -----------------
-        // Gratis da Google Cloud Console (vedi guida in chat), con restrizione
-        // "Referrer HTTP" sul dominio Pages: alza la quota e stoppa i 429 delle
-        // chiamate anonime. Vuota = chiamate anonime (spesso bloccate).
-        // NON è un segreto: come la anon di Supabase, la protezione è la
-        // restrizione referrer impostata in Console, non il nasconderla qui.
-        const GOOGLE_BOOKS_API_KEY = '';
+        // --- Ricerca libri via Hardcover (Richiesta 38) -------------------------
+        // Il token Hardcover NON sta qui (loro lo vietano + repo pubblica):
+        // vive come secret Supabase ed è la Edge Function `hardcover-proxy`
+        // a usarlo — stesso schema di `tmdb-proxy` per TMDB.
 
         // Il tuo user_id (Supabase Auth): usato solo per decidere se mostrare
         // il pulsante "Apri Database" — nessuna implicazione di sicurezza,
@@ -7279,8 +7276,8 @@ function apriLightbox(url) {
         //   Schema semplificato come deciso: niente pagine/voto/acquistato,
         //   solo stati Da leggere / Letto / Abbandonato + saga Livello 1
         //   (saga_nome TEXT + saga_numero NUMERIC, sempre editabili a mano).
-        //   Ricerca metadati via Google Books (pubblica, CORS aperto:
-        //   nessuna chiave, nessuna Edge Function come per AniList).
+        //   Ricerca metadati via Hardcover (Edge Function `hardcover-proxy`,
+        //   stesso schema di `tmdb-proxy`: il token resta secret server-side).
         // ==========================================
 
         function statoBadgeLibro_(stato) {
@@ -7609,7 +7606,7 @@ function apriLightbox(url) {
         document.getElementById('btnNuovoLibro').onclick = function() {
             targetEditTitleLibri = null;
             sinossiPendenteLibri = null;
-            ultimoDettaglioGoogleBooks = null;
+            ultimoDettaglioHardcover = null;
             document.getElementById('modalTitleLibri').innerText = 'Aggiungi Nuovo Libro';
             document.getElementById('libriForm').reset();
             document.getElementById('inpStatoLibri').value = 'Da leggere';
@@ -7625,7 +7622,7 @@ function apriLightbox(url) {
 
             targetEditTitleLibri = titolo;
             sinossiPendenteLibri = null;
-            ultimoDettaglioGoogleBooks = null;
+            ultimoDettaglioHardcover = null;
             document.getElementById('modalTitleLibri').innerText = 'Modifica Libro';
             document.getElementById('inpTitoloLibri').value = item.titolo || '';
             document.getElementById('inpAutoreLibri').value = item.autore || '';
@@ -7682,7 +7679,7 @@ function apriLightbox(url) {
                 if (sinossiPendenteLibri) {
                     impostaSinossiSB_(dati.titolo, 'libri', sinossiPendenteLibri)
                         .catch(function(err) {
-                            console.error('Errore salvataggio trama Google Books: ' + err);
+                            console.error('Errore salvataggio trama Hardcover: ' + err);
                             showToast('Libro salvato, ma la trama non è stata scritta. Riprova dal pulsante 🔎.', 'error');
                         });
                     sinossiPendenteLibri = null;
@@ -7762,113 +7759,85 @@ function apriLightbox(url) {
         // 🔎 GOOGLE BOOKS (chiamata diretta, nessuna chiave)
         // ------------------------------------------
 
-        async function cercaCandidatiLibriGB_(query) {
+        // Euristica lingua trama (Richiesta 38): Hardcover non dichiara la
+        // lingua della descrizione. Se il testo contiene parole tipicamente
+        // italiane lo tengo così com'è, altrimenti traduco EN→IT (stesso
+        // traduttore di AniList; se fallisce resta l'originale).
+        function sembraItaliano_(testo) {
+            const paroleIT = ['che', 'della', 'nella', 'delle', 'degli', 'sono', 'come', 'quando', 'questo', 'questa', 'questi', 'queste', 'libro', 'storia', 'mondo', 'vita', 'tempo', 'uomo', 'donna', 'grande', 'nuovo', 'vecchio', 'giorno', 'notte', 'casa', 'famiglia', 'amore', 'guerra', 'regno', 'magia', 'potere', 'ragazzo', 'anni', 'dopo', 'prima', 'ancora', 'sempre', 'molto'];
+            const tn = String(testo || '').toLowerCase();
+            let trovate = 0;
+            paroleIT.forEach(function(w) {
+                if (new RegExp('\\b' + w + '\\b').test(tn)) trovate++;
+            });
+            return trovate >= 3;
+        }
+
+        // Ricerca libri via Hardcover (Richiesta 38): il browser chiama solo
+        // la Edge Function `hardcover-proxy` (stesso schema di `tmdb-proxy`
+        // per TMDB) — il token resta secret lato server. Un'unica chiamata dà
+        // già tutto (trama, generi, copertina, saga): niente secondo dettaglio.
+        async function cercaCandidatiLibriHC_(query) {
             const q = String(query || '').trim();
             if (!q) throw new Error('Inserisci prima un titolo da cercare.');
-            // Chiave (Richiesta 37): se configurata sopra, la quota diventa
-            // quella del tuo progetto invece dell'anonima condivisa per IP.
-            let url = 'https://www.googleapis.com/books/v1/volumes?q=' + encodeURIComponent(q) + '&maxResults=10&printType=books&langRestrict=it';
-            if (typeof GOOGLE_BOOKS_API_KEY !== 'undefined' && GOOGLE_BOOKS_API_KEY) {
-                url += '&key=' + encodeURIComponent(GOOGLE_BOOKS_API_KEY);
-            }
-            let resp;
+            let data, error;
             try {
-                resp = await fetch(url);
-            } catch (networkErr) {
-                throw new Error('Rete: impossibile raggiungere Google Books (' + networkErr.message + ').');
-            }
-            if (!resp.ok) {
-                if (resp.status === 429) throw new Error('Google Books: troppe richieste, riprova tra un minuto.');
-                throw new Error('Google Books non disponibile [HTTP ' + resp.status + '].');
-            }
-            const json = await resp.json();
-            const items = (json && json.items) || [];
-            return items.map(function(it) {
-                const vi = it.volumeInfo || {};
-                let anno = '';
-                if (vi.publishedDate) anno = String(vi.publishedDate).substring(0, 4);
-                let img = '';
-                if (vi.imageLinks) img = vi.imageLinks.thumbnail || vi.imageLinks.smallThumbnail || '';
-                if (img) img = img.replace(/^http:\/\//i, 'https://');
-                return {
-                    id: it.id, titolo: vi.title || 'Senza titolo',
-                    sottotitolo: vi.subtitle || '',
-                    autori: (vi.authors || []).join(', '),
-                    anno: anno, immagine: img, fonte: 'GB'
-                };
-            });
-        }
-
-        async function getDettaglioLibroGB_(volumeId) {
-            let url = 'https://www.googleapis.com/books/v1/volumes/' + encodeURIComponent(volumeId) + '?projection=full';
-            if (typeof GOOGLE_BOOKS_API_KEY !== 'undefined' && GOOGLE_BOOKS_API_KEY) {
-                url += '&key=' + encodeURIComponent(GOOGLE_BOOKS_API_KEY);
-            }
-            const resp = await fetch(url);
-            if (!resp.ok) throw new Error('Dettaglio Google Books non disponibile [HTTP ' + resp.status + '].');
-            const json = await resp.json();
-            const vi = json.volumeInfo || {};
-
-            let descrizione = String(vi.description || '');
-            descrizione = descrizione
-                .replace(/<br\s*\/?>/gi, '\n')
-                .replace(/<\/?[^>]+(>|$)/g, '')
-                .replace(/\n{3,}/g, '\n\n')
-                .trim();
-
-            // Trama in inglese → traduzione automatica (Richiesta 37): riusa
-            // il traduttore gratuito già usato per AniList; se fallisce resta
-            // l'originale (vedi tradurreTestoGoogleFree_).
-            const linguaGB = String(vi.language || '').toLowerCase();
-            if (descrizione && (linguaGB === 'en' || linguaGB.indexOf('en') === 0)) {
-                descrizione = await tradurreTestoGoogleFree_(descrizione, 'en', 'it');
-            }
-
-            let anno = '';
-            if (vi.publishedDate) anno = String(vi.publishedDate).substring(0, 4);
-
-            let img = '';
-            if (vi.imageLinks) img = vi.imageLinks.thumbnail || vi.imageLinks.smallThumbnail || '';
-            if (img) img = img.replace(/^http:\/\//i, 'https://');
-
-            // Categorie Google Books ("Fiction / Fantasy"): le appiattisco su
-            // singole parole e le confronto con MASTER_GENRES_LIST.
-            const rawCategorie = vi.categories || [];
-            const paroleCategorie = [];
-            rawCategorie.forEach(function(c) {
-                String(c).split('/').forEach(function(p) {
-                    const t = p.trim();
-                    if (t) paroleCategorie.push(t);
+                const res = await supabaseClient.functions.invoke('hardcover-proxy', {
+                    body: { action: 'search', query: q }
                 });
-            });
-
-            // Saga: Google Books la espone solo a volte (seriesInfo, nato per i
-            // fumetti). Numero comunque utile, nome quasi mai: lo suggerisco
-            // con euristica su titolo/sottotitolo, resta tutto modificabile.
-            let sagaNumeroGB = null;
-            try {
-                const si = vi.seriesInfo;
-                const vs = si && si.volumeSeries && si.volumeSeries[0];
-                if (vs) {
-                    const n = parseFloat(vs.orderNumber !== undefined ? vs.orderNumber : vs.bookDisplayNumber);
-                    if (!isNaN(n)) sagaNumeroGB = n;
-                }
-            } catch (e) { sagaNumeroGB = null; }
-            const sagaEuristica = suggerisciSagaDaTitolo_((vi.title || ''), (vi.subtitle || ''));
-            if (sagaNumeroGB === null && sagaEuristica && sagaEuristica.numero !== null) {
-                sagaNumeroGB = sagaEuristica.numero;
+                data = res.data; error = res.error;
+            } catch (networkErr) {
+                throw new Error('Rete: impossibile raggiungere il server (' + networkErr.message + ').');
             }
-
-            return {
-                id: json.id, titolo: vi.title || '', sottotitolo: vi.subtitle || '',
-                autori: (vi.authors || []).join(', '), anno: anno,
-                sinossi: descrizione || 'Nessuna trama disponibile per questo libro.',
-                immagine: img, categorie: paroleCategorie,
-                sagaNome: (sagaEuristica && sagaEuristica.nome) ? sagaEuristica.nome : '',
-                sagaNumero: sagaNumeroGB,
-                sagaFonte: (sagaEuristica && sagaEuristica.nome) ? 'euristica' : ((sagaNumeroGB !== null) ? 'google' : 'nessuna')
-            };
+            if (error) {
+                const corpo = (data && data.error) ? String(data.error) : '';
+                if (corpo) throw new Error(corpo);
+                const msg = String((error && error.message) || '');
+                if (/failed to fetch|not found|404/i.test(msg)) {
+                    throw new Error('Funzione hardcover-proxy non trovata: creala in Supabase (vedi guida).');
+                }
+                throw new Error('Hardcover: ' + (msg || 'errore imprevisto.'));
+            }
+            if (data && data.error) throw new Error(String(data.error));
+            const risultati = (data && data.risultati) || [];
+            return risultati.map(function(r) {
+                return {
+                    id: r.id || '', titolo: r.titolo || 'Senza titolo',
+                    sottotitolo: r.sottotitolo || '', autori: r.autori || '',
+                    anno: r.anno || '', immagine: r.immagine || '',
+                    descrizione: r.descrizione || '', categorie: r.categorie || [],
+                    pagine: r.pagine || null,
+                    sagaNome: r.sagaNome || '',
+                    sagaNumero: (r.sagaNumero !== null && r.sagaNumero !== undefined) ? r.sagaNumero : null,
+                    fonte: 'HC'
+                };
+            }).filter(function(c) { return !!c.id; });
         }
+
+        function apriRicercaHardcover() {
+            const titolo = document.getElementById('inpTitoloLibri').value.trim();
+            if (!titolo) {
+                alert('Inserisci prima un titolo da cercare.');
+                return;
+            }
+            const wrap = document.getElementById('libriCandidatiWrapper');
+            wrap.innerHTML = `<div style="color:var(--success); font-weight:600; font-size:13px; margin-bottom:12px;">⏳ Ricerca su Hardcover in corso...</div>`;
+            cercaCandidatiLibriHC_(titolo)
+                .then(function(candidati) { renderCandidatiLibriHC_(candidati, titolo); })
+                .catch(function(err) {
+                    wrap.innerHTML = `<div style="color:var(--danger); font-size:13px; margin-bottom:12px;">❌ ${String(err && err.message ? err.message : err)}</div>`;
+                });
+        }
+        window.apriRicercaHardcover = apriRicercaHardcover;
+
+        // ------------------------------------------
+        // 📚 DETTAGLIO LIBRO: nessun secondo giro di rete (Richiesta 38).
+        // La search Hardcover restituisce già trama/generi/saga per ogni
+        // candidato: la selezione li prende dai dati in memoria
+        // (ultimiCandidatiLibri_), traduce la trama se serve e apre
+        // direttamente l'anteprima. Euristica titolo solo se Hardcover non
+        // conosce la saga.
+        // ------------------------------------------
 
         // Euristica sul titolo: becca "(Dune, #2)", "Dune #2", "Vol. 3".
         // Ritorna { nome, numero } o null. Meglio un suggerimento da
@@ -7893,134 +7862,47 @@ function apriLightbox(url) {
             return null;
         }
 
-        // Ultimi candidati mostrati nel picker (Richiesta 36): serve per
-        // ritrovare autore/anno/copertina quando il dettaglio arriva da
-        // Open Library invece che da Google Books.
+        // Ultimi candidati mostrati nel picker (Richiesta 38): la search
+        // Hardcover restituisce già i dati completi, la selezione li riusa
+        // da qui senza altre chiamate di rete.
         let ultimiCandidatiLibri_ = [];
 
-        function apriRicercaGoogleBooks() {
-            const titolo = document.getElementById('inpTitoloLibri').value.trim();
-            if (!titolo) {
-                alert('Inserisci prima un titolo da cercare.');
+        function selezionaCandidatoLibroHC_(idLibro, titoloCandidato) {
+            const wrap = document.getElementById('libriCandidatiWrapper');
+            const cand = (ultimiCandidatiLibri_ || []).find(function(x) { return x.id === idLibro; });
+            if (!cand) {
+                wrap.innerHTML = `<div style="color:var(--danger); font-size:13px; margin-bottom:12px;">❌ Candidato non più disponibile: cerca di nuovo il libro.</div>`;
                 return;
             }
-            const wrap = document.getElementById('libriCandidatiWrapper');
-            wrap.innerHTML = `<div style="color:var(--success); font-weight:600; font-size:13px; margin-bottom:12px;">⏳ Ricerca su Google Books in corso...</div>`;
-            cercaCandidatiLibriGB_(titolo)
-                .then(function(candidati) {
-                    if (candidati && candidati.length > 0) {
-                        renderCandidatiLibriGB_(candidati, false, titolo);
-                    } else {
-                        provaFallbackOpenLibrary_(titolo, wrap, 'Google Books non trova nulla per questo titolo.');
-                    }
-                })
-                .catch(function(err) {
-                    const motivo = String(err && err.message ? err.message : err);
-                    provaFallbackOpenLibrary_(titolo, wrap, 'Google Books non risponde (' + motivo + ').');
+            const sinossiPulita = String(cand.descrizione || '').replace(/\n{3,}/g, '\n\n').trim();
+            const completaAnteprima = function(testoFinale) {
+                const sagaEur = (!cand.sagaNome) ? suggerisciSagaDaTitolo_(cand.titolo, cand.sottotitolo) : null;
+                renderDettaglioLibriHC_({
+                    id: cand.id, titolo: cand.titolo, sottotitolo: cand.sottotitolo,
+                    autori: cand.autori, anno: cand.anno,
+                    sinossi: testoFinale || 'Nessuna trama disponibile per questo libro.',
+                    immagine: cand.immagine, categorie: cand.categorie || [],
+                    sagaNome: cand.sagaNome || ((sagaEur && sagaEur.nome) ? sagaEur.nome : ''),
+                    sagaNumero: (cand.sagaNumero !== null && cand.sagaNumero !== undefined)
+                        ? cand.sagaNumero
+                        : ((sagaEur && sagaEur.numero !== null) ? sagaEur.numero : null),
+                    sagaFonte: cand.sagaNome ? 'hardcover' : ((sagaEur && sagaEur.nome) ? 'euristica' : 'nessuna')
                 });
-        }
-        window.apriRicercaGoogleBooks = apriRicercaGoogleBooks;
-
-        // Piano B quando Google Books fallisce o è a secco (Richiesta 36):
-        // capita spesso il 429 "troppe richieste" legato all'IP di uscita,
-        // che persiste anche aspettando. Open Library è gratuita, senza
-        // chiave e con CORS aperto: dà candidati (autore/anno/copertina) e,
-        // quando c'è, trama e soggetti dal record dell'opera.
-        function provaFallbackOpenLibrary_(titolo, wrap, messaggio) {
-            wrap.innerHTML = `<div style="color:var(--warning); font-weight:600; font-size:13px; margin-bottom:12px;">⚠️ ${messaggio} Provo con Open Library...</div>`;
-            cercaCandidatiOpenLibrary_(titolo)
-                .then(function(candidati) { renderCandidatiLibriGB_(candidati, true, titolo); })
-                .catch(function() {
-                    wrap.innerHTML = `<div style="color:var(--danger); font-size:13px; margin-bottom:12px;">❌ Né Google Books né Open Library rispondono. Riprova tra qualche minuto oppure compila a mano.</div>`;
-                });
-        }
-
-        async function cercaCandidatiOpenLibrary_(query) {
-            const q = String(query || '').trim();
-            if (!q) throw new Error('Inserisci prima un titolo da cercare.');
-            // Prima cerca nel campo titolo (preciso), se a secco ripiega sulla
-            // full-text (Richiesta 37): riduce i falsi positivi tipo Othello.
-            const campiOL = 'key,title,author_name,first_publish_year,cover_i,isbn';
-            async function cercaOL_(url) {
-                let resp;
-                try {
-                    resp = await fetch(url);
-                } catch (networkErr) {
-                    throw new Error('Rete: impossibile raggiungere Open Library (' + networkErr.message + ').');
-                }
-                if (!resp.ok) throw new Error('Open Library non disponibile [HTTP ' + resp.status + '].');
-                const json = await resp.json();
-                return (json && json.docs) || [];
-            }
-            let docs = await cercaOL_('https://openlibrary.org/search.json?title=' + encodeURIComponent(q) + '&limit=10&fields=' + campiOL);
-            if (docs.length === 0) {
-                docs = await cercaOL_('https://openlibrary.org/search.json?q=' + encodeURIComponent(q) + '&limit=10&fields=' + campiOL);
-            }
-            return docs.map(function(d) {
-                let img = '';
-                if (d.cover_i) img = 'https://covers.openlibrary.org/b/id/' + d.cover_i + '-M.jpg';
-                else if (d.isbn && d.isbn[0]) img = 'https://covers.openlibrary.org/b/isbn/' + d.isbn[0] + '-M.jpg';
-                return {
-                    id: d.key || '', titolo: d.title || 'Senza titolo',
-                    sottotitolo: '',
-                    autori: ((d.author_name || []).join(', ')),
-                    anno: d.first_publish_year ? String(d.first_publish_year) : '',
-                    immagine: img, fonte: 'OL'
-                };
-            }).filter(function(c) { return !!c.id; });
-        }
-
-        // Dettaglio Open Library: la search dà già autore/anno/copertina, qui
-        // aggiungo trama e soggetti dal record dell'opera quando esistono.
-        // Ritorna la stessa forma del dettaglio Google Books così il resto
-        // del flusso (anteprima + conferma) è identico.
-        async function getDettaglioOpenLibrary_(candidato) {
-            let descrizione = '';
-            let soggetti = [];
-            let operaInItaliano = false;
-            try {
-                const resp = await fetch('https://openlibrary.org' + candidato.id + '.json');
-                if (resp.ok) {
-                    const w = await resp.json();
-                    const desc = w.description;
-                    if (typeof desc === 'string') descrizione = desc;
-                    else if (desc && desc.value) descrizione = String(desc.value);
-                    if (w.subjects) soggetti = w.subjects;
-                    // L'opera dichiara l'italiano tra le lingue? Allora niente traduzione.
-                    const lingue = w.languages || [];
-                    operaInItaliano = lingue.some(function(l) {
-                        return String((l && l.key) || '').toLowerCase().indexOf('ita') !== -1;
-                    });
-                }
-            } catch (e) { /* trama resta vuota: non si blocca il flusso */ }
-            descrizione = String(descrizione || '').replace(/\n{3,}/g, '\n\n').trim();
-
-            // Le trame di Open Library sono quasi sempre in inglese
-            // (Richiesta 37): stesso traduttore di Google Books/AniList.
-            if (descrizione && !operaInItaliano) {
-                descrizione = await tradurreTestoGoogleFree_(descrizione, 'en', 'it');
-            }
-
-            const sagaEuristica = suggerisciSagaDaTitolo_(candidato.titolo, '');
-            let imgGrande = candidato.immagine || '';
-            if (imgGrande.indexOf('-M.jpg') !== -1) imgGrande = imgGrande.replace('-M.jpg', '-L.jpg');
-
-            return {
-                id: candidato.id, titolo: candidato.titolo, sottotitolo: '',
-                autori: candidato.autori, anno: candidato.anno,
-                sinossi: descrizione || 'Nessuna trama su Open Library: incollala a mano se vuoi.',
-                immagine: imgGrande, categorie: soggetti,
-                sagaNome: (sagaEuristica && sagaEuristica.nome) ? sagaEuristica.nome : '',
-                sagaNumero: (sagaEuristica && sagaEuristica.numero !== null) ? sagaEuristica.numero : null,
-                sagaFonte: (sagaEuristica && sagaEuristica.nome) ? 'euristica' : 'nessuna'
             };
+            // Trama non italiana → traduzione automatica (stesso di AniList).
+            if (sinossiPulita && !sembraItaliano_(sinossiPulita)) {
+                wrap.innerHTML = `<div style="color:var(--success); font-weight:600; font-size:13px; margin-bottom:12px;">⏳ Traduzione della trama in corso...</div>`;
+                tradurreTestoGoogleFree_(sinossiPulita, 'en', 'it').then(completaAnteprima);
+            } else {
+                completaAnteprima(sinossiPulita);
+            }
         }
+        window.selezionaCandidatoLibroHC_ = selezionaCandidatoLibroHC_;
 
-        // Pertinenza client-side (Richiesta 37): né Google Books (full-text)
-        // né Open Library ordinano sempre per somiglianza al titolo cercato
-        // (es. "Harry Potter e la Pietra Filosofale" → Othello primo). Qui
-        // vince chi contiene tutta la query, poi chi inizia con essa, poi chi
-        // condivide più parole (il titolo pesa doppio dell'autore).
+        // Pertinenza client-side (Richiesta 37, tenuta anche con Hardcover):
+        // Typesense ordina già bene, ma qui vince comunque chi contiene tutta
+        // la query, poi chi inizia con essa, poi chi condivide più parole
+        // (il titolo pesa doppio dell'autore). Rete di sicurezza a costo zero.
         function ordinaCandidatiPerPertinenza_(candidati, query) {
             const normalizza = function(s) {
                 return String(s || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
@@ -8043,18 +7925,18 @@ function apriLightbox(url) {
             return candidati;
         }
 
-        function renderCandidatiLibriGB_(candidati, daOpenLibrary, queryTitolo) {
+        function renderCandidatiLibriHC_(candidati, queryTitolo) {
             ultimiCandidatiLibri_ = candidati || [];
             ordinaCandidatiPerPertinenza_(ultimiCandidatiLibri_, queryTitolo || '');
             const wrap = document.getElementById('libriCandidatiWrapper');
             if (!candidati || candidati.length === 0) {
-                wrap.innerHTML = `<div style="color:var(--text-muted); font-size:13px; margin-bottom:12px;">Nessun risultato${daOpenLibrary ? ' nemmeno su Open Library' : ' su Google Books'}: procedi pure a mano.</div>`;
+                wrap.innerHTML = `<div style="color:var(--text-muted); font-size:13px; margin-bottom:12px;">Nessun risultato su Hardcover: procedi pure a mano.</div>`;
                 return;
             }
             wrap.innerHTML = '';
             const label = document.createElement('div');
             label.style = 'font-size:12px; color:var(--text-muted); font-weight:600; margin-bottom:8px;';
-            label.innerText = '🔎 Scegli il libro corretto (' + candidati.length + ' risultati' + (daOpenLibrary ? ' — via Open Library' : ' — via Google Books') + '):';
+            label.innerText = '🔎 Scegli il libro corretto (' + candidati.length + ' risultati — via Hardcover):';
             wrap.appendChild(label);
 
             const grid = document.createElement('div');
@@ -8069,35 +7951,14 @@ function apriLightbox(url) {
                     : `<div style="width:100%; height:170px; display:flex; align-items:center; justify-content:center; background:#222; font-size:28px;">📗</div>`;
                 const sub = (c.autori ? c.autori : '') + (c.anno ? ' (' + c.anno + ')' : '');
                 card.innerHTML = imgHtml + `<div style="padding:6px; font-size:11px; line-height:1.3;"><div style="font-weight:700;">${c.titolo}</div><div style="color:var(--text-muted); margin-top:2px;">${sub}</div></div>`;
-                card.onclick = function() { selezionaCandidatoLibroGB_(c.id, c.titolo, c.fonte); };
+                card.onclick = function() { selezionaCandidatoLibroHC_(c.id, c.titolo); };
                 grid.appendChild(card);
             });
             wrap.appendChild(grid);
         }
 
-        function selezionaCandidatoLibroGB_(volumeId, titoloCandidato, fonte) {
-            const wrap = document.getElementById('libriCandidatiWrapper');
-            wrap.innerHTML = `<div style="color:var(--success); font-weight:600; font-size:13px; margin-bottom:12px;">⏳ Recupero dettagli di "${titoloCandidato}"...</div>`;
-            if (fonte === 'OL') {
-                const cand = (ultimiCandidatiLibri_ || []).find(function(x) { return x.id === volumeId; }) ||
-                    { id: volumeId, titolo: titoloCandidato, autori: '', anno: '', immagine: '' };
-                getDettaglioOpenLibrary_(cand)
-                    .then(function(dettaglio) { renderDettaglioLibroGB_(dettaglio); })
-                    .catch(function(err) {
-                        wrap.innerHTML = `<div style="color:var(--danger); font-size:13px; margin-bottom:12px;">❌ ${String(err && err.message ? err.message : err)}</div>`;
-                    });
-                return;
-            }
-            getDettaglioLibroGB_(volumeId)
-                .then(function(dettaglio) { renderDettaglioLibroGB_(dettaglio); })
-                .catch(function(err) {
-                    wrap.innerHTML = `<div style="color:var(--danger); font-size:13px; margin-bottom:12px;">❌ ${String(err && err.message ? err.message : err)}</div>`;
-                });
-        }
-        window.selezionaCandidatoLibroGB_ = selezionaCandidatoLibroGB_;
-
-        function renderDettaglioLibroGB_(dettaglio) {
-            ultimoDettaglioGoogleBooks = dettaglio;
+        function renderDettaglioLibriHC_(dettaglio) {
+            ultimoDettaglioHardcover = dettaglio;
             const wrap = document.getElementById('libriCandidatiWrapper');
             wrap.innerHTML = '';
 
@@ -8109,17 +7970,17 @@ function apriLightbox(url) {
             box.innerHTML = imgHtml + `
                 <div style="flex:1; min-width:220px; display:flex; flex-direction:column; gap:8px;">
                     <label style="font-size:12px; color:var(--text-muted); font-weight:600;">Titolo (modificabile — verrà riportato nella scheda)</label>
-                    <input type="text" id="gbTitoloInput" style="width:100%; background:rgba(255,255,255,0.04); border:1px solid var(--border-color); border-radius:8px; color:var(--text); padding:8px; font-size:13px;">
+                    <input type="text" id="hcTitoloInput" style="width:100%; background:rgba(255,255,255,0.04); border:1px solid var(--border-color); border-radius:8px; color:var(--text); padding:8px; font-size:13px;">
                     <label style="font-size:12px; color:var(--text-muted); font-weight:600;">Trama (modificabile prima di confermare)</label>
-                    <textarea id="gbSinossiTextarea" rows="6" style="width:100%; background:rgba(255,255,255,0.04); border:1px solid var(--border-color); border-radius:8px; color:var(--text); padding:8px; font-size:13px; line-height:1.5; resize:vertical;"></textarea>
+                    <textarea id="hcSinossiTextarea" rows="6" style="width:100%; background:rgba(255,255,255,0.04); border:1px solid var(--border-color); border-radius:8px; color:var(--text); padding:8px; font-size:13px; line-height:1.5; resize:vertical;"></textarea>
                     <div style="font-size:12.5px; color:var(--text);">✍️ <b>Autore:</b> ${dettaglio.autori || 'sconosciuto'} &nbsp;·&nbsp; 📅 <b>Anno:</b> ${dettaglio.anno || 'sconosciuto'}</div>
                     <div style="font-size:12.5px; color:var(--text);">📚 <b>Saga suggerita:</b> ${(dettaglio.sagaNome || '—') + ((dettaglio.sagaNumero !== null && dettaglio.sagaNumero !== undefined) ? ' #' + dettaglio.sagaNumero : '')}
                         <span style="color:var(--text-muted);">${dettaglio.sagaFonte === 'nessuna' ? '(non rilevata: compila a mano)' : '(da verificare, resta modificabile)'}</span>
                     </div>
                 </div>`;
             wrap.appendChild(box);
-            document.getElementById('gbTitoloInput').value = dettaglio.titolo || '';
-            document.getElementById('gbSinossiTextarea').value = dettaglio.sinossi || '';
+            document.getElementById('hcTitoloInput').value = dettaglio.titolo || '';
+            document.getElementById('hcSinossiTextarea').value = dettaglio.sinossi || '';
 
             const suggeritiLower = (dettaglio.categorie || []).map(function(g) { return String(g).trim().toLowerCase(); });
             const generiCorrispondenti = MASTER_GENRES_LIST.filter(function(g) {
@@ -8133,35 +7994,35 @@ function apriLightbox(url) {
                     <label style="display:block; margin-bottom:6px; font-weight:600; color:var(--text-muted); font-size:12px;">
                         Generi rilevati (deseleziona quelli da scartare — aggiunti ai tuoi senza toglierne)
                     </label>
-                    <div id="gbGenresPicker" class="genres-grid-container">
+                    <div id="hcGenresPicker" class="genres-grid-container">
                         ${generiCorrispondenti.map(function(g) {
-                            return `<label><input type="checkbox" class="gb_genre_cb" value="${g}" checked> ${g}</label>`;
+                            return `<label><input type="checkbox" class="hc_genre_cb" value="${g}" checked> ${g}</label>`;
                         }).join('')}
                     </div>`;
             } else {
-                genreSection.innerHTML = `<div style="color:var(--text-muted); font-size:12px;">Nessun genere della tua lista tra quelli di Google Books (${(dettaglio.categorie || []).join(', ') || 'nessuno'}).</div>`;
+                genreSection.innerHTML = `<div style="color:var(--text-muted); font-size:12px;">Nessun genere della tua lista tra quelli di Hardcover (${(dettaglio.categorie || []).join(', ') || 'nessuno'}).</div>`;
             }
             wrap.appendChild(genreSection);
 
             const footer = document.createElement('div');
             footer.style = 'display:flex; justify-content:flex-end; gap:8px; margin-bottom:12px;';
             footer.innerHTML = `
-                <button type="button" class="btn btn-danger" id="gbAnnullaBtn">Annulla</button>
-                <button type="button" class="btn btn-libri" id="gbConfermaBtn">✅ Usa questi dati</button>`;
+                <button type="button" class="btn btn-danger" id="hcAnnullaBtn">Annulla</button>
+                <button type="button" class="btn btn-libri" id="hcConfermaBtn">✅ Usa questi dati</button>`;
             wrap.appendChild(footer);
-            document.getElementById('gbAnnullaBtn').onclick = function() {
+            document.getElementById('hcAnnullaBtn').onclick = function() {
                 document.getElementById('libriCandidatiWrapper').innerHTML = '';
-                ultimoDettaglioGoogleBooks = null;
+                ultimoDettaglioHardcover = null;
             };
-            document.getElementById('gbConfermaBtn').onclick = confermaDatiGoogleBooks_;
+            document.getElementById('hcConfermaBtn').onclick = confermaDatiHardcover_;
         }
 
-        function applicaDatiPrincipaliLibriGB_() {
-            if (!ultimoDettaglioGoogleBooks) return false;
-            const d = ultimoDettaglioGoogleBooks;
-            const titoloInput = document.getElementById('gbTitoloInput');
+        function applicaDatiPrincipaliLibriHC_() {
+            if (!ultimoDettaglioHardcover) return false;
+            const d = ultimoDettaglioHardcover;
+            const titoloInput = document.getElementById('hcTitoloInput');
             const titoloFinale = titoloInput ? titoloInput.value.trim() : d.titolo;
-            const sinossiEl = document.getElementById('gbSinossiTextarea');
+            const sinossiEl = document.getElementById('hcSinossiTextarea');
             const sinossiFinale = sinossiEl ? sinossiEl.value : d.sinossi;
 
             if (titoloFinale) document.getElementById('inpTitoloLibri').value = titoloFinale;
@@ -8183,16 +8044,16 @@ function apriLightbox(url) {
                 document.getElementById('inpSagaNumeroLibri').value = d.sagaNumero;
             }
             if (!d.sagaNome && (d.sagaNumero === null || d.sagaNumero === undefined)) {
-                showToast('Google Books non conosce la saga: compilala a mano se fa parte di una serie.', 'error');
+                showToast('Hardcover non conosce la saga: compilala a mano se fa parte di una serie.', 'error');
             } else {
                 showToast('Saga suggerita da verificare: correggila pure a mano.', 'success');
             }
 
             sinossiPendenteLibri = sinossiFinale;
 
-            const picker = document.getElementById('gbGenresPicker');
+            const picker = document.getElementById('hcGenresPicker');
             if (picker) {
-                const daAggiungere = Array.from(picker.querySelectorAll('.gb_genre_cb:checked')).map(function(cb) { return cb.value; });
+                const daAggiungere = Array.from(picker.querySelectorAll('.hc_genre_cb:checked')).map(function(cb) { return cb.value; });
                 document.querySelectorAll('input[name="libri_genres_cb"]').forEach(function(cb) {
                     if (daAggiungere.indexOf(cb.value) !== -1) cb.checked = true;
                 });
@@ -8200,12 +8061,12 @@ function apriLightbox(url) {
             return true;
         }
 
-        function confermaDatiGoogleBooks_() {
-            if (!applicaDatiPrincipaliLibriGB_()) return;
+        function confermaDatiHardcover_() {
+            if (!applicaDatiPrincipaliLibriHC_()) return;
             document.getElementById('libriCandidatiWrapper').innerHTML = '';
             showToast('Titolo, copertina, trama e generi applicati: premi "Salva" per confermare', 'success');
         }
-        window.confermaDatiGoogleBooks_ = confermaDatiGoogleBooks_;
+        window.confermaDatiHardcover_ = confermaDatiHardcover_;
 
         // ==========================================
         //   📝 PATCH NOTES (note di versione)
@@ -8215,6 +8076,10 @@ function apriLightbox(url) {
         //   Nuove voci: aggiungere in CIMA all'array.
         // ==========================================
         const PATCH_NOTES = [
+            { v: '1.0.38', titolo: 'Ricerca libri via Hardcover', data: '11/10/2026', punti: [
+                'Nuova fonte unica Hardcover: copertina, trama, generi, autore, anno e saga automatica.',
+                'Addio errori di Google Books: il token resta al sicuro sul server.'
+            ] },
             { v: '1.0.37', titolo: 'Ricerca libri più precisa', data: '11/10/2026', punti: [
                 'Trame in inglese tradotte in automatico.',
                 'Risultati riordinati per somiglianza al titolo cercato.',
@@ -10085,8 +9950,8 @@ function chiudiSinossi() {
 
 let sinossiPendenteAnime = null;
 let sinossiPendenteManga = null;
-let sinossiPendenteLibri = null; // View Libri (Richiesta 35): trama Google Books in sospeso
-let ultimoDettaglioGoogleBooks = null; // dettaglio volume GB in anteprima nel picker
+let sinossiPendenteLibri = null; // View Libri (Richiesta 35): trama Hardcover in sospeso
+let ultimoDettaglioHardcover = null; // dettaglio volume GB in anteprima nel picker
 let ultimoDettaglioAniList = null; // { immagine, sinossi } del candidato attualmente in anteprima
 let episodiPerStagionePendenteAnime = null; // { 1: episodi, 2: episodi, ... } da "Cerca stagioni/film collegati"
 
