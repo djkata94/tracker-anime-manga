@@ -253,6 +253,9 @@
         
         .btn-manga { background: linear-gradient(135deg, #f97316, #fb923c); color: white; box-shadow: 0 4px 14px rgba(249, 115, 22, 0.3); }
         .btn-manga:hover { filter: brightness(1.08); transform: translateY(-2px); box-shadow: 0 8px 20px rgba(249, 115, 22, 0.4); }
+        /* View Libri (Richiesta 35): verde smeraldo, distinto dall'arancione dei manga */
+        .btn-libri { background: linear-gradient(135deg, #059669, #34d399); color: white; box-shadow: 0 4px 14px rgba(5, 150, 105, 0.3); }
+        .btn-libri:hover { filter: brightness(1.08); transform: translateY(-2px); box-shadow: 0 8px 20px rgba(5, 150, 105, 0.4); }
         
         .btn-danger { background: var(--danger); color: white; }
         .btn-danger:hover { background: #ff8686; }
@@ -838,7 +841,7 @@
 				padding: 8px 4px;
 			}
 			
-			.dropdown-container, #btnToggleGenresAnime, #btnToggleGenresManga {
+			.dropdown-container, #btnToggleGenresAnime, #btnToggleGenresManga, #btnToggleGenresLibri {
 				width: 100%;
 			}
 		
@@ -1269,6 +1272,14 @@
     box-shadow: 0 0 8px rgba(249, 115, 22, 0.15);
 }
 
+/* Badge log per i libri (Richiesta 35): verde smeraldo come il bottone view */
+.log-badge-libri {
+    background: rgba(52, 211, 153, 0.15);
+    color: #6ee7b7;
+    border: 1px solid rgba(52, 211, 153, 0.4);
+    box-shadow: 0 0 8px rgba(52, 211, 153, 0.15);
+}
+
 .log-badge-cinema {
     background: rgba(220, 38, 38, 0.15);
     color: #fca5a5;
@@ -1407,6 +1418,7 @@
 
 .global-search-group-label.tipo-anime { color: #38bdf8; }
 .global-search-group-label.tipo-manga { color: #fb923c; }
+.global-search-group-label.tipo-libri { color: #34d399; }
 .global-search-group-label.tipo-cinema { color: #f59e0b; }
             .global-search-group-label.tipo-serietv { color: #38bdf8; }
 
@@ -1452,6 +1464,7 @@
 
 .global-search-thumb-placeholder.tipo-anime { background: linear-gradient(135deg, #2f6fed, #38bdf8); }
 .global-search-thumb-placeholder.tipo-manga { background: linear-gradient(135deg, #f97316, #fb923c); }
+.global-search-thumb-placeholder.tipo-libri { background: linear-gradient(135deg, #059669, #34d399); }
 .global-search-thumb-placeholder.tipo-cinema { background: linear-gradient(135deg, #dc2626, #f59e0b); }
             .global-search-thumb-placeholder.tipo-serietv { background: linear-gradient(135deg, #7c3aed, #38bdf8); }
 
@@ -1780,6 +1793,7 @@
         <button id="nav-anime" class="btn btn-nav" onclick="switchView('anime')">📺 Anime</button>
         <button id="nav-serietv" class="btn btn-nav" onclick="switchView('serietv')">📡 Serie TV</button>
         <button id="nav-manga" class="btn btn-nav" onclick="switchView('manga')">📚 Manga</button>
+        <button id="nav-libri" class="btn btn-nav" onclick="switchView('libri')">📗 Libri</button>
         <button id="nav-cinema" class="btn btn-nav" onclick="switchView('cinema')">🎬 Cinema</button>
         <button id="btnPatchNotes" class="btn btn-nav" style="margin-left:auto;" onclick="apriPatchNotes()" title="Note di versione">📝 Patch notes<span id="patchNotesBadge" class="patch-badge" style="display:none;">0</span></button>
         <span id="loggedUserEmail" style="color: var(--text-muted); font-size:13px; display:flex; align-items:center; gap:6px;"></span>
@@ -1820,7 +1834,7 @@
         <div class="global-search-wrap" id="globalSearchWrap">
             <div class="global-search-box" id="globalSearchBox">
                 <span class="global-search-icon">🔍</span>
-                <input type="search" id="globalSearchInput" class="global-search-input" placeholder="Cerca un titolo tra anime, serie TV, manga e cinema..." autocomplete="off">
+                <input type="search" id="globalSearchInput" class="global-search-input" placeholder="Cerca un titolo tra anime, serie TV, manga, libri e cinema..." autocomplete="off">
                 <span class="global-search-hint" id="globalSearchHint">esc</span>
             </div>
             <div class="global-search-results" id="globalSearchResults" style="display:none;"></div>
@@ -1830,6 +1844,7 @@
             <button class="btn btn-anime" style="height:100px; font-size:16px; border-radius: 12px;" onclick="switchView('anime')">📺 Catalogo Anime</button>
             <button class="btn btn-serietv" style="height:100px; font-size:16px; border-radius: 12px;" onclick="switchView('serietv')">📡 Catalogo Serie TV</button>
             <button class="btn btn-manga" style="height:100px; font-size:16px; border-radius: 12px;" onclick="switchView('manga')">📚 Archivio Manga / LN</button>
+            <button class="btn btn-libri" style="height:100px; font-size:16px; border-radius: 12px;" onclick="switchView('libri')">📗 Biblioteca Libri</button>
             <button class="btn btn-cinema" style="height:100px; font-size:16px; border-radius: 12px;" onclick="switchView('cinema')">🎬 Film al Cinema</button>
         </div>
 
@@ -1895,6 +1910,7 @@
                             <option value="all">Tutti i tipi</option>
                             <option value="ANIME">📺 Anime</option>
                             <option value="MANGA">📚 Manga</option>
+                            <option value="LIBRO">📗 Libro</option>
                             <option value="CINEMA">🎬 Cinema</option>
                             <option value="SERIE_TV">📡 Serie TV</option>
                         </select>
@@ -2284,6 +2300,81 @@
                     </tr>
                 </thead>
                 <tbody id="mangaTableBody"></tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- ================================================================
+         📗 VIEW LIBRI (Richiesta 35)
+         Stessa struttura della view Manga, semplificata come deciso:
+         niente pagine/voto/acquistato, solo stati Da leggere / Letto /
+         Abbandonato + saga Livello 1 (saga_nome + saga_numero a mano,
+         con suggerimento semi-automatico da Google Books quando noto).
+         ================================================================ -->
+    <div id="libriView" class="view-container" style="display: none;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 10px;">
+            <h2 style="margin:0; font-size:24px; font-weight:700;">📗 Biblioteca Libri</h2>
+            <button id="btnNuovoLibro" class="btn btn-libri">+ Nuovo Libro</button>
+        </div>
+
+        <div class="stat-banner">
+            <div class="stat-block"><span class="stat-label">Libri Totali</span><span class="stat-value" id="statLibriTotali">-</span></div>
+            <div style="width:1px; background:var(--border-color);"></div>
+            <div class="stat-block"><span class="stat-label">Letti</span><span class="stat-value" id="statLibriLetti">-</span></div>
+            <div style="width:1px; background:var(--border-color);"></div>
+            <div class="stat-block"><span class="stat-label">Da Leggere</span><span class="stat-value" id="statLibriDaLeggere">-</span></div>
+        </div>
+
+        <div class="filter-bar">
+            <input type="search" id="searchInpLibri" placeholder="Cerca titolo o autore...">
+
+            <div class="filter-group" id="filterGroupPreferitiLibri">
+                <button class="filter-btn active" data-fav="all">Tutti</button>
+                <button class="filter-btn" data-fav="yes">⭐ Preferiti</button>
+            </div>
+
+            <!-- FINESTRA FLUTTUANTE FILTRO GENERI LIBRI -->
+            <div class="dropdown-container">
+                <button id="btnToggleGenresLibri" class="btn btn-nav" style="border: 1px solid var(--border-color);">🎭 Filtra Generi (<span id="badgeGenresLibriCount">0</span>)</button>
+                <div id="dropdownGenresLibri" class="dropdown-genres"></div>
+            </div>
+
+            <select id="sortSelLibri">
+                <option value="title-asc">Titolo A-Z</option>
+                <option value="title-desc">Titolo Z-A</option>
+                <option value="autore-asc">Autore A-Z</option>
+                <option value="anno-desc">Anno più recente</option>
+                <option value="anno-asc">Anno più vecchio</option>
+                <option value="saga-asc">Saga (nome + n.)</option>
+            </select>
+
+            <div class="filter-group" id="filterGroupStatoLibri">
+                <button class="filter-btn active" data-stato="all">Tutti</button>
+                <button class="filter-btn" data-stato="Da leggere">Da leggere</button>
+                <button class="filter-btn" data-stato="Letto">Letto</button>
+                <button class="filter-btn" data-stato="Abbandonato">Abbandonato</button>
+            </div>
+
+            <input type="search" id="searchSagaLibri" placeholder="🔍 Filtra saga..." style="max-width:170px;" autocomplete="off">
+
+            <button type="button" id="btnResetFiltriLibri" class="btn-reset-filters">↺ Reset Filtri</button>
+            <span id="countLibri" class="filter-count"></span>
+        </div>
+
+        <div id="loadingLibri" style="color:var(--warning); padding:20px; font-weight:600;">Caricamento dati dal server...</div>
+
+        <div class="table-container">
+            <table id="libriTable" style="display:none;">
+                <thead>
+                    <tr>
+                        <th>Titolo Opera</th>
+                        <th>Anno</th>
+                        <th>Stato Lettura</th>
+                        <th>Note Personali</th>
+                        <th style="text-align: center;">Azioni</th>
+                    </tr>
+                </thead>
+                <tbody id="libriTableBody"></tbody>
             </table>
         </div>
     </div>
@@ -2763,6 +2854,72 @@
         </div>
     </div>
 
+    <!-- ================================================================
+         📗 MODALE LIBRO (Richiesta 35)
+         Titolo + ricerca Google Books (copertina/trama/generi/autore/anno
+         + suggerimento saga quando noto), stato lettura a 3 valori, saga
+         Livello 1 sempre modificabile a mano, generi dalla stessa lista
+         dei manga, note e immagine. Niente voto/pagine/acquistato.
+         ================================================================ -->
+    <div class="modal-overlay" id="modalOverlayLibri">
+        <div class="modal">
+            <div class="modal-header">
+                <h2 id="modalTitleLibri">Nuovo Libro</h2>
+                <button class="close-modal" onclick="chiudiModale('Libri')">&times;</button>
+            </div>
+            <form id="libriForm">
+                <div class="form-group">
+                    <label>Titolo *</label>
+                    <div style="display:flex; gap:6px;">
+                        <input type="search" id="inpTitoloLibri" required style="flex:1;">
+                        <button type="button" class="btn" style="padding:0 12px; white-space:nowrap;" onclick="apriRicercaGoogleBooks()" title="Cerca copertina, trama, generi, autore e anno su Google Books">🔎 Google Books</button>
+                    </div>
+                </div>
+                <div id="libriCandidatiWrapper"></div>
+                <div class="form-group">
+                    <label>Autore</label>
+                    <input type="text" id="inpAutoreLibri" placeholder="Es. Frank Herbert" autocomplete="off">
+                </div>
+                <div class="form-group">
+                    <label>Anno pubblicazione</label>
+                    <input type="number" id="inpAnnoLibri" placeholder="Es. 1965" min="0" max="2100">
+                </div>
+                <div class="form-group">
+                    <label>Stato Lettura</label>
+                    <select id="inpStatoLibri">
+                        <option value="Da leggere">Da leggere</option>
+                        <option value="Letto">Letto</option>
+                        <option value="Abbandonato">Abbandonato</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Saga (nome)</label>
+                    <input type="text" id="inpSagaNomeLibri" placeholder="Es. Dune — vuoto se volume unico" autocomplete="off">
+                </div>
+                <div class="form-group">
+                    <label>Saga (numero volume)</label>
+                    <input type="number" id="inpSagaNumeroLibri" placeholder="Es. 1" step="0.5" min="0">
+                    <small style="color: var(--text-muted); display:block; margin-top:4px;">
+                        Google Books lo suggerisce solo quando lo conosce (spesso vuoto sui romanzi): resta sempre modificabile a mano. Ammessi mezzi numeri per spin-off (es. 1.5).
+                    </small>
+                </div>
+
+                <div class="form-group">
+                    <label>Generi Associa</label>
+                    <div class="genres-grid-container" id="libriGenresGrid"></div>
+                </div>
+
+                <div class="form-group"><label>Note</label><textarea id="inpNoteLibri" rows="2"></textarea></div>
+                <div class="form-group"><label>URL Immagine / Copertina</label><input type="url" id="inpImmagineLibri" placeholder="Compilato da Google Books, modificabile (es. https://...)"></div>
+
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-danger" onclick="chiudiModale('Libri')">Annulla</button>
+                    <button type="submit" class="btn btn-libri" id="btnSalvaLibri">Salva</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <div class="modal-overlay" id="modalOverlayCinema">
         <div class="modal">
             <div class="modal-header">
@@ -2991,8 +3148,10 @@
         function buildGenresForms() {
             const animeGrid = document.getElementById('animeGenresGrid');
             const mangaGrid = document.getElementById('mangaGenresGrid');
+            const libriGrid = document.getElementById('libriGenresGrid');
             const animeFilterDropdown = document.getElementById('dropdownGenresAnime');
             const mangaFilterDropdown = document.getElementById('dropdownGenresManga');
+            const libriFilterDropdown = document.getElementById('dropdownGenresLibri');
             const cinemaFilterDropdown = document.getElementById('dropdownGenresCinema');
             const serieTvFilterDropdown = document.getElementById('dropdownGenresSerieTv');
             
@@ -3002,8 +3161,15 @@
                 ).join('');
             }
             if (mangaGrid) {
-                mangaGrid.innerHTML = MASTER_GENRES_LIST.map(g => 
+                mangaGrid.innerHTML = MASTER_GENRES_LIST.map(g =>
                     `<label><input type="checkbox" name="manga_genres_cb" value="${g}"> ${g}</label>`
+                ).join('');
+            }
+            // View Libri (Richiesta 35): stessa lista generi dei manga, sia nel
+            // modale (libriGenresGrid) che nel filtro fluttuante.
+            if (libriGrid) {
+                libriGrid.innerHTML = MASTER_GENRES_LIST.map(g =>
+                    `<label><input type="checkbox" name="libri_genres_cb" value="${g}"> ${g}</label>`
                 ).join('');
             }
             
@@ -3014,8 +3180,13 @@
                 ).join('');
             }
             if (mangaFilterDropdown) {
-                mangaFilterDropdown.innerHTML = MASTER_GENRES_LIST.map(g => 
+                mangaFilterDropdown.innerHTML = MASTER_GENRES_LIST.map(g =>
                     `<label><input type="checkbox" class="manga-filter-genre-cb" value="${g}"> ${g}</label>`
+                ).join('');
+            }
+            if (libriFilterDropdown) {
+                libriFilterDropdown.innerHTML = MASTER_GENRES_LIST.map(g =>
+                    `<label><input type="checkbox" class="libri-filter-genre-cb" value="${g}"> ${g}</label>`
                 ).join('');
             }
             if (cinemaFilterDropdown) {
@@ -3034,6 +3205,7 @@
         // Stati globali memorizzati
         let animeList = [];
         let mangaList = [];
+        let libriList = []; // View Libri (Richiesta 35): righe della tabella libri
         let episodiAnimeList = []; // NUOVO: righe di episodiAnime per TUTTI i titoli (stagioni/film)
 
         // NUOVO: true se il titolo ha almeno un episodio segnato come visto, anche se nessuna
@@ -3055,10 +3227,18 @@
         let currentSearchManga = '';
         let selectedGenresManga = []; // Array dei generi attivi nel filtro avanzato
 
+        // View Libri (Richiesta 35): filtri dedicati, stesso schema dei manga
+        let currentSearchLibri = '';
+        let currentSearchSagaLibri = '';
+        let currentFilterStatoLibri = 'all';
+        let selectedGenresLibri = [];
+        let currentFavFilterLibri = 'all';
+
         let selectedGenresCinema = []; // Array dei generi TMDB attivi nel filtro avanzato Cinema
-        
+
         let targetEditTitleAnime = null;
         let targetEditTitleManga = null;
+        let targetEditTitleLibri = null;
 
         // Gestione apertura/chiusura delle finestre fluttuanti generi al click sul rispettivo tasto
         document.getElementById('btnToggleGenresAnime').onclick = function(e) {
@@ -3069,8 +3249,20 @@
         document.getElementById('btnToggleGenresManga').onclick = function(e) {
             e.stopPropagation();
             document.getElementById('dropdownGenresAnime').classList.remove('active');
+            const dropLibriManga = document.getElementById('dropdownGenresLibri');
+            if (dropLibriManga) dropLibriManga.classList.remove('active');
             document.getElementById('dropdownGenresManga').classList.toggle('active');
         };
+        // View Libri (Richiesta 35): apre/chiude il filtro generi chiudendo gli altri
+        const btnToggleGenresLibriEl = document.getElementById('btnToggleGenresLibri');
+        if (btnToggleGenresLibriEl) {
+            btnToggleGenresLibriEl.onclick = function(e) {
+                e.stopPropagation();
+                document.getElementById('dropdownGenresAnime').classList.remove('active');
+                document.getElementById('dropdownGenresManga').classList.remove('active');
+                document.getElementById('dropdownGenresLibri').classList.toggle('active');
+            };
+        }
         const btnToggleGenresCinemaEl = document.getElementById('btnToggleGenresCinema');
         if (btnToggleGenresCinemaEl) {
             btnToggleGenresCinemaEl.onclick = function(e) {
@@ -3082,6 +3274,7 @@
         window.addEventListener('click', function(e) {
             const dropAnime = document.getElementById('dropdownGenresAnime');
             const dropManga = document.getElementById('dropdownGenresManga');
+            const dropLibri = document.getElementById('dropdownGenresLibri');
             const dropCinema = document.getElementById('dropdownGenresCinema');
             const dropSerieTv = document.getElementById('dropdownGenresSerieTv');
             if (dropAnime && !dropAnime.contains(e.target) && e.target.id !== 'btnToggleGenresAnime') {
@@ -3089,6 +3282,9 @@
             }
             if (dropManga && !dropManga.contains(e.target) && e.target.id !== 'btnToggleGenresManga') {
                 dropManga.classList.remove('active');
+            }
+            if (dropLibri && !dropLibri.contains(e.target) && e.target.id !== 'btnToggleGenresLibri') {
+                dropLibri.classList.remove('active');
             }
             if (dropCinema && !dropCinema.contains(e.target) && e.target.id !== 'btnToggleGenresCinema') {
                 dropCinema.classList.remove('active');
@@ -3109,6 +3305,15 @@
             document.getElementById('badgeGenresMangaCount').innerText = selectedGenresManga.length;
             renderListManga();
         });
+        // View Libri (Richiesta 35): filtro generi con logica AND come i manga
+        const dropdownGenresLibriEl = document.getElementById('dropdownGenresLibri');
+        if (dropdownGenresLibriEl) {
+            dropdownGenresLibriEl.addEventListener('change', function() {
+                selectedGenresLibri = Array.from(document.querySelectorAll('.libri-filter-genre-cb:checked')).map(cb => cb.value);
+                document.getElementById('badgeGenresLibriCount').innerText = selectedGenresLibri.length;
+                renderListLibri();
+            });
+        }
         const dropdownGenresCinemaEl = document.getElementById('dropdownGenresCinema');
         if (dropdownGenresCinemaEl) {
             dropdownGenresCinemaEl.addEventListener('change', function() {
@@ -3123,14 +3328,17 @@
             document.getElementById('homeView').style.display = 'none';
             document.getElementById('animeView').style.display = 'none';
             document.getElementById('mangaView').style.display = 'none';
+            document.getElementById('libriView').style.display = 'none';
             document.getElementById('cinemaView').style.display = 'none';
             var wsrSwitch = document.getElementById('widgetInCorsoSearchResults');
             if (wsrSwitch) wsrSwitch.style.display = 'none';
             document.getElementById('serietvView').style.display = 'none';
-            
+
             // Chiudi eventuali filtri fluttuanti aperti cambiando pagina
             document.getElementById('dropdownGenresAnime').classList.remove('active');
             document.getElementById('dropdownGenresManga').classList.remove('active');
+            const dropLibriSwitch = document.getElementById('dropdownGenresLibri');
+            if (dropLibriSwitch) dropLibriSwitch.classList.remove('active');
             const dropCinemaSwitch = document.getElementById('dropdownGenresCinema');
             if (dropCinemaSwitch) dropCinemaSwitch.classList.remove('active');
             const dropSerieTvSwitch = document.getElementById('dropdownGenresSerieTv');
@@ -3155,6 +3363,10 @@
                 document.getElementById('mangaView').style.display = 'block';
                 document.getElementById('nav-manga').classList.add('active-view');
                 caricaDatiManga();
+            } else if (viewName === 'libri') {
+                document.getElementById('libriView').style.display = 'block';
+                document.getElementById('nav-libri').classList.add('active-view');
+                caricaDatiLibri();
             } else if (viewName === 'cinema') {
                 document.getElementById('cinemaView').style.display = 'block';
                 document.getElementById('nav-cinema').classList.add('active-view');
@@ -7049,6 +7261,777 @@ function apriLightbox(url) {
         };
 
         // ==========================================
+        //   📗 GRUPPO LIBRI (Supabase diretto, Richiesta 35)
+        //   Schema semplificato come deciso: niente pagine/voto/acquistato,
+        //   solo stati Da leggere / Letto / Abbandonato + saga Livello 1
+        //   (saga_nome TEXT + saga_numero NUMERIC, sempre editabili a mano).
+        //   Ricerca metadati via Google Books (pubblica, CORS aperto:
+        //   nessuna chiave, nessuna Edge Function come per AniList).
+        // ==========================================
+
+        function statoBadgeLibro_(stato) {
+            const s = String(stato || 'Da leggere');
+            if (s === 'Letto') return 'status-concluso';
+            if (s === 'Abbandonato') return 'status-altro-anime';
+            return 'status-in-arrivo';
+        }
+
+        async function getLibriDataSB_() {
+            const { data, error } = await supabaseClient.from('libri').select('*').order('titolo', { ascending: true });
+            if (error) throw error;
+            return (data || []).map(function(l) {
+                let notaTesto = l.note || '';
+                if (typeof notaTesto === 'string' && !notaTesto.includes('<a ') && notaTesto.match(/https?:\/\/[^\s]+/i)) {
+                    notaTesto = notaTesto.replace(/(https?:\/\/[^\s]+)/gi, '<a href="$1" target="_blank" style="color: #00ffcc; text-decoration: underline; font-weight: 500;">$1</a>');
+                }
+                let sagaNumero = null;
+                if (l.saga_numero !== null && l.saga_numero !== undefined && String(l.saga_numero).trim() !== '') {
+                    const n = parseFloat(String(l.saga_numero).replace(',', '.'));
+                    sagaNumero = isNaN(n) ? null : n;
+                }
+                return {
+                    titolo: l.titolo, autore: l.autore || '', anno: l.anno_pubblicazione || '',
+                    generi: l.generi || '', sagaNome: l.saga_nome || '', sagaNumero: sagaNumero,
+                    stato: l.stato || 'Da leggere', preferito: !!l.preferito,
+                    immagine: l.immagine || '', note: notaTesto, priorita: !!l.priorita
+                };
+            });
+        }
+
+        async function addLibroSB_(dati) {
+            const titoloTrim = String(dati.titolo || '').trim();
+            if (!titoloTrim) throw new Error('Titolo mancante.');
+            const statoNuovo = dati.stato || 'Da leggere';
+            let annoVal = null;
+            if (dati.anno !== '' && dati.anno !== null && dati.anno !== undefined) {
+                const a = parseInt(dati.anno);
+                if (!isNaN(a) && a > 0) annoVal = a;
+            }
+            let sagaNumVal = null;
+            if (dati.sagaNumero !== '' && dati.sagaNumero !== null && dati.sagaNumero !== undefined) {
+                const n = parseFloat(String(dati.sagaNumero).replace(',', '.'));
+                if (!isNaN(n)) sagaNumVal = n;
+            }
+            const { error: errIns } = await supabaseClient.from('libri').insert([{
+                titolo: titoloTrim, autore: String(dati.autore || '').trim(), anno_pubblicazione: annoVal,
+                generi: dati.generi || '', saga_nome: String(dati.sagaNome || '').trim(), saga_numero: sagaNumVal,
+                stato: statoNuovo, note: dati.note || '', preferito: false,
+                immagine: dati.immagine || '', priorita: false
+            }]);
+            if (errIns) throw errIns;
+
+            await supabaseClient.from('sinossi_libri').insert([{ libro_titolo: titoloTrim, sinossi: '' }]);
+            await registraLogSB_(titoloTrim, 'LIBRO', 'CREAZIONE', 'N/D', statoNuovo);
+            if (statoNuovo === 'Letto') await registraLogSB_(titoloTrim, 'LIBRO', 'COMPLETAMENTO', 'Da leggere', 'Letto');
+            if (statoNuovo === 'Abbandonato') await registraLogSB_(titoloTrim, 'LIBRO', 'ABBANDONO', 'Da leggere', 'Abbandonato');
+
+            return getLibriDataSB_();
+        }
+
+        async function updateLibroSB_(vecchioTitolo, dati) {
+            const vecchioTitoloTrim = String(vecchioTitolo).trim();
+            const { data: righeVecchie, error: errSel } = await supabaseClient.from('libri').select('*').eq('titolo', vecchioTitoloTrim);
+            if (errSel) throw errSel;
+            if (!righeVecchie || righeVecchie.length === 0) return getLibriDataSB_();
+            const vecchiaRiga = righeVecchie[0];
+            const vecchioStato = vecchiaRiga.stato || 'Da leggere';
+
+            const titoloTrim = String(dati.titolo || '').trim() || vecchioTitoloTrim;
+            const statoNuovo = dati.stato || 'Da leggere';
+            let annoVal = null;
+            if (dati.anno !== '' && dati.anno !== null && dati.anno !== undefined) {
+                const a = parseInt(dati.anno);
+                if (!isNaN(a) && a > 0) annoVal = a;
+            }
+            let sagaNumVal = null;
+            if (dati.sagaNumero !== '' && dati.sagaNumero !== null && dati.sagaNumero !== undefined) {
+                const n = parseFloat(String(dati.sagaNumero).replace(',', '.'));
+                if (!isNaN(n)) sagaNumVal = n;
+            }
+
+            const { error: errUpd } = await supabaseClient.from('libri').update({
+                titolo: titoloTrim, autore: String(dati.autore || '').trim(), anno_pubblicazione: annoVal,
+                generi: dati.generi || '', saga_nome: String(dati.sagaNome || '').trim(), saga_numero: sagaNumVal,
+                stato: statoNuovo, note: dati.note || '', immagine: dati.immagine || ''
+            }).eq('titolo', vecchioTitoloTrim);
+            if (errUpd) throw errUpd;
+
+            try {
+                if (String(statoNuovo).trim() !== String(vecchioStato).trim()) {
+                    if (statoNuovo === 'Letto') {
+                        await registraLogSB_(titoloTrim, 'LIBRO', 'COMPLETAMENTO', vecchioStato, statoNuovo);
+                    } else if (statoNuovo === 'Abbandonato') {
+                        await registraLogSB_(titoloTrim, 'LIBRO', 'ABBANDONO', vecchioStato, statoNuovo);
+                    } else if (String(vecchioStato).trim() === 'Abbandonato') {
+                        await registraLogSB_(titoloTrim, 'LIBRO', 'RIPRESA', vecchioStato, statoNuovo);
+                    } else {
+                        await registraLogSB_(titoloTrim, 'LIBRO', 'CAMBIO_STATO', vecchioStato, statoNuovo);
+                    }
+                }
+            } catch (logErr) {
+                console.error("Errore durante la valutazione degli eventi di log per updateLibro: " + logErr);
+            }
+
+            return getLibriDataSB_();
+        }
+
+        async function deleteLibroSB_(titolo) {
+            const { error } = await supabaseClient.from('libri').delete().eq('titolo', String(titolo).trim());
+            if (error) throw error;
+            return getLibriDataSB_();
+        }
+
+        async function toggleLibroPreferitoSB_(titolo, preferitoStato) {
+            const { error } = await supabaseClient.from('libri').update({ preferito: !!preferitoStato }).eq('titolo', String(titolo).trim());
+            if (error) throw error;
+        }
+
+        async function toggleLibroPrioritaSB_(titolo, prioritaStato) {
+            const { error } = await supabaseClient.from('libri').update({ priorita: !!prioritaStato }).eq('titolo', String(titolo).trim());
+            if (error) throw error;
+        }
+
+        function caricaDatiLibri() {
+            document.getElementById('loadingLibri').style.display = 'block';
+            document.getElementById('libriTable').style.display = 'none';
+
+            getLibriDataSB_().then(function(data) {
+                libriList = data || [];
+                document.getElementById('loadingLibri').style.display = 'none';
+                document.getElementById('libriTable').style.display = 'table';
+                renderListLibri();
+            }).catch(function(err) {
+                console.error('Errore caricamento dati Libri da Supabase:', err);
+                document.getElementById('loadingLibri').style.display = 'none';
+                alert('❌ Errore nel caricamento dei libri. Controlla la console per i dettagli.');
+            });
+        }
+
+        function renderListLibri() {
+            const tbody = document.getElementById('libriTableBody');
+            if (!tbody) return;
+            tbody.innerHTML = '';
+
+            let lettiCount = 0;
+            let daLeggereCount = 0;
+            (libriList || []).forEach(function(item) {
+                if (!item) return;
+                if (item.stato === 'Letto') lettiCount++;
+                if (item.stato === 'Da leggere') daLeggereCount++;
+            });
+            document.getElementById('statLibriTotali').innerText = String((libriList || []).length);
+            document.getElementById('statLibriLetti').innerText = String(lettiCount);
+            document.getElementById('statLibriDaLeggere').innerText = String(daLeggereCount);
+
+            let filtered = (libriList || []).filter(function(item) {
+                if (!item) return false;
+                const termine = (currentSearchLibri || '').toLowerCase();
+                let notaTesto = '';
+                if (item.note && typeof item.note === 'string') notaTesto = item.note.toLowerCase();
+                else if (item.note) notaTesto = String(item.note).toLowerCase();
+                const matchesSearch = !termine ||
+                    (item.titolo || '').toLowerCase().includes(termine) ||
+                    (item.autore || '').toLowerCase().includes(termine) ||
+                    notaTesto.includes(termine);
+
+                let matchesStato = (currentFilterStatoLibri === 'all' || item.stato === currentFilterStatoLibri);
+
+                const termineSaga = (currentSearchSagaLibri || '').toLowerCase();
+                let matchesSaga = !termineSaga || (item.sagaNome || '').toLowerCase().includes(termineSaga);
+
+                let matchesGenres = true;
+                if (selectedGenresLibri.length > 0) {
+                    const itemGenres = item.generi ? item.generi.split(',').map(function(g) { return g.trim(); }) : [];
+                    matchesGenres = selectedGenresLibri.every(function(g) { return itemGenres.includes(g); });
+                }
+
+                let matchesPreferito = true;
+                if (currentFavFilterLibri === 'yes') matchesPreferito = (item.preferito === true);
+
+                return matchesSearch && matchesStato && matchesSaga && matchesGenres && matchesPreferito;
+            });
+
+            const sortVal = document.getElementById('sortSelLibri').value;
+            filtered.sort(function(a, b) {
+                const pA = a.priorita ? 1 : 0;
+                const pB = b.priorita ? 1 : 0;
+                if (pA !== pB) return pB - pA;
+                if (sortVal === 'title-desc') return (b.titolo || '').localeCompare(a.titolo || '');
+                if (sortVal === 'autore-asc') {
+                    const c = (a.autore || '').localeCompare(b.autore || '');
+                    return c !== 0 ? c : (a.titolo || '').localeCompare(b.titolo || '');
+                }
+                if (sortVal === 'anno-desc') return (parseInt(b.anno) || 0) - (parseInt(a.anno) || 0);
+                if (sortVal === 'anno-asc') return (parseInt(a.anno) || 0) - (parseInt(b.anno) || 0);
+                if (sortVal === 'saga-asc') {
+                    const sA = (a.sagaNome || '').toLowerCase();
+                    const sB = (b.sagaNome || '').toLowerCase();
+                    if (sA !== sB) {
+                        if (!sA) return 1;
+                        if (!sB) return -1;
+                        return sA.localeCompare(sB);
+                    }
+                    const nA = (a.sagaNumero === null || a.sagaNumero === undefined) ? 9999 : a.sagaNumero;
+                    const nB = (b.sagaNumero === null || b.sagaNumero === undefined) ? 9999 : b.sagaNumero;
+                    if (nA !== nB) return nA - nB;
+                    return (a.titolo || '').localeCompare(b.titolo || '');
+                }
+                return (a.titolo || '').localeCompare(b.titolo || '');
+            });
+
+            const countEl = document.getElementById('countLibri');
+            if (countEl) countEl.textContent = filtered.length + ' di ' + (libriList || []).length + ' libri';
+
+            filtered.forEach(function(item) {
+                const tr = document.createElement('tr');
+                const badgeClass = statoBadgeLibro_(item.stato);
+                const safeTitle = (item.titolo || '').replace(/'/g, "\\'").replace(/"/g, '\\"');
+
+                let genresHTML = '';
+                if (item.generi && item.generi.trim() !== '') {
+                    genresHTML = `<div class="genre-tags-list" style="color: var(--accent);">🎭 ${item.generi}</div>`;
+                }
+                let sagaHTML = '';
+                if (item.sagaNome && item.sagaNome.trim() !== '') {
+                    const numTxt = (item.sagaNumero !== null && item.sagaNumero !== undefined) ? ' #' + item.sagaNumero : '';
+                    sagaHTML = `<div class="genre-tags-list" style="color: var(--success);">📚 ${item.sagaNome}${numTxt}</div>`;
+                }
+                let autoreHTML = '';
+                if (item.autore && item.autore.trim() !== '') {
+                    autoreHTML = `<div style="font-size:12px; color:var(--text-muted);">✍️ ${item.autore}</div>`;
+                }
+
+                let starClass = item.preferito ? 'star-btn is-favorite' : 'star-btn';
+                let starIcon = item.preferito ? '★' : '☆';
+                let pinClass = item.priorita ? 'pin-btn is-priority' : 'pin-btn';
+                let pinTitle = item.priorita ? 'Rimuovi dalle priorità' : 'Contrassegna come prioritario';
+
+                let avatarHTML = '';
+                if (item.immagine && item.immagine.trim() !== '') {
+                    const safeImgUrl = item.immagine.trim().replace(/'/g, "\\'");
+                    avatarHTML = `<img src="${safeImgUrl}" style="width: 45px; height: 65px; border-radius: 6px; object-fit: cover; flex-shrink: 0; border: 1px solid var(--border-color); cursor: zoom-in; background:#10111d;" alt="Copertina" loading="lazy" onclick="apriLightbox('${safeImgUrl}')">`;
+                } else {
+                    avatarHTML = `<div style="width: 45px; height: 65px; flex-shrink: 0;"></div>`;
+                }
+
+                tr.innerHTML = `
+                    <td class="media-title">
+                        <div style="display: flex; align-items: center; gap: 12px;">
+                            <button class="${starClass}" style="flex-shrink: 0;" onclick="toggleFavoriteLibri('${safeTitle}', this)">${starIcon}</button>
+                            <button class="${pinClass}" onclick="togglePinLibri('${safeTitle}', this, event)" title="${pinTitle}">📌</button>
+                            ${avatarHTML}
+                            <div style="display: flex; flex-direction: column; gap: 3px;">
+                                <div style="font-weight: 600; display: flex; align-items: center; gap: 6px;">
+                                    <span>${item.titolo || 'Senza Titolo'}</span>
+                                    <button class="action-icon-btn" style="font-size: 13px; padding: 0; background: none; border: none; cursor: pointer;" onclick="mostraSinossi('${safeTitle}', 'libri')" title="Visualizza Trama">ℹ️</button>
+                                </div>
+                                ${autoreHTML}
+                                ${sagaHTML}
+                                ${genresHTML}
+                            </div>
+                        </div>
+                    </td>
+                    <td style="white-space:nowrap;">${item.anno || '-'}</td>
+                    <td><span class="status-badge ${badgeClass}">${item.stato || 'Da leggere'}</span></td>
+                    <td style="color: var(--text-muted); font-size: 13px;">${item.note || '-'}</td>
+                    <td style="text-align: center; white-space:nowrap;">
+                        <button class="action-icon-btn" onclick="apriModificaLibro('${safeTitle}')">✏️</button>
+                        <button class="action-icon-btn" onclick="rimuoviLibro('${safeTitle}')">🗑️</button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        function resetFiltriLibri() {
+            currentSearchLibri = '';
+            currentSearchSagaLibri = '';
+            currentFilterStatoLibri = 'all';
+            currentFavFilterLibri = 'all';
+            selectedGenresLibri = [];
+
+            document.getElementById('searchInpLibri').value = '';
+            document.getElementById('searchSagaLibri').value = '';
+            document.getElementById('sortSelLibri').value = 'title-asc';
+
+            ['filterGroupStatoLibri', 'filterGroupPreferitiLibri'].forEach(function(groupId) {
+                const group = document.getElementById(groupId);
+                if (!group) return;
+                group.querySelectorAll('.filter-btn').forEach(function(btn) { btn.classList.remove('active'); });
+                const first = group.querySelector('.filter-btn');
+                if (first) first.classList.add('active');
+            });
+
+            document.querySelectorAll('.libri-filter-genre-cb:checked').forEach(function(cb) { cb.checked = false; });
+            const badge = document.getElementById('badgeGenresLibriCount');
+            if (badge) badge.innerText = '0';
+
+            renderListLibri();
+            showToast('Filtri Libri azzerati', 'success');
+        }
+
+        document.getElementById('searchInpLibri').oninput = function(e) { currentSearchLibri = e.target.value; renderListLibri(); };
+        document.getElementById('searchSagaLibri').oninput = function(e) { currentSearchSagaLibri = e.target.value; renderListLibri(); };
+        document.getElementById('sortSelLibri').onchange = renderListLibri;
+        document.getElementById('btnResetFiltriLibri').onclick = resetFiltriLibri;
+
+        document.querySelectorAll('#filterGroupStatoLibri .filter-btn').forEach(function(btn) {
+            btn.onclick = function(e) {
+                document.querySelector('#filterGroupStatoLibri .filter-btn.active').classList.remove('active');
+                e.target.classList.add('active');
+                currentFilterStatoLibri = e.target.getAttribute('data-stato');
+                renderListLibri();
+            };
+        });
+        document.querySelectorAll('#filterGroupPreferitiLibri .filter-btn').forEach(function(btn) {
+            btn.onclick = function(e) {
+                document.querySelectorAll('#filterGroupPreferitiLibri .filter-btn').forEach(function(b) { b.classList.remove('active'); });
+                e.target.classList.add('active');
+                currentFavFilterLibri = e.target.getAttribute('data-fav');
+                renderListLibri();
+            };
+        });
+
+        document.getElementById('btnNuovoLibro').onclick = function() {
+            targetEditTitleLibri = null;
+            sinossiPendenteLibri = null;
+            ultimoDettaglioGoogleBooks = null;
+            document.getElementById('modalTitleLibri').innerText = 'Aggiungi Nuovo Libro';
+            document.getElementById('libriForm').reset();
+            document.getElementById('inpStatoLibri').value = 'Da leggere';
+            document.getElementById('inpImmagineLibri').value = '';
+            document.getElementById('libriCandidatiWrapper').innerHTML = '';
+            document.querySelectorAll('input[name="libri_genres_cb"]').forEach(function(cb) { cb.checked = false; });
+            document.getElementById('modalOverlayLibri').classList.add('active');
+        };
+
+        window.apriModificaLibro = function(titolo) {
+            const item = (libriList || []).find(function(l) { return l.titolo === titolo; });
+            if (!item) return;
+
+            targetEditTitleLibri = titolo;
+            sinossiPendenteLibri = null;
+            ultimoDettaglioGoogleBooks = null;
+            document.getElementById('modalTitleLibri').innerText = 'Modifica Libro';
+            document.getElementById('inpTitoloLibri').value = item.titolo || '';
+            document.getElementById('inpAutoreLibri').value = item.autore || '';
+            document.getElementById('inpAnnoLibri').value = item.anno || '';
+            document.getElementById('inpStatoLibri').value = item.stato || 'Da leggere';
+            document.getElementById('inpSagaNomeLibri').value = item.sagaNome || '';
+            document.getElementById('inpSagaNumeroLibri').value = (item.sagaNumero !== null && item.sagaNumero !== undefined) ? item.sagaNumero : '';
+            document.getElementById('inpNoteLibri').value = (function() {
+                const tmp = document.createElement('div');
+                tmp.innerHTML = item.note || '';
+                return tmp.textContent || '';
+            })();
+            document.getElementById('inpImmagineLibri').value = item.immagine || '';
+            document.getElementById('libriCandidatiWrapper').innerHTML = '';
+
+            document.querySelectorAll('input[name="libri_genres_cb"]').forEach(function(cb) {
+                cb.checked = false;
+                if (item.generi) {
+                    const splitGeneri = item.generi.split(',').map(function(g) { return g.trim(); });
+                    if (splitGeneri.includes(cb.value)) cb.checked = true;
+                }
+            });
+
+            document.getElementById('modalOverlayLibri').classList.add('active');
+        };
+
+        document.getElementById('libriForm').onsubmit = function(e) {
+            e.preventDefault();
+            document.getElementById('btnSalvaLibri').innerText = 'Salvataggio...';
+
+            const selectedGenres = Array.from(document.querySelectorAll('input[name="libri_genres_cb"]:checked'))
+                .map(function(cb) { return cb.value; })
+                .join(', ');
+
+            const dati = {
+                titolo: document.getElementById('inpTitoloLibri').value.trim(),
+                autore: document.getElementById('inpAutoreLibri').value,
+                anno: document.getElementById('inpAnnoLibri').value,
+                stato: document.getElementById('inpStatoLibri').value,
+                sagaNome: document.getElementById('inpSagaNomeLibri').value,
+                sagaNumero: document.getElementById('inpSagaNumeroLibri').value,
+                generi: selectedGenres,
+                note: document.getElementById('inpNoteLibri').value,
+                immagine: document.getElementById('inpImmagineLibri').value
+            };
+            if (!dati.titolo) {
+                showToast('Inserisci almeno il titolo.', 'error');
+                document.getElementById('btnSalvaLibri').innerText = 'Salva';
+                return;
+            }
+            const isEdit = !!targetEditTitleLibri;
+            const cb = function(data) {
+                libriList = data || [];
+                if (sinossiPendenteLibri) {
+                    impostaSinossiSB_(dati.titolo, 'libri', sinossiPendenteLibri)
+                        .catch(function(err) {
+                            console.error('Errore salvataggio trama Google Books: ' + err);
+                            showToast('Libro salvato, ma la trama non è stata scritta. Riprova dal pulsante 🔎.', 'error');
+                        });
+                    sinossiPendenteLibri = null;
+                }
+                // La ricerca globale usa una cache: va invalidata o il nuovo
+                // libro non comparirebbe tra i risultati fino al reload.
+                ricercaGlobaleIndice = null;
+                document.getElementById('btnSalvaLibri').innerText = 'Salva';
+                chiudiModale('Libri');
+                renderListLibri();
+                showToast(isEdit ? 'Libro aggiornato con successo' : 'Libro aggiunto con successo', 'success');
+            };
+            const errorCb = function(err) {
+                alert('❌ Errore durante il salvataggio: ' + (err && err.message ? err.message : err));
+                document.getElementById('btnSalvaLibri').innerText = 'Salva';
+            };
+
+            if (targetEditTitleLibri) {
+                updateLibroSB_(targetEditTitleLibri, dati).then(cb).catch(errorCb);
+            } else {
+                addLibroSB_(dati).then(cb).catch(errorCb);
+            }
+        };
+
+        window.rimuoviLibro = function(titolo) {
+            if (confirm("Eliminare definitivamente '" + titolo + "'?")) {
+                deleteLibroSB_(titolo).then(function(data) {
+                    libriList = data || [];
+                    ricercaGlobaleIndice = null;
+                    renderListLibri();
+                    showToast('Libro eliminato', 'success');
+                }).catch(function(err) {
+                    console.error('Errore eliminazione libro:', err);
+                    alert("❌ Errore durante l'eliminazione.");
+                });
+            }
+        };
+
+        function toggleFavoriteLibri(titolo, btn) {
+            const item = (libriList || []).find(function(l) { return l.titolo === titolo; });
+            if (!item) return;
+            const nuovoStato = !item.preferito;
+            item.preferito = nuovoStato;
+            if (btn) {
+                btn.classList.toggle('is-favorite', nuovoStato);
+                btn.innerText = nuovoStato ? '★' : '☆';
+            }
+            if (currentFavFilterLibri === 'yes' && !nuovoStato) renderListLibri();
+            toggleLibroPreferitoSB_(titolo, nuovoStato).catch(function(err) {
+                console.error('Errore toggle preferito libro:', err);
+                item.preferito = !nuovoStato;
+                renderListLibri();
+            });
+        }
+        window.toggleFavoriteLibri = toggleFavoriteLibri;
+
+        function togglePinLibri(titolo, btn, event) {
+            if (event) event.stopPropagation();
+            const item = (libriList || []).find(function(l) { return l.titolo === titolo; });
+            if (!item) return;
+            const nuovoStato = !item.priorita;
+            item.priorita = nuovoStato;
+            if (btn) {
+                btn.classList.toggle('is-priority', nuovoStato);
+                btn.title = nuovoStato ? 'Rimuovi dalle priorità' : 'Contrassegna come prioritario';
+            }
+            renderListLibri();
+            toggleLibroPrioritaSB_(titolo, nuovoStato).catch(function(err) {
+                console.error('Errore toggle priorità libro:', err);
+                item.priorita = !nuovoStato;
+                renderListLibri();
+            });
+        }
+        window.togglePinLibri = togglePinLibri;
+
+        // ------------------------------------------
+        // 🔎 GOOGLE BOOKS (chiamata diretta, nessuna chiave)
+        // ------------------------------------------
+
+        async function cercaCandidatiLibriGB_(query) {
+            const q = String(query || '').trim();
+            if (!q) throw new Error('Inserisci prima un titolo da cercare.');
+            const url = 'https://www.googleapis.com/books/v1/volumes?q=' + encodeURIComponent(q) + '&maxResults=8&printType=books&langRestrict=it';
+            let resp;
+            try {
+                resp = await fetch(url);
+            } catch (networkErr) {
+                throw new Error('Rete: impossibile raggiungere Google Books (' + networkErr.message + ').');
+            }
+            if (!resp.ok) {
+                if (resp.status === 429) throw new Error('Google Books: troppe richieste, riprova tra un minuto.');
+                throw new Error('Google Books non disponibile [HTTP ' + resp.status + '].');
+            }
+            const json = await resp.json();
+            const items = (json && json.items) || [];
+            return items.map(function(it) {
+                const vi = it.volumeInfo || {};
+                let anno = '';
+                if (vi.publishedDate) anno = String(vi.publishedDate).substring(0, 4);
+                let img = '';
+                if (vi.imageLinks) img = vi.imageLinks.thumbnail || vi.imageLinks.smallThumbnail || '';
+                if (img) img = img.replace(/^http:\/\//i, 'https://');
+                return {
+                    id: it.id, titolo: vi.title || 'Senza titolo',
+                    sottotitolo: vi.subtitle || '',
+                    autori: (vi.authors || []).join(', '),
+                    anno: anno, immagine: img
+                };
+            });
+        }
+
+        async function getDettaglioLibroGB_(volumeId) {
+            const url = 'https://www.googleapis.com/books/v1/volumes/' + encodeURIComponent(volumeId) + '?projection=full';
+            const resp = await fetch(url);
+            if (!resp.ok) throw new Error('Dettaglio Google Books non disponibile [HTTP ' + resp.status + '].');
+            const json = await resp.json();
+            const vi = json.volumeInfo || {};
+
+            let descrizione = String(vi.description || '');
+            descrizione = descrizione
+                .replace(/<br\s*\/?>/gi, '\n')
+                .replace(/<\/?[^>]+(>|$)/g, '')
+                .replace(/\n{3,}/g, '\n\n')
+                .trim();
+
+            let anno = '';
+            if (vi.publishedDate) anno = String(vi.publishedDate).substring(0, 4);
+
+            let img = '';
+            if (vi.imageLinks) img = vi.imageLinks.thumbnail || vi.imageLinks.smallThumbnail || '';
+            if (img) img = img.replace(/^http:\/\//i, 'https://');
+
+            // Categorie Google Books ("Fiction / Fantasy"): le appiattisco su
+            // singole parole e le confronto con MASTER_GENRES_LIST.
+            const rawCategorie = vi.categories || [];
+            const paroleCategorie = [];
+            rawCategorie.forEach(function(c) {
+                String(c).split('/').forEach(function(p) {
+                    const t = p.trim();
+                    if (t) paroleCategorie.push(t);
+                });
+            });
+
+            // Saga: Google Books la espone solo a volte (seriesInfo, nato per i
+            // fumetti). Numero comunque utile, nome quasi mai: lo suggerisco
+            // con euristica su titolo/sottotitolo, resta tutto modificabile.
+            let sagaNumeroGB = null;
+            try {
+                const si = vi.seriesInfo;
+                const vs = si && si.volumeSeries && si.volumeSeries[0];
+                if (vs) {
+                    const n = parseFloat(vs.orderNumber !== undefined ? vs.orderNumber : vs.bookDisplayNumber);
+                    if (!isNaN(n)) sagaNumeroGB = n;
+                }
+            } catch (e) { sagaNumeroGB = null; }
+            const sagaEuristica = suggerisciSagaDaTitolo_((vi.title || ''), (vi.subtitle || ''));
+            if (sagaNumeroGB === null && sagaEuristica && sagaEuristica.numero !== null) {
+                sagaNumeroGB = sagaEuristica.numero;
+            }
+
+            return {
+                id: json.id, titolo: vi.title || '', sottotitolo: vi.subtitle || '',
+                autori: (vi.authors || []).join(', '), anno: anno,
+                sinossi: descrizione || 'Nessuna trama disponibile per questo libro.',
+                immagine: img, categorie: paroleCategorie,
+                sagaNome: (sagaEuristica && sagaEuristica.nome) ? sagaEuristica.nome : '',
+                sagaNumero: sagaNumeroGB,
+                sagaFonte: (sagaEuristica && sagaEuristica.nome) ? 'euristica' : ((sagaNumeroGB !== null) ? 'google' : 'nessuna')
+            };
+        }
+
+        // Euristica sul titolo: becca "(Dune, #2)", "Dune #2", "Vol. 3".
+        // Ritorna { nome, numero } o null. Meglio un suggerimento da
+        // correggere che due campi sempre vuoti.
+        function suggerisciSagaDaTitolo_(titolo, sottotitolo) {
+            const testi = [String(titolo || ''), String(sottotitolo || '')].filter(function(t) { return t; });
+            const patterns = [
+                /\(([^()]{2,60}),?\s*#(\d+(?:[.,]\d+)?)\)/,
+                /^(.{2,60}?)\s+#(\d+(?:[.,]\d+)?)\s*$/,
+                /^(.{2,60}?)\s+[Vv]ol\.?\s*(\d+(?:[.,]\d+)?)\s*$/,
+                /^(.{2,60}?)\s*-\s*[Ll]ibro\s*(\d+(?:[.,]\d+)?)\s*$/
+            ];
+            for (let i = 0; i < testi.length; i++) {
+                for (let p = 0; p < patterns.length; p++) {
+                    const m = testi[i].match(patterns[p]);
+                    if (m) {
+                        const n = parseFloat(String(m[2]).replace(',', '.'));
+                        return { nome: m[1].trim(), numero: isNaN(n) ? null : n };
+                    }
+                }
+            }
+            return null;
+        }
+
+        function apriRicercaGoogleBooks() {
+            const titolo = document.getElementById('inpTitoloLibri').value.trim();
+            if (!titolo) {
+                alert('Inserisci prima un titolo da cercare.');
+                return;
+            }
+            const wrap = document.getElementById('libriCandidatiWrapper');
+            wrap.innerHTML = `<div style="color:var(--success); font-weight:600; font-size:13px; margin-bottom:12px;">⏳ Ricerca su Google Books in corso...</div>`;
+            cercaCandidatiLibriGB_(titolo)
+                .then(function(candidati) { renderCandidatiLibriGB_(candidati); })
+                .catch(function(err) {
+                    wrap.innerHTML = `<div style="color:var(--danger); font-size:13px; margin-bottom:12px;">❌ ${String(err && err.message ? err.message : err)}</div>`;
+                });
+        }
+        window.apriRicercaGoogleBooks = apriRicercaGoogleBooks;
+
+        function renderCandidatiLibriGB_(candidati) {
+            const wrap = document.getElementById('libriCandidatiWrapper');
+            if (!candidati || candidati.length === 0) {
+                wrap.innerHTML = `<div style="color:var(--text-muted); font-size:13px; margin-bottom:12px;">Nessun risultato su Google Books: procedi pure a mano.</div>`;
+                return;
+            }
+            wrap.innerHTML = '';
+            const label = document.createElement('div');
+            label.style = 'font-size:12px; color:var(--text-muted); font-weight:600; margin-bottom:8px;';
+            label.innerText = '🔎 Scegli il libro corretto (' + candidati.length + ' risultati):';
+            wrap.appendChild(label);
+
+            const grid = document.createElement('div');
+            grid.style = 'display:grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap:10px; margin-bottom:12px;';
+            candidati.forEach(function(c) {
+                const card = document.createElement('div');
+                card.style = 'cursor:pointer; border:1px solid var(--border-color); border-radius:8px; overflow:hidden; background:rgba(255,255,255,0.03); transition: transform 0.15s, border-color 0.15s;';
+                card.onmouseover = function() { card.style.transform = 'translateY(-2px)'; card.style.borderColor = 'var(--success)'; };
+                card.onmouseout = function() { card.style.transform = 'translateY(0)'; card.style.borderColor = 'var(--border-color)'; };
+                const imgHtml = c.immagine
+                    ? `<img src="${c.immagine}" style="width:100%; height:170px; object-fit:cover; display:block; background:#222;">`
+                    : `<div style="width:100%; height:170px; display:flex; align-items:center; justify-content:center; background:#222; font-size:28px;">📗</div>`;
+                const sub = (c.autori ? c.autori : '') + (c.anno ? ' (' + c.anno + ')' : '');
+                card.innerHTML = imgHtml + `<div style="padding:6px; font-size:11px; line-height:1.3;"><div style="font-weight:700;">${c.titolo}</div><div style="color:var(--text-muted); margin-top:2px;">${sub}</div></div>`;
+                card.onclick = function() { selezionaCandidatoLibroGB_(c.id, c.titolo); };
+                grid.appendChild(card);
+            });
+            wrap.appendChild(grid);
+        }
+
+        function selezionaCandidatoLibroGB_(volumeId, titoloCandidato) {
+            const wrap = document.getElementById('libriCandidatiWrapper');
+            wrap.innerHTML = `<div style="color:var(--success); font-weight:600; font-size:13px; margin-bottom:12px;">⏳ Recupero dettagli di "${titoloCandidato}"...</div>`;
+            getDettaglioLibroGB_(volumeId)
+                .then(function(dettaglio) { renderDettaglioLibroGB_(dettaglio); })
+                .catch(function(err) {
+                    wrap.innerHTML = `<div style="color:var(--danger); font-size:13px; margin-bottom:12px;">❌ ${String(err && err.message ? err.message : err)}</div>`;
+                });
+        }
+        window.selezionaCandidatoLibroGB_ = selezionaCandidatoLibroGB_;
+
+        function renderDettaglioLibroGB_(dettaglio) {
+            ultimoDettaglioGoogleBooks = dettaglio;
+            const wrap = document.getElementById('libriCandidatiWrapper');
+            wrap.innerHTML = '';
+
+            const box = document.createElement('div');
+            box.style = 'display:flex; gap:14px; align-items:flex-start; flex-wrap:wrap; background:rgba(52,211,153,0.06); border:1px solid var(--border-color); border-radius:10px; padding:12px; margin-bottom:12px;';
+            const imgHtml = dettaglio.immagine
+                ? `<img src="${dettaglio.immagine}" style="width:110px; border-radius:8px; flex-shrink:0; background:#222;">`
+                : `<div style="width:110px; height:160px; border-radius:8px; flex-shrink:0; background:#222; display:flex; align-items:center; justify-content:center; font-size:32px;">📗</div>`;
+            box.innerHTML = imgHtml + `
+                <div style="flex:1; min-width:220px; display:flex; flex-direction:column; gap:8px;">
+                    <label style="font-size:12px; color:var(--text-muted); font-weight:600;">Titolo (modificabile — verrà riportato nella scheda)</label>
+                    <input type="text" id="gbTitoloInput" style="width:100%; background:rgba(255,255,255,0.04); border:1px solid var(--border-color); border-radius:8px; color:var(--text); padding:8px; font-size:13px;">
+                    <label style="font-size:12px; color:var(--text-muted); font-weight:600;">Trama (modificabile prima di confermare)</label>
+                    <textarea id="gbSinossiTextarea" rows="6" style="width:100%; background:rgba(255,255,255,0.04); border:1px solid var(--border-color); border-radius:8px; color:var(--text); padding:8px; font-size:13px; line-height:1.5; resize:vertical;"></textarea>
+                    <div style="font-size:12.5px; color:var(--text);">✍️ <b>Autore:</b> ${dettaglio.autori || 'sconosciuto'} &nbsp;·&nbsp; 📅 <b>Anno:</b> ${dettaglio.anno || 'sconosciuto'}</div>
+                    <div style="font-size:12.5px; color:var(--text);">📚 <b>Saga suggerita:</b> ${(dettaglio.sagaNome || '—') + ((dettaglio.sagaNumero !== null && dettaglio.sagaNumero !== undefined) ? ' #' + dettaglio.sagaNumero : '')}
+                        <span style="color:var(--text-muted);">${dettaglio.sagaFonte === 'nessuna' ? '(non rilevata: compila a mano)' : '(da verificare, resta modificabile)'}</span>
+                    </div>
+                </div>`;
+            wrap.appendChild(box);
+            document.getElementById('gbTitoloInput').value = dettaglio.titolo || '';
+            document.getElementById('gbSinossiTextarea').value = dettaglio.sinossi || '';
+
+            const suggeritiLower = (dettaglio.categorie || []).map(function(g) { return String(g).trim().toLowerCase(); });
+            const generiCorrispondenti = MASTER_GENRES_LIST.filter(function(g) {
+                const gl = g.toLowerCase();
+                return suggeritiLower.some(function(s) { return s === gl || s.includes(gl) || gl.includes(s); });
+            });
+            const genreSection = document.createElement('div');
+            genreSection.style = 'margin-bottom:12px;';
+            if (generiCorrispondenti.length > 0) {
+                genreSection.innerHTML = `
+                    <label style="display:block; margin-bottom:6px; font-weight:600; color:var(--text-muted); font-size:12px;">
+                        Generi rilevati (deseleziona quelli da scartare — aggiunti ai tuoi senza toglierne)
+                    </label>
+                    <div id="gbGenresPicker" class="genres-grid-container">
+                        ${generiCorrispondenti.map(function(g) {
+                            return `<label><input type="checkbox" class="gb_genre_cb" value="${g}" checked> ${g}</label>`;
+                        }).join('')}
+                    </div>`;
+            } else {
+                genreSection.innerHTML = `<div style="color:var(--text-muted); font-size:12px;">Nessun genere della tua lista tra quelli di Google Books (${(dettaglio.categorie || []).join(', ') || 'nessuno'}).</div>`;
+            }
+            wrap.appendChild(genreSection);
+
+            const footer = document.createElement('div');
+            footer.style = 'display:flex; justify-content:flex-end; gap:8px; margin-bottom:12px;';
+            footer.innerHTML = `
+                <button type="button" class="btn btn-danger" id="gbAnnullaBtn">Annulla</button>
+                <button type="button" class="btn btn-libri" id="gbConfermaBtn">✅ Usa questi dati</button>`;
+            wrap.appendChild(footer);
+            document.getElementById('gbAnnullaBtn').onclick = function() {
+                document.getElementById('libriCandidatiWrapper').innerHTML = '';
+                ultimoDettaglioGoogleBooks = null;
+            };
+            document.getElementById('gbConfermaBtn').onclick = confermaDatiGoogleBooks_;
+        }
+
+        function applicaDatiPrincipaliLibriGB_() {
+            if (!ultimoDettaglioGoogleBooks) return false;
+            const d = ultimoDettaglioGoogleBooks;
+            const titoloInput = document.getElementById('gbTitoloInput');
+            const titoloFinale = titoloInput ? titoloInput.value.trim() : d.titolo;
+            const sinossiEl = document.getElementById('gbSinossiTextarea');
+            const sinossiFinale = sinossiEl ? sinossiEl.value : d.sinossi;
+
+            if (titoloFinale) document.getElementById('inpTitoloLibri').value = titoloFinale;
+            // Autore/anno: li porto dentro solo se il campo scheda è vuoto,
+            // mai sovrascrivere ciò che hai già scritto a mano.
+            if (d.autori && !document.getElementById('inpAutoreLibri').value.trim()) {
+                document.getElementById('inpAutoreLibri').value = d.autori;
+            }
+            if (d.anno && !String(document.getElementById('inpAnnoLibri').value).trim()) {
+                document.getElementById('inpAnnoLibri').value = d.anno;
+            }
+            document.getElementById('inpImmagineLibri').value = d.immagine || '';
+
+            // Saga: stesso principio, non sovrascrivere il manuale.
+            if (d.sagaNome && !document.getElementById('inpSagaNomeLibri').value.trim()) {
+                document.getElementById('inpSagaNomeLibri').value = d.sagaNome;
+            }
+            if ((d.sagaNumero !== null && d.sagaNumero !== undefined) && !String(document.getElementById('inpSagaNumeroLibri').value).trim()) {
+                document.getElementById('inpSagaNumeroLibri').value = d.sagaNumero;
+            }
+            if (!d.sagaNome && (d.sagaNumero === null || d.sagaNumero === undefined)) {
+                showToast('Google Books non conosce la saga: compilala a mano se fa parte di una serie.', 'error');
+            } else {
+                showToast('Saga suggerita da verificare: correggila pure a mano.', 'success');
+            }
+
+            sinossiPendenteLibri = sinossiFinale;
+
+            const picker = document.getElementById('gbGenresPicker');
+            if (picker) {
+                const daAggiungere = Array.from(picker.querySelectorAll('.gb_genre_cb:checked')).map(function(cb) { return cb.value; });
+                document.querySelectorAll('input[name="libri_genres_cb"]').forEach(function(cb) {
+                    if (daAggiungere.indexOf(cb.value) !== -1) cb.checked = true;
+                });
+            }
+            return true;
+        }
+
+        function confermaDatiGoogleBooks_() {
+            if (!applicaDatiPrincipaliLibriGB_()) return;
+            document.getElementById('libriCandidatiWrapper').innerHTML = '';
+            showToast('Titolo, copertina, trama e generi applicati: premi "Salva" per confermare', 'success');
+        }
+        window.confermaDatiGoogleBooks_ = confermaDatiGoogleBooks_;
+
+        // ==========================================
         //   📝 PATCH NOTES (note di versione)
         //   Voci user-facing delle modifiche, dalla più recente alla più
         //   vecchia. Versione v1.0.N = Richiesta N della guida_migrazione.md
@@ -7056,6 +8039,11 @@ function apriLightbox(url) {
         //   Nuove voci: aggiungere in CIMA all'array.
         // ==========================================
         const PATCH_NOTES = [
+            { v: '1.0.35', titolo: 'Biblioteca Libri', data: '11/10/2026', punti: [
+                'Nuova vista Libri con ricerca Google Books (copertina, trama, generi, autore, anno).',
+                'Saga di livello 1: nome + numero suggeriti quando noti, sempre modificabili a mano.',
+                'Stati Da leggere / Letto / Abbandonato con log nel widget di Home e ricerca globale.'
+            ] },
             { v: '1.0.32', titolo: 'Streaming vero + badge patch', data: '06/10/2026 · 09:11', punti: [
                 'Film in streaming archiviati tra i Visti con data e log, separati col pill Sala/Streaming.',
                 'Pallino rosso sulle patch notes con le versioni ancora da leggere (per utente).'
@@ -8785,8 +9773,8 @@ function togglePinManga(titolo, btn, event) {
 // ==========================================
 
 async function getSinossiSB_(titolo, tipo) {
-    const tabella = (tipo === 'anime') ? 'sinossi_anime' : ((tipo === 'serietv') ? 'sinossi_serie_tv' : 'sinossi_manga');
-    const colonnaTitolo = (tipo === 'anime') ? 'anime_titolo' : ((tipo === 'serietv') ? 'serie_titolo' : 'manga_titolo');
+    const tabella = (tipo === 'anime') ? 'sinossi_anime' : ((tipo === 'serietv') ? 'sinossi_serie_tv' : ((tipo === 'libri') ? 'sinossi_libri' : 'sinossi_manga'));
+    const colonnaTitolo = (tipo === 'anime') ? 'anime_titolo' : ((tipo === 'serietv') ? 'serie_titolo' : ((tipo === 'libri') ? 'libro_titolo' : 'manga_titolo'));
     const messaggioErrore = "Nessuna informazione su questa opera!";
 
     const { data, error } = await supabaseClient.from(tabella).select('sinossi').eq(colonnaTitolo, String(titolo).trim());
@@ -8798,8 +9786,8 @@ async function getSinossiSB_(titolo, tipo) {
 }
 
 async function impostaSinossiSB_(titolo, tipo, testo) {
-    const tabella = (tipo === 'anime') ? 'sinossi_anime' : ((tipo === 'serietv') ? 'sinossi_serie_tv' : 'sinossi_manga');
-    const colonnaTitolo = (tipo === 'anime') ? 'anime_titolo' : ((tipo === 'serietv') ? 'serie_titolo' : 'manga_titolo');
+    const tabella = (tipo === 'anime') ? 'sinossi_anime' : ((tipo === 'serietv') ? 'sinossi_serie_tv' : ((tipo === 'libri') ? 'sinossi_libri' : 'sinossi_manga'));
+    const colonnaTitolo = (tipo === 'anime') ? 'anime_titolo' : ((tipo === 'serietv') ? 'serie_titolo' : ((tipo === 'libri') ? 'libro_titolo' : 'manga_titolo'));
     const titoloTrim = String(titolo).trim();
 
     const { data, error: errSel } = await supabaseClient.from(tabella).select(colonnaTitolo).eq(colonnaTitolo, titoloTrim);
@@ -8912,6 +9900,8 @@ function chiudiSinossi() {
 
 let sinossiPendenteAnime = null;
 let sinossiPendenteManga = null;
+let sinossiPendenteLibri = null; // View Libri (Richiesta 35): trama Google Books in sospeso
+let ultimoDettaglioGoogleBooks = null; // dettaglio volume GB in anteprima nel picker
 let ultimoDettaglioAniList = null; // { immagine, sinossi } del candidato attualmente in anteprima
 let episodiPerStagionePendenteAnime = null; // { 1: episodi, 2: episodi, ... } da "Cerca stagioni/film collegati"
 
@@ -9700,8 +10690,9 @@ function renderLogAttivita(logs, filtriAttivi) {
         const isAnime = (tipoMedia === 'ANIME');
         const isCinema = (tipoMedia === 'CINEMA');
         const isSerieTv = (tipoMedia === 'SERIE_TV');
-        const badgeClass = isSerieTv ? 'log-badge-serietv' : (isAnime ? 'log-badge-anime' : (isCinema ? 'log-badge-cinema' : 'log-badge-manga'));
-        const badgeLabel = isSerieTv ? 'SERIE TV' : (isAnime ? 'ANIME' : (isCinema ? 'CINEMA' : 'MANGA'));
+        const isLibro = (tipoMedia === 'LIBRO');
+        const badgeClass = isSerieTv ? 'log-badge-serietv' : (isAnime ? 'log-badge-anime' : (isCinema ? 'log-badge-cinema' : (isLibro ? 'log-badge-libri' : 'log-badge-manga')));
+        const badgeLabel = isSerieTv ? 'SERIE TV' : (isAnime ? 'ANIME' : (isCinema ? 'CINEMA' : (isLibro ? 'LIBRO' : 'MANGA')));
 
         const titoloHtml = '<span class="log-title-highlight">' + escapeHtmlLog(log.idTitolo || 'Titolo sconosciuto') + '</span>';
         const valoreNuovoHtml = '<span class="log-value-highlight">' + escapeHtmlLog(log.valoreNuovo) + '</span>';
@@ -9711,7 +10702,9 @@ function renderLogAttivita(logs, filtriAttivi) {
             case 'CREAZIONE':
                 frase = isCinema
                     ? '🎬 Nuovo film aggiunto: ' + titoloHtml + ' è stato inserito nel tracker!'
-                    : '👾 Nuova opera aggiunta: ' + titoloHtml + ' è stato inserito nel tracker!';
+                    : (isLibro
+                        ? '📗 Nuovo libro aggiunto: ' + titoloHtml + ' è stato inserito in biblioteca!'
+                        : '👾 Nuova opera aggiunta: ' + titoloHtml + ' è stato inserito nel tracker!');
                 break;
             case 'AVANZAMENTO':
                 if (isAnime) {
@@ -9726,7 +10719,9 @@ function renderLogAttivita(logs, filtriAttivi) {
                 } else {
                     frase = isCinema
                         ? '🍿 <span class="log-value-highlight">VISTO!</span> Hai visto ' + titoloHtml + ' al cinema! 🎬'
-                        : '🏆 <span class="log-value-highlight">COMPLETATO!</span> Hai finito ' + titoloHtml + '! ✨';
+                        : (isLibro
+                            ? '📗 <span class="log-value-highlight">LETTO!</span> Hai finito di leggere ' + titoloHtml + '! ✨'
+                            : '🏆 <span class="log-value-highlight">COMPLETATO!</span> Hai finito ' + titoloHtml + '! ✨');
                 }
                 break;
             case 'IN_PARI':
@@ -10412,8 +11407,8 @@ let ricercaGlobaleRisultatiFlat = [];
 let ricercaGlobaleAttivo = -1;
 let ricercaGlobaleTimer = null;
 
-const RICERCA_GLOBALE_ICONE = { anime: '📺', manga: '📚', cinema: '🎬', serietv: '📡' };
-const RICERCA_GLOBALE_LABEL = { anime: 'Anime', manga: 'Manga', cinema: 'Cinema', serietv: 'Serie TV' };
+const RICERCA_GLOBALE_ICONE = { anime: '📺', manga: '📚', libri: '📗', cinema: '🎬', serietv: '📡' };
+const RICERCA_GLOBALE_LABEL = { anime: 'Anime', manga: 'Manga', libri: 'Libri', cinema: 'Cinema', serietv: 'Serie TV' };
 
 // Toglie gli accenti e uniforma il case, così "citta" trova "Città" e viceversa.
 function normalizzaTestoRicerca(str) {
@@ -10424,8 +11419,8 @@ function normalizzaTestoRicerca(str) {
 }
 
 async function getIndiceRicercaSB_() {
-    const [animeData, mangaData, cinemaData, serieTvData] = await Promise.all([
-        getAnimeDataSB_(), getMangaDataSB_(), getCinemaDataSB_(), getSerieTvDataSB_()
+    const [animeData, mangaData, cinemaData, serieTvData, libriData] = await Promise.all([
+        getAnimeDataSB_(), getMangaDataSB_(), getCinemaDataSB_(), getSerieTvDataSB_(), getLibriDataSB_()
     ]);
     const risultati = [];
     animeData.forEach(function(a) {
@@ -10451,6 +11446,12 @@ async function getIndiceRicercaSB_() {
         risultati.push({
             titolo: s.titolo, tipo: 'serietv', stato: s.stato, coloreVisione: s.coloreVisione,
             stagioniTotali: s.stagioniTotali, stagioniViste: s.stagioniViste, immagine: s.immagine
+        });
+    });
+    (libriData || []).forEach(function(l) {
+        risultati.push({
+            titolo: l.titolo, tipo: 'libri', stato: l.stato, autore: l.autore,
+            sagaNome: l.sagaNome, sagaNumero: l.sagaNumero, immagine: l.immagine
         });
     });
     return risultati;
@@ -10499,9 +11500,12 @@ function eseguiRicercaGlobale(query) {
     if (!q) { nascondiRisultatiRicercaGlobale(); return; }
     if (!ricercaGlobaleIndice) return;
 
-    const gruppi = { anime: [], manga: [], cinema: [], serietv: [] };
+    const gruppi = { anime: [], manga: [], libri: [], cinema: [], serietv: [] };
     ricercaGlobaleIndice.forEach(function (item) {
-        if (normalizzaTestoRicerca(item.titolo).includes(q)) {
+        const titoloMatch = normalizzaTestoRicerca(item.titolo).includes(q);
+        const autoreMatch = (item.tipo === 'libri' && item.autore) ? normalizzaTestoRicerca(item.autore).includes(q) : false;
+        const sagaMatch = (item.tipo === 'libri' && item.sagaNome) ? normalizzaTestoRicerca(item.sagaNome).includes(q) : false;
+        if (titoloMatch || autoreMatch || sagaMatch) {
             gruppi[item.tipo].push(item);
         }
     });
@@ -10545,6 +11549,11 @@ function sottotitoloRisultatoRicercaGlobale(item) {
         const acquisto = item.acquistato === 'Sì' ? ' · Acquistato' : ' · Non acquistato';
         return escapeHtmlLog(item.stato) + vol + acquisto;
     }
+    if (item.tipo === 'libri') {
+        const autore = item.autore ? ' · ' + escapeHtmlLog(item.autore) : '';
+        const saga = (item.sagaNome) ? ' · 📚 ' + escapeHtmlLog(item.sagaNome) + (item.sagaNumero ? ' #' + item.sagaNumero : '') : '';
+        return escapeHtmlLog(item.stato || 'Da leggere') + autore + saga;
+    }
     // cinema
     if (item.visione === 'Sì') return 'Visto' + (item.streaming ? ' in streaming' : '') + (item.dataVisione ? ' il ' + item.dataVisione : '');
     if (item.streaming) return 'Da vedere in streaming';
@@ -10569,7 +11578,7 @@ function renderRisultatiRicercaGlobale(gruppi) {
     ricercaGlobaleRisultatiFlat = [];
     ricercaGlobaleAttivo = -1;
 
-    const totale = gruppi.anime.length + gruppi.manga.length + gruppi.cinema.length + gruppi.serietv.length;
+    const totale = gruppi.anime.length + gruppi.manga.length + (gruppi.libri ? gruppi.libri.length : 0) + gruppi.cinema.length + gruppi.serietv.length;
     if (totale === 0) {
         box.innerHTML = '<div class="global-search-empty">Nessun titolo trovato per "' + escapeHtmlLog(query) + '"</div>';
         box.style.display = 'block';
@@ -10577,7 +11586,7 @@ function renderRisultatiRicercaGlobale(gruppi) {
     }
 
     let html = '';
-    ['anime', 'serietv', 'manga', 'cinema'].forEach(function (tipo) {
+    ['anime', 'serietv', 'manga', 'libri', 'cinema'].forEach(function (tipo) {
         const lista = gruppi[tipo].slice(0, 6);
         if (lista.length === 0) return;
 
@@ -10608,10 +11617,11 @@ function renderRisultatiRicercaGlobale(gruppi) {
 }
 
 // Apre il dettaglio del risultato scelto: overlay sinossi già esistente per
-// Anime/Manga, scheda rapida dedicata per Cinema (che non ha una sinossi).
+// Anime/Manga/Libri/Serie TV, scheda rapida dedicata per Cinema (che non ha
+// una sinossi).
 function apriRisultatoRicercaGlobale(tipo, titolo) {
     nascondiRisultatiRicercaGlobale();
-    if (tipo === 'anime' || tipo === 'manga' || tipo === 'serietv') {
+    if (tipo === 'anime' || tipo === 'manga' || tipo === 'serietv' || tipo === 'libri') {
         mostraSinossi(titolo, tipo);
     } else if (tipo === 'cinema') {
         mostraDettaglioCinemaRicercaGlobale(titolo);
