@@ -7866,6 +7866,34 @@ function apriLightbox(url) {
         // Hardcover restituisce già i dati completi, la selezione li riusa
         // da qui senza altre chiamate di rete.
         let ultimiCandidatiLibri_ = [];
+        // Ultima query digitata (Richiesta 39): se è un titolo intero in
+        // italiano la riuso come titolo proposto, così la biblioteca non si
+        // riempie di titoli inglesi da correggere a mano.
+        let ultimaQueryLibri_ = '';
+
+        // Titolo da proporre nella scheda (Richiesta 39): query lunga (3+
+        // parole = hai scritto il titolo intero con parole tue) → mi fido di
+        // te con capitalizzazione leggera; query corta (frammento tipo
+        // "dune") → il titolo ufficiale è più completo, tengo quello.
+        function scegliTitoloDaProporre_(query, titoloHC) {
+            const q = String(query || '').trim();
+            const t = String(titoloHC || '').trim();
+            if (!q) return t;
+            const paroleQ = q.split(/\s+/).filter(function(w) { return w; });
+            if (paroleQ.length < 3) return t;
+            return maiuscolaTitolo_(q);
+        }
+
+        // Capitalizza ogni parola tranne articoli/preposizioni/congiunzioni
+        // (vale per italiano e inglese): "harry potter e la pietra
+        // filosofale" → "Harry Potter e la Pietra Filosofale".
+        function maiuscolaTitolo_(s) {
+            const minuscole = ['e', 'ed', 'o', 'od', 'di', 'a', 'da', 'in', 'con', 'su', 'per', 'tra', 'fra', 'il', 'lo', 'la', 'i', 'gli', 'le', 'un', 'uno', 'una', 'dei', 'degli', 'delle', 'al', 'allo', 'alla', 'ai', 'agli', 'alle', 'dal', 'dallo', 'dalla', 'dai', 'dagli', 'dalle', 'del', 'dello', 'della', 'nel', 'nello', 'nella', 'nei', 'negli', 'nelle', 'sul', 'sullo', 'sulla', 'sui', 'sugli', 'sulle', 'and', 'the', 'of', 'a', 'an', 'on', 'at', 'to', 'for', 'with'];
+            return String(s || '').toLowerCase().split(/\s+/).filter(function(w) { return w; }).map(function(w, i) {
+                if (i > 0 && minuscole.indexOf(w) !== -1) return w;
+                return w.charAt(0).toUpperCase() + w.slice(1);
+            }).join(' ');
+        }
 
         function selezionaCandidatoLibroHC_(idLibro, titoloCandidato) {
             const wrap = document.getElementById('libriCandidatiWrapper');
@@ -7879,6 +7907,7 @@ function apriLightbox(url) {
                 const sagaEur = (!cand.sagaNome) ? suggerisciSagaDaTitolo_(cand.titolo, cand.sottotitolo) : null;
                 renderDettaglioLibriHC_({
                     id: cand.id, titolo: cand.titolo, sottotitolo: cand.sottotitolo,
+                    titoloProposto: scegliTitoloDaProporre_(ultimaQueryLibri_, cand.titolo),
                     autori: cand.autori, anno: cand.anno,
                     sinossi: testoFinale || 'Nessuna trama disponibile per questo libro.',
                     immagine: cand.immagine, categorie: cand.categorie || [],
@@ -7927,6 +7956,7 @@ function apriLightbox(url) {
 
         function renderCandidatiLibriHC_(candidati, queryTitolo) {
             ultimiCandidatiLibri_ = candidati || [];
+            ultimaQueryLibri_ = queryTitolo || '';
             ordinaCandidatiPerPertinenza_(ultimiCandidatiLibri_, queryTitolo || '');
             const wrap = document.getElementById('libriCandidatiWrapper');
             if (!candidati || candidati.length === 0) {
@@ -7979,7 +8009,7 @@ function apriLightbox(url) {
                     </div>
                 </div>`;
             wrap.appendChild(box);
-            document.getElementById('hcTitoloInput').value = dettaglio.titolo || '';
+            document.getElementById('hcTitoloInput').value = dettaglio.titoloProposto || dettaglio.titolo || '';
             document.getElementById('hcSinossiTextarea').value = dettaglio.sinossi || '';
 
             const suggeritiLower = (dettaglio.categorie || []).map(function(g) { return String(g).trim().toLowerCase(); });
@@ -8076,6 +8106,10 @@ function apriLightbox(url) {
         //   Nuove voci: aggiungere in CIMA all'array.
         // ==========================================
         const PATCH_NOTES = [
+            { v: '1.0.39', titolo: 'Titolo libro in italiano', data: '11/10/2026', punti: [
+                'Se cerchi il titolo intero in italiano, te lo ripropone così nella scheda (niente più titoli inglesi).',
+                'Con ricerche corte resta il titolo ufficiale completo.'
+            ] },
             { v: '1.0.38', titolo: 'Ricerca libri via Hardcover', data: '11/10/2026', punti: [
                 'Nuova fonte unica Hardcover: copertina, trama, generi, autore, anno e saga automatica.',
                 'Addio errori di Google Books: il token resta al sicuro sul server.'
