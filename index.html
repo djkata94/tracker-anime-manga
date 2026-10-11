@@ -107,9 +107,15 @@
 
         .menu-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            grid-template-columns: repeat(5, 1fr);
             gap: 20px;
             margin-top: 15px;
+        }
+
+        /* I 5 bottoni stanno in una riga su desktop (Richiesta 36):
+           sotto gli 1100px torna il wrap automatico. */
+        @media (max-width: 1100px) {
+            .menu-grid { grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); }
         }
 
         /* Pulsanti Stilizzati */
@@ -1841,11 +1847,11 @@
         </div>
 
         <div class="menu-grid">
-            <button class="btn btn-anime" style="height:100px; font-size:16px; border-radius: 12px;" onclick="switchView('anime')">📺 Catalogo Anime</button>
-            <button class="btn btn-serietv" style="height:100px; font-size:16px; border-radius: 12px;" onclick="switchView('serietv')">📡 Catalogo Serie TV</button>
-            <button class="btn btn-manga" style="height:100px; font-size:16px; border-radius: 12px;" onclick="switchView('manga')">📚 Archivio Manga / LN</button>
-            <button class="btn btn-libri" style="height:100px; font-size:16px; border-radius: 12px;" onclick="switchView('libri')">📗 Biblioteca Libri</button>
-            <button class="btn btn-cinema" style="height:100px; font-size:16px; border-radius: 12px;" onclick="switchView('cinema')">🎬 Film al Cinema</button>
+            <button class="btn btn-anime" style="height:64px; font-size:14px; border-radius: 12px;" onclick="switchView('anime')">📺 Catalogo Anime</button>
+            <button class="btn btn-serietv" style="height:64px; font-size:14px; border-radius: 12px;" onclick="switchView('serietv')">📡 Catalogo Serie TV</button>
+            <button class="btn btn-manga" style="height:64px; font-size:14px; border-radius: 12px;" onclick="switchView('manga')">📚 Archivio Manga / LN</button>
+            <button class="btn btn-libri" style="height:64px; font-size:14px; border-radius: 12px;" onclick="switchView('libri')">📗 Biblioteca Libri</button>
+            <button class="btn btn-cinema" style="height:64px; font-size:14px; border-radius: 12px;" onclick="switchView('cinema')">🎬 Film al Cinema</button>
         </div>
 
         <!-- ================================================================
@@ -2872,7 +2878,7 @@
                     <label>Titolo *</label>
                     <div style="display:flex; gap:6px;">
                         <input type="search" id="inpTitoloLibri" required style="flex:1;">
-                        <button type="button" class="btn" style="padding:0 12px; white-space:nowrap;" onclick="apriRicercaGoogleBooks()" title="Cerca copertina, trama, generi, autore e anno su Google Books">🔎 Google Books</button>
+                        <button type="button" class="btn" style="padding:0 12px; white-space:nowrap;" onclick="apriRicercaGoogleBooks()" title="Cerca copertina, trama e metadati online (Google Books, con fallback Open Library se non risponde)">🔎 Google Books</button>
                     </div>
                 </div>
                 <div id="libriCandidatiWrapper"></div>
@@ -7775,7 +7781,7 @@ function apriLightbox(url) {
                     id: it.id, titolo: vi.title || 'Senza titolo',
                     sottotitolo: vi.subtitle || '',
                     autori: (vi.authors || []).join(', '),
-                    anno: anno, immagine: img
+                    anno: anno, immagine: img, fonte: 'GB'
                 };
             });
         }
@@ -7863,6 +7869,11 @@ function apriLightbox(url) {
             return null;
         }
 
+        // Ultimi candidati mostrati nel picker (Richiesta 36): serve per
+        // ritrovare autore/anno/copertina quando il dettaglio arriva da
+        // Open Library invece che da Google Books.
+        let ultimiCandidatiLibri_ = [];
+
         function apriRicercaGoogleBooks() {
             const titolo = document.getElementById('inpTitoloLibri').value.trim();
             if (!titolo) {
@@ -7872,23 +7883,106 @@ function apriLightbox(url) {
             const wrap = document.getElementById('libriCandidatiWrapper');
             wrap.innerHTML = `<div style="color:var(--success); font-weight:600; font-size:13px; margin-bottom:12px;">⏳ Ricerca su Google Books in corso...</div>`;
             cercaCandidatiLibriGB_(titolo)
-                .then(function(candidati) { renderCandidatiLibriGB_(candidati); })
+                .then(function(candidati) {
+                    if (candidati && candidati.length > 0) {
+                        renderCandidatiLibriGB_(candidati, false);
+                    } else {
+                        provaFallbackOpenLibrary_(titolo, wrap, 'Google Books non trova nulla per questo titolo.');
+                    }
+                })
                 .catch(function(err) {
-                    wrap.innerHTML = `<div style="color:var(--danger); font-size:13px; margin-bottom:12px;">❌ ${String(err && err.message ? err.message : err)}</div>`;
+                    const motivo = String(err && err.message ? err.message : err);
+                    provaFallbackOpenLibrary_(titolo, wrap, 'Google Books non risponde (' + motivo + ').');
                 });
         }
         window.apriRicercaGoogleBooks = apriRicercaGoogleBooks;
 
-        function renderCandidatiLibriGB_(candidati) {
+        // Piano B quando Google Books fallisce o è a secco (Richiesta 36):
+        // capita spesso il 429 "troppe richieste" legato all'IP di uscita,
+        // che persiste anche aspettando. Open Library è gratuita, senza
+        // chiave e con CORS aperto: dà candidati (autore/anno/copertina) e,
+        // quando c'è, trama e soggetti dal record dell'opera.
+        function provaFallbackOpenLibrary_(titolo, wrap, messaggio) {
+            wrap.innerHTML = `<div style="color:var(--warning); font-weight:600; font-size:13px; margin-bottom:12px;">⚠️ ${messaggio} Provo con Open Library...</div>`;
+            cercaCandidatiOpenLibrary_(titolo)
+                .then(function(candidati) { renderCandidatiLibriGB_(candidati, true); })
+                .catch(function() {
+                    wrap.innerHTML = `<div style="color:var(--danger); font-size:13px; margin-bottom:12px;">❌ Né Google Books né Open Library rispondono. Riprova tra qualche minuto oppure compila a mano.</div>`;
+                });
+        }
+
+        async function cercaCandidatiOpenLibrary_(query) {
+            const q = String(query || '').trim();
+            if (!q) throw new Error('Inserisci prima un titolo da cercare.');
+            const url = 'https://openlibrary.org/search.json?q=' + encodeURIComponent(q) + '&limit=8&fields=key,title,author_name,first_publish_year,cover_i,isbn';
+            let resp;
+            try {
+                resp = await fetch(url);
+            } catch (networkErr) {
+                throw new Error('Rete: impossibile raggiungere Open Library (' + networkErr.message + ').');
+            }
+            if (!resp.ok) throw new Error('Open Library non disponibile [HTTP ' + resp.status + '].');
+            const json = await resp.json();
+            const docs = (json && json.docs) || [];
+            return docs.map(function(d) {
+                let img = '';
+                if (d.cover_i) img = 'https://covers.openlibrary.org/b/id/' + d.cover_i + '-M.jpg';
+                else if (d.isbn && d.isbn[0]) img = 'https://covers.openlibrary.org/b/isbn/' + d.isbn[0] + '-M.jpg';
+                return {
+                    id: d.key || '', titolo: d.title || 'Senza titolo',
+                    sottotitolo: '',
+                    autori: ((d.author_name || []).join(', ')),
+                    anno: d.first_publish_year ? String(d.first_publish_year) : '',
+                    immagine: img, fonte: 'OL'
+                };
+            }).filter(function(c) { return !!c.id; });
+        }
+
+        // Dettaglio Open Library: la search dà già autore/anno/copertina, qui
+        // aggiungo trama e soggetti dal record dell'opera quando esistono.
+        // Ritorna la stessa forma del dettaglio Google Books così il resto
+        // del flusso (anteprima + conferma) è identico.
+        async function getDettaglioOpenLibrary_(candidato) {
+            let descrizione = '';
+            let soggetti = [];
+            try {
+                const resp = await fetch('https://openlibrary.org' + candidato.id + '.json');
+                if (resp.ok) {
+                    const w = await resp.json();
+                    const desc = w.description;
+                    if (typeof desc === 'string') descrizione = desc;
+                    else if (desc && desc.value) descrizione = String(desc.value);
+                    if (w.subjects) soggetti = w.subjects;
+                }
+            } catch (e) { /* trama resta vuota: non si blocca il flusso */ }
+            descrizione = String(descrizione || '').replace(/\n{3,}/g, '\n\n').trim();
+
+            const sagaEuristica = suggerisciSagaDaTitolo_(candidato.titolo, '');
+            let imgGrande = candidato.immagine || '';
+            if (imgGrande.indexOf('-M.jpg') !== -1) imgGrande = imgGrande.replace('-M.jpg', '-L.jpg');
+
+            return {
+                id: candidato.id, titolo: candidato.titolo, sottotitolo: '',
+                autori: candidato.autori, anno: candidato.anno,
+                sinossi: descrizione || 'Nessuna trama su Open Library: incollala a mano se vuoi.',
+                immagine: imgGrande, categorie: soggetti,
+                sagaNome: (sagaEuristica && sagaEuristica.nome) ? sagaEuristica.nome : '',
+                sagaNumero: (sagaEuristica && sagaEuristica.numero !== null) ? sagaEuristica.numero : null,
+                sagaFonte: (sagaEuristica && sagaEuristica.nome) ? 'euristica' : 'nessuna'
+            };
+        }
+
+        function renderCandidatiLibriGB_(candidati, daOpenLibrary) {
+            ultimiCandidatiLibri_ = candidati || [];
             const wrap = document.getElementById('libriCandidatiWrapper');
             if (!candidati || candidati.length === 0) {
-                wrap.innerHTML = `<div style="color:var(--text-muted); font-size:13px; margin-bottom:12px;">Nessun risultato su Google Books: procedi pure a mano.</div>`;
+                wrap.innerHTML = `<div style="color:var(--text-muted); font-size:13px; margin-bottom:12px;">Nessun risultato${daOpenLibrary ? ' nemmeno su Open Library' : ' su Google Books'}: procedi pure a mano.</div>`;
                 return;
             }
             wrap.innerHTML = '';
             const label = document.createElement('div');
             label.style = 'font-size:12px; color:var(--text-muted); font-weight:600; margin-bottom:8px;';
-            label.innerText = '🔎 Scegli il libro corretto (' + candidati.length + ' risultati):';
+            label.innerText = '🔎 Scegli il libro corretto (' + candidati.length + ' risultati' + (daOpenLibrary ? ' — via Open Library' : ' — via Google Books') + '):';
             wrap.appendChild(label);
 
             const grid = document.createElement('div');
@@ -7903,15 +7997,25 @@ function apriLightbox(url) {
                     : `<div style="width:100%; height:170px; display:flex; align-items:center; justify-content:center; background:#222; font-size:28px;">📗</div>`;
                 const sub = (c.autori ? c.autori : '') + (c.anno ? ' (' + c.anno + ')' : '');
                 card.innerHTML = imgHtml + `<div style="padding:6px; font-size:11px; line-height:1.3;"><div style="font-weight:700;">${c.titolo}</div><div style="color:var(--text-muted); margin-top:2px;">${sub}</div></div>`;
-                card.onclick = function() { selezionaCandidatoLibroGB_(c.id, c.titolo); };
+                card.onclick = function() { selezionaCandidatoLibroGB_(c.id, c.titolo, c.fonte); };
                 grid.appendChild(card);
             });
             wrap.appendChild(grid);
         }
 
-        function selezionaCandidatoLibroGB_(volumeId, titoloCandidato) {
+        function selezionaCandidatoLibroGB_(volumeId, titoloCandidato, fonte) {
             const wrap = document.getElementById('libriCandidatiWrapper');
             wrap.innerHTML = `<div style="color:var(--success); font-weight:600; font-size:13px; margin-bottom:12px;">⏳ Recupero dettagli di "${titoloCandidato}"...</div>`;
+            if (fonte === 'OL') {
+                const cand = (ultimiCandidatiLibri_ || []).find(function(x) { return x.id === volumeId; }) ||
+                    { id: volumeId, titolo: titoloCandidato, autori: '', anno: '', immagine: '' };
+                getDettaglioOpenLibrary_(cand)
+                    .then(function(dettaglio) { renderDettaglioLibroGB_(dettaglio); })
+                    .catch(function(err) {
+                        wrap.innerHTML = `<div style="color:var(--danger); font-size:13px; margin-bottom:12px;">❌ ${String(err && err.message ? err.message : err)}</div>`;
+                    });
+                return;
+            }
             getDettaglioLibroGB_(volumeId)
                 .then(function(dettaglio) { renderDettaglioLibroGB_(dettaglio); })
                 .catch(function(err) {
@@ -8039,6 +8143,10 @@ function apriLightbox(url) {
         //   Nuove voci: aggiungere in CIMA all'array.
         // ==========================================
         const PATCH_NOTES = [
+            { v: '1.0.36', titolo: 'Home compatta + Open Library', data: '11/10/2026', punti: [
+                'I 5 bottoni della Home stanno in una riga su desktop, più bassi e compatti.',
+                'Se Google Books non risponde (limite richieste) la ricerca passa da sola a Open Library.'
+            ] },
             { v: '1.0.35', titolo: 'Biblioteca Libri', data: '11/10/2026', punti: [
                 'Nuova vista Libri con ricerca Google Books (copertina, trama, generi, autore, anno).',
                 'Saga di livello 1: nome + numero suggeriti quando noti, sempre modificabili a mano.',
