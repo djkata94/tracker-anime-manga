@@ -2994,6 +2994,14 @@
         const SUPABASE_URL = 'https://jcclzcyezqbhmxptlnoo.supabase.co';
         const SUPABASE_ANON_KEY = 'sb_publishable_YsZNPRv7TVA39DoOi1P5cg_VJds36b5';
 
+        // --- Chiave API Google Books (opzionale, Richiesta 37) -----------------
+        // Gratis da Google Cloud Console (vedi guida in chat), con restrizione
+        // "Referrer HTTP" sul dominio Pages: alza la quota e stoppa i 429 delle
+        // chiamate anonime. Vuota = chiamate anonime (spesso bloccate).
+        // NON è un segreto: come la anon di Supabase, la protezione è la
+        // restrizione referrer impostata in Console, non il nasconderla qui.
+        const GOOGLE_BOOKS_API_KEY = '';
+
         // Il tuo user_id (Supabase Auth): usato solo per decidere se mostrare
         // il pulsante "Apri Database" — nessuna implicazione di sicurezza,
         // la vera protezione dei dati resta la RLS, questo è solo estetico.
@@ -7757,7 +7765,12 @@ function apriLightbox(url) {
         async function cercaCandidatiLibriGB_(query) {
             const q = String(query || '').trim();
             if (!q) throw new Error('Inserisci prima un titolo da cercare.');
-            const url = 'https://www.googleapis.com/books/v1/volumes?q=' + encodeURIComponent(q) + '&maxResults=8&printType=books&langRestrict=it';
+            // Chiave (Richiesta 37): se configurata sopra, la quota diventa
+            // quella del tuo progetto invece dell'anonima condivisa per IP.
+            let url = 'https://www.googleapis.com/books/v1/volumes?q=' + encodeURIComponent(q) + '&maxResults=10&printType=books&langRestrict=it';
+            if (typeof GOOGLE_BOOKS_API_KEY !== 'undefined' && GOOGLE_BOOKS_API_KEY) {
+                url += '&key=' + encodeURIComponent(GOOGLE_BOOKS_API_KEY);
+            }
             let resp;
             try {
                 resp = await fetch(url);
@@ -7787,7 +7800,10 @@ function apriLightbox(url) {
         }
 
         async function getDettaglioLibroGB_(volumeId) {
-            const url = 'https://www.googleapis.com/books/v1/volumes/' + encodeURIComponent(volumeId) + '?projection=full';
+            let url = 'https://www.googleapis.com/books/v1/volumes/' + encodeURIComponent(volumeId) + '?projection=full';
+            if (typeof GOOGLE_BOOKS_API_KEY !== 'undefined' && GOOGLE_BOOKS_API_KEY) {
+                url += '&key=' + encodeURIComponent(GOOGLE_BOOKS_API_KEY);
+            }
             const resp = await fetch(url);
             if (!resp.ok) throw new Error('Dettaglio Google Books non disponibile [HTTP ' + resp.status + '].');
             const json = await resp.json();
@@ -7799,6 +7815,14 @@ function apriLightbox(url) {
                 .replace(/<\/?[^>]+(>|$)/g, '')
                 .replace(/\n{3,}/g, '\n\n')
                 .trim();
+
+            // Trama in inglese → traduzione automatica (Richiesta 37): riusa
+            // il traduttore gratuito già usato per AniList; se fallisce resta
+            // l'originale (vedi tradurreTestoGoogleFree_).
+            const linguaGB = String(vi.language || '').toLowerCase();
+            if (descrizione && (linguaGB === 'en' || linguaGB.indexOf('en') === 0)) {
+                descrizione = await tradurreTestoGoogleFree_(descrizione, 'en', 'it');
+            }
 
             let anno = '';
             if (vi.publishedDate) anno = String(vi.publishedDate).substring(0, 4);
@@ -7885,7 +7909,7 @@ function apriLightbox(url) {
             cercaCandidatiLibriGB_(titolo)
                 .then(function(candidati) {
                     if (candidati && candidati.length > 0) {
-                        renderCandidatiLibriGB_(candidati, false);
+                        renderCandidatiLibriGB_(candidati, false, titolo);
                     } else {
                         provaFallbackOpenLibrary_(titolo, wrap, 'Google Books non trova nulla per questo titolo.');
                     }
@@ -7905,7 +7929,7 @@ function apriLightbox(url) {
         function provaFallbackOpenLibrary_(titolo, wrap, messaggio) {
             wrap.innerHTML = `<div style="color:var(--warning); font-weight:600; font-size:13px; margin-bottom:12px;">⚠️ ${messaggio} Provo con Open Library...</div>`;
             cercaCandidatiOpenLibrary_(titolo)
-                .then(function(candidati) { renderCandidatiLibriGB_(candidati, true); })
+                .then(function(candidati) { renderCandidatiLibriGB_(candidati, true, titolo); })
                 .catch(function() {
                     wrap.innerHTML = `<div style="color:var(--danger); font-size:13px; margin-bottom:12px;">❌ Né Google Books né Open Library rispondono. Riprova tra qualche minuto oppure compila a mano.</div>`;
                 });
@@ -7914,16 +7938,24 @@ function apriLightbox(url) {
         async function cercaCandidatiOpenLibrary_(query) {
             const q = String(query || '').trim();
             if (!q) throw new Error('Inserisci prima un titolo da cercare.');
-            const url = 'https://openlibrary.org/search.json?q=' + encodeURIComponent(q) + '&limit=8&fields=key,title,author_name,first_publish_year,cover_i,isbn';
-            let resp;
-            try {
-                resp = await fetch(url);
-            } catch (networkErr) {
-                throw new Error('Rete: impossibile raggiungere Open Library (' + networkErr.message + ').');
+            // Prima cerca nel campo titolo (preciso), se a secco ripiega sulla
+            // full-text (Richiesta 37): riduce i falsi positivi tipo Othello.
+            const campiOL = 'key,title,author_name,first_publish_year,cover_i,isbn';
+            async function cercaOL_(url) {
+                let resp;
+                try {
+                    resp = await fetch(url);
+                } catch (networkErr) {
+                    throw new Error('Rete: impossibile raggiungere Open Library (' + networkErr.message + ').');
+                }
+                if (!resp.ok) throw new Error('Open Library non disponibile [HTTP ' + resp.status + '].');
+                const json = await resp.json();
+                return (json && json.docs) || [];
             }
-            if (!resp.ok) throw new Error('Open Library non disponibile [HTTP ' + resp.status + '].');
-            const json = await resp.json();
-            const docs = (json && json.docs) || [];
+            let docs = await cercaOL_('https://openlibrary.org/search.json?title=' + encodeURIComponent(q) + '&limit=10&fields=' + campiOL);
+            if (docs.length === 0) {
+                docs = await cercaOL_('https://openlibrary.org/search.json?q=' + encodeURIComponent(q) + '&limit=10&fields=' + campiOL);
+            }
             return docs.map(function(d) {
                 let img = '';
                 if (d.cover_i) img = 'https://covers.openlibrary.org/b/id/' + d.cover_i + '-M.jpg';
@@ -7945,6 +7977,7 @@ function apriLightbox(url) {
         async function getDettaglioOpenLibrary_(candidato) {
             let descrizione = '';
             let soggetti = [];
+            let operaInItaliano = false;
             try {
                 const resp = await fetch('https://openlibrary.org' + candidato.id + '.json');
                 if (resp.ok) {
@@ -7953,9 +7986,20 @@ function apriLightbox(url) {
                     if (typeof desc === 'string') descrizione = desc;
                     else if (desc && desc.value) descrizione = String(desc.value);
                     if (w.subjects) soggetti = w.subjects;
+                    // L'opera dichiara l'italiano tra le lingue? Allora niente traduzione.
+                    const lingue = w.languages || [];
+                    operaInItaliano = lingue.some(function(l) {
+                        return String((l && l.key) || '').toLowerCase().indexOf('ita') !== -1;
+                    });
                 }
             } catch (e) { /* trama resta vuota: non si blocca il flusso */ }
             descrizione = String(descrizione || '').replace(/\n{3,}/g, '\n\n').trim();
+
+            // Le trame di Open Library sono quasi sempre in inglese
+            // (Richiesta 37): stesso traduttore di Google Books/AniList.
+            if (descrizione && !operaInItaliano) {
+                descrizione = await tradurreTestoGoogleFree_(descrizione, 'en', 'it');
+            }
 
             const sagaEuristica = suggerisciSagaDaTitolo_(candidato.titolo, '');
             let imgGrande = candidato.immagine || '';
@@ -7972,8 +8016,36 @@ function apriLightbox(url) {
             };
         }
 
-        function renderCandidatiLibriGB_(candidati, daOpenLibrary) {
+        // Pertinenza client-side (Richiesta 37): né Google Books (full-text)
+        // né Open Library ordinano sempre per somiglianza al titolo cercato
+        // (es. "Harry Potter e la Pietra Filosofale" → Othello primo). Qui
+        // vince chi contiene tutta la query, poi chi inizia con essa, poi chi
+        // condivide più parole (il titolo pesa doppio dell'autore).
+        function ordinaCandidatiPerPertinenza_(candidati, query) {
+            const normalizza = function(s) {
+                return String(s || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+            };
+            const qn = normalizza(query);
+            const parole = qn.split(/[^a-z0-9]+/).filter(function(w) { return w.length > 2; });
+            (candidati || []).forEach(function(c) {
+                const tn = normalizza(c.titolo);
+                const an = normalizza(c.autori);
+                let punti = 0;
+                if (tn && qn && tn.indexOf(qn) !== -1) punti += 10;
+                if (tn && qn && tn.indexOf(qn) === 0) punti += 5;
+                parole.forEach(function(w) {
+                    if (tn.indexOf(w) !== -1) punti += 2;
+                    if (an.indexOf(w) !== -1) punti += 1;
+                });
+                c._pertinenza = punti;
+            });
+            (candidati || []).sort(function(a, b) { return (b._pertinenza || 0) - (a._pertinenza || 0); });
+            return candidati;
+        }
+
+        function renderCandidatiLibriGB_(candidati, daOpenLibrary, queryTitolo) {
             ultimiCandidatiLibri_ = candidati || [];
+            ordinaCandidatiPerPertinenza_(ultimiCandidatiLibri_, queryTitolo || '');
             const wrap = document.getElementById('libriCandidatiWrapper');
             if (!candidati || candidati.length === 0) {
                 wrap.innerHTML = `<div style="color:var(--text-muted); font-size:13px; margin-bottom:12px;">Nessun risultato${daOpenLibrary ? ' nemmeno su Open Library' : ' su Google Books'}: procedi pure a mano.</div>`;
@@ -8143,6 +8215,11 @@ function apriLightbox(url) {
         //   Nuove voci: aggiungere in CIMA all'array.
         // ==========================================
         const PATCH_NOTES = [
+            { v: '1.0.37', titolo: 'Ricerca libri più precisa', data: '11/10/2026', punti: [
+                'Trame in inglese tradotte in automatico.',
+                'Risultati riordinati per somiglianza al titolo cercato.',
+                'Supporto chiave API Google Books gratuita (alza la quota e riduce gli errori).'
+            ] },
             { v: '1.0.36', titolo: 'Home compatta + Open Library', data: '11/10/2026', punti: [
                 'I 5 bottoni della Home stanno in una riga su desktop, più bassi e compatti.',
                 'Se Google Books non risponde (limite richieste) la ricerca passa da sola a Open Library.'
