@@ -3861,6 +3861,185 @@
                 });
         }
 
+        // --- GIARDINO DIGITALE (mind-garden): un seme per titolo (Richiesta 33) ---
+        // Bottone 🌱 in ogni riga anime/manga: overlay di scrittura, salva crea/aggiorna
+        // la nota nel giardino (upsert su tipo+titolo, mai duplicati). Tags: tipo + generi.
+        const GIARDINO_URL = 'https://mind-garden-tau.vercel.app';
+        // Token di scrittura del giardino (SEED_TOKEN di mind-garden). Gira nel browser:
+        // visibile a chi ispeziona il sito; a basso privilegio (pianta/aggiorna solo note).
+        const GIARDINO_SEED_TOKEN = 'zBJiX+ItDAsKHPPKRxMSzACR1jEUj8LJgmvKEKjRMz0=';
+        const GIARDINO_SEED_MAX = 300;
+        const GIARDINO_GROWING_MAX = 1500;
+        let GIARDINO_TITOLO_ = '';
+        let GIARDINO_TIPO_ = '';
+
+        function slugPerGiardino_(s) {
+            return String(s || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+        }
+
+        function stadioPerGiardino_(testo) {
+            const len = String(testo || '').length;
+            if (len < GIARDINO_SEED_MAX) return 'Seme';
+            if (len < GIARDINO_GROWING_MAX) return 'In crescita';
+            return 'Matura';
+        }
+
+        function testoSenzaHtml_(html) {
+            const d = document.createElement('div');
+            d.innerHTML = html || '';
+            return (d.textContent || '').trim();
+        }
+
+        function elementoGiardino_(tipo, titolo) {
+            const lista = (tipo === 'anime' ? (typeof animeList !== 'undefined' ? animeList : []) : (typeof mangaList !== 'undefined' ? mangaList : []));
+            for (let i = 0; i < lista.length; i++) {
+                if (lista[i] && lista[i].titolo === titolo) return lista[i];
+            }
+            return null;
+        }
+
+        function generiPerGiardino_(tipo, item) {
+            const tags = [tipo];
+            const raw = item && item.generi ? String(item.generi).split(',') : [];
+            for (let i = 0; i < raw.length; i++) {
+                const g = raw[i].trim();
+                if (g && tags.indexOf(g) === -1) tags.push(g);
+            }
+            return tags;
+        }
+
+        async function giardinoCheck_(tipo, titolo) {
+            const params = new URLSearchParams({ source: 'tracker', source_id: tipo + '-' + slugPerGiardino_(titolo) });
+            const res = await fetch(GIARDINO_URL + '/api/seed?' + params.toString(), {
+                headers: { 'Authorization': 'Bearer ' + GIARDINO_SEED_TOKEN }
+            });
+            const data = await res.json().catch(function() { return {}; });
+            if (!res.ok) throw new Error((data && data.error) || 'Controllo giardino non riuscito.');
+            return data.url ? GIARDINO_URL + data.url : null;
+        }
+
+        async function giardinoLeggi_(slug) {
+            const res = await fetch(GIARDINO_URL + '/api/notes/' + encodeURIComponent(slug));
+            if (!res.ok) return null;
+            const data = await res.json().catch(function() { return null; });
+            return (data && data.slug) ? data : null;
+        }
+
+        function apriGiardinoOverlay(titolo, tipo) {
+            GIARDINO_TITOLO_ = titolo;
+            GIARDINO_TIPO_ = tipo;
+            let box = document.getElementById('giardinoOverlay');
+            if (!box) {
+                box = document.createElement('div');
+                box.id = 'giardinoOverlay';
+                box.style.cssText = 'position:fixed;inset:0;z-index:9999;display:flex;align-items:center;justify-content:center;padding:16px;background:rgba(0,0,0,0.55);';
+                box.innerHTML =
+                    '<div style="width:520px;max-width:100%;max-height:calc(100vh - 32px);overflow:auto;background:var(--card-bg,var(--bg));border:1px solid var(--border-color);border-radius:14px;padding:18px;">' +
+                    '<h3 id="giardinoOverlayTitolo" style="margin:0 0 12px;font-size:17px;">🌱 Pianta nel giardino</h3>' +
+                    '<div id="giardinoOverlayCarico" style="font-size:13px;opacity:0.7;display:none;">Caricamento nota…</div>' +
+                    '<label style="display:block;font-size:13px;margin-bottom:10px;">Titolo<input id="giardinoTitolo" maxlength="200" style="width:100%;margin-top:4px;padding:8px 10px;border-radius:8px;border:1px solid var(--border-color);background:var(--bg);color:inherit;box-sizing:border-box;"></label>' +
+                    '<label style="display:block;font-size:13px;margin-bottom:6px;">Nota<textarea id="giardinoTesto" rows="8" style="width:100%;margin-top:4px;padding:8px 10px;border-radius:8px;border:1px solid var(--border-color);background:var(--bg);color:inherit;box-sizing:border-box;resize:vertical;"></textarea></label>' +
+                    '<p id="giardinoStadio" style="font-size:12px;opacity:0.7;margin:0 0 10px;"></p>' +
+                    '<p id="giardinoMsg" style="font-size:13px;margin:0 0 10px;display:none;"></p>' +
+                    '<p id="giardinoLinkWrap" style="font-size:13px;margin:0 0 10px;display:none;"><a id="giardinoLink" href="#" target="_blank" rel="noreferrer" style="text-decoration:underline;">Vedi nel giardino →</a></p>' +
+                    '<div style="display:flex;justify-content:flex-end;gap:8px;">' +
+                    '<button onclick="chiudiGiardinoOverlay()" style="padding:7px 14px;border-radius:8px;border:1px solid var(--border-color);background:none;color:inherit;cursor:pointer;font-size:13px;">Annulla</button>' +
+                    '<button onclick="giardinoSalva_()" style="padding:7px 14px;border-radius:8px;border:none;background:var(--primary);color:#fff;cursor:pointer;font-size:13px;font-weight:700;">Salva nel giardino</button>' +
+                    '</div></div>';
+                box.addEventListener('click', function(e) { if (e.target === box) chiudiGiardinoOverlay(); });
+                document.body.appendChild(box);
+                document.getElementById('giardinoTesto').addEventListener('input', aggiornaStadioGiardino_);
+            }
+            box.style.display = 'flex';
+            document.getElementById('giardinoOverlayTitolo').textContent = '🌱 Pianta nel giardino';
+            document.getElementById('giardinoMsg').style.display = 'none';
+            document.getElementById('giardinoLinkWrap').style.display = 'none';
+            const item = elementoGiardino_(tipo, titolo);
+            const base = item && item.note ? testoSenzaHtml_(item.note) : '';
+            document.getElementById('giardinoTitolo').value = titolo;
+            document.getElementById('giardinoTesto').value = base;
+            aggiornaStadioGiardino_();
+            // Se il titolo ha già un seme, precarica titolo e testo dalla nota.
+            document.getElementById('giardinoOverlayCarico').style.display = 'block';
+            giardinoCheck_(tipo, titolo).then(function(url) {
+                if (!url) return null;
+                document.getElementById('giardinoOverlayTitolo').textContent = '🌱 Aggiorna nel giardino';
+                const slug = url.split('/notes/')[1];
+                if (!slug) return null;
+                return giardinoLeggi_(decodeURIComponent(slug));
+            }).then(function(nota) {
+                if (nota && document.getElementById('giardinoOverlay').style.display !== 'none') {
+                    document.getElementById('giardinoTitolo').value = nota.title || titolo;
+                    document.getElementById('giardinoTesto').value = nota.content || '';
+                    aggiornaStadioGiardino_();
+                    const lw = document.getElementById('giardinoLinkWrap');
+                    lw.style.display = 'block';
+                    document.getElementById('giardinoLink').href = GIARDINO_URL + '/notes/' + nota.slug;
+                }
+            }).catch(function(err) {
+                giardinoAvviso_('Non riesco a caricare la nota precedente: ' + err.message);
+            }).finally(function() {
+                document.getElementById('giardinoOverlayCarico').style.display = 'none';
+            });
+        }
+
+        function aggiornaStadioGiardino_() {
+            const t = document.getElementById('giardinoTesto');
+            if (!t) return;
+            document.getElementById('giardinoStadio').textContent = 'Diventerà: ' + stadioPerGiardino_(t.value) + ' (' + t.value.length + ' caratteri)';
+        }
+
+        function giardinoAvviso_(testo) {
+            const m = document.getElementById('giardinoMsg');
+            if (!m) return;
+            m.textContent = testo;
+            m.style.display = 'block';
+        }
+
+        function chiudiGiardinoOverlay() {
+            const box = document.getElementById('giardinoOverlay');
+            if (box) box.style.display = 'none';
+        }
+
+        async function giardinoSalva_() {
+            const titolo = document.getElementById('giardinoTitolo').value.trim();
+            const testo = document.getElementById('giardinoTesto').value;
+            if (!titolo) {
+                giardinoAvviso_('Il titolo è obbligatorio.');
+                return;
+            }
+            const item = elementoGiardino_(GIARDINO_TIPO_, GIARDINO_TITOLO_);
+            const tags = generiPerGiardino_(GIARDINO_TIPO_, item);
+            giardinoAvviso_('Salvataggio…');
+            try {
+                const res = await fetch(GIARDINO_URL + '/api/seed', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + GIARDINO_SEED_TOKEN },
+                    body: JSON.stringify({
+                        source: 'tracker',
+                        source_id: GIARDINO_TIPO_ + '-' + slugPerGiardino_(GIARDINO_TITOLO_),
+                        title: titolo,
+                        content: testo,
+                        tags: tags
+                    })
+                });
+                const data = await res.json().catch(function() { return {}; });
+                if (!res.ok) throw new Error((data && data.error) || 'Salvataggio non riuscito.');
+                document.getElementById('giardinoOverlayTitolo').textContent = '🌱 Aggiorna nel giardino';
+                const lw = document.getElementById('giardinoLinkWrap');
+                lw.style.display = 'block';
+                document.getElementById('giardinoLink').href = GIARDINO_URL + data.url;
+                giardinoAvviso_('Salvato nel giardino!');
+            } catch (err) {
+                giardinoAvviso_(err.message);
+            }
+        }
+
+        // Esposte globali come le altre action di riga (onclick inline).
+        window.apriGiardinoOverlay = apriGiardinoOverlay;
+        window.chiudiGiardinoOverlay = chiudiGiardinoOverlay;
+        window.giardinoSalva_ = giardinoSalva_;
+
         function renderListAnime() {
             const tbody = document.getElementById('animeTableBody');
             if (!tbody) return;
@@ -4107,6 +4286,7 @@
                                     <span>${item.titolo || 'Senza Titolo'}</span>
                                     <button class="action-icon-btn" style="font-size: 13px; padding: 0; background: none; border: none; cursor: pointer;" onclick="mostraSinossi('${safeTitle}', 'anime')" title="Visualizza Sinossi">ℹ️</button>
                                     <button class="action-icon-btn" style="font-size: 13px; padding: 0; background: none; border: none; cursor: pointer;" onclick="apriGestioneEpisodi('${safeTitle}')" title="Gestisci Episodi">📺</button>
+                                    <button class="action-icon-btn" style="font-size: 13px; padding: 0; background: none; border: none; cursor: pointer;" onclick="apriGiardinoOverlay('${safeTitle}', 'anime')" title="Pianta nel giardino">🌱</button>
                                 </div>
                                 <div style="font-size: 12px; color: var(--text-muted); font-weight: normal;">
                                     Stagioni: <b>${stagioniViste}/${stagioniTotali}</b> | Film: <b>${filmVisti}/${filmTotali}</b>${item.abbandonata ? ' <span style="color:#f87171; font-weight:700;">⛔ Abbandonato</span>' : ''}
@@ -7088,6 +7268,7 @@ filtered.sort((a, b) => {
                                 <div style="font-weight: 600; display: flex; align-items: center; gap: 6px;">
                                     <span>${item.titolo || 'Senza Titolo'}</span>
                                     <button class="action-icon-btn" style="font-size: 13px; padding: 0; background: none; border: none; cursor: pointer;" onclick="mostraSinossi('${safeTitle}', 'manga')" title="Visualizza Sinossi">ℹ️</button>
+                                    <button class="action-icon-btn" style="font-size: 13px; padding: 0; background: none; border: none; cursor: pointer;" onclick="apriGiardinoOverlay('${safeTitle}', 'manga')" title="Pianta nel giardino">🌱</button>
                                 </div>
                                 ${genresHTML}
                             </div>
@@ -8106,6 +8287,10 @@ function apriLightbox(url) {
         //   Nuove voci: aggiungere in CIMA all'array.
         // ==========================================
         const PATCH_NOTES = [
+            { v: '1.0.40', titolo: 'Semi nel giardino per anime e manga', data: '12/10/2026', punti: [
+                'Bottone 🌱 in ogni riga anime/manga: overlay di scrittura che crea/aggiorna la nota nel giardino.',
+                'Una nota per titolo (mai duplicati), tags tipo + generi, precarica il testo precedente.'
+            ] },
             { v: '1.0.39', titolo: 'Titolo libro in italiano', data: '11/10/2026', punti: [
                 'Se cerchi il titolo intero in italiano, te lo ripropone così nella scheda (niente più titoli inglesi).',
                 'Con ricerche corte resta il titolo ufficiale completo.'

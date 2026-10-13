@@ -1801,3 +1801,7 @@ l'account di login).
 
 ---
 *Ultimo aggiornamento: Fase 17 completata e testata — sito multi-utente, dati isolati per proprietario via RLS, nessuna modifica al codice frontend necessaria.*
+
+## Richiesta 33 — Semi nel giardino per anime e manga (patch v1.0.40)
+
+Bottone 🌱 in ogni riga anime/manga (accanto alle altre icone): apre un overlay di scrittura (titolo + nota, hint Diventerà) che crea/aggiorna la nota nel giardino digitale via `POST /api/seed` (source `tracker`, source_id stabile `anime-<slug>`/`manga-<slug>`: mai duplicati). Se il titolo ha già un seme, precarica titolo e testo dalla nota. Tags automatici: tipo + generi della scheda. Token giardino in costante `GIARDINO_SEED_TOKEN` (visibile nel bundle, basso privilegio). Solo `index.html` (backup `index_backup_pre_giardino.html`, fuori repo), niente DB/Edge. Richiede `https://djkata94.github.io` in `ALLOWED_ORIGINS` del giardino. Patch notes v1.0.40. Deployati su GitHub `index.html` e `guida_migrazione.md`.
