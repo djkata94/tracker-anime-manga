@@ -3063,6 +3063,8 @@
                 const isOwner = !!(session && session.user && session.user.id === OWNER_USER_ID);
                 driveBtnEl.style.display = isOwner ? '' : 'none';
             }
+            // Stesso criterio per il bottone giardino (solo proprietario).
+            window.GIARDINO_IS_OWNER_ = !!(session && session.user && session.user.id === OWNER_USER_ID);
             // Ricarica il widget "In Corso" a ogni login: il caricamento
             // automatico all'avvio può essere partito senza sessione (la RLS
             // restituisce liste vuote senza errore) e non si riprenderebbe mai.
@@ -3890,6 +3892,12 @@
             return (d.textContent || '').trim();
         }
 
+        // Bottone riga solo per il proprietario (come driveShortcutBtn).
+        function giardinoBtn_(tipo, safeTitle) {
+            if (!window.GIARDINO_IS_OWNER_) return '';
+            return '<button class="action-icon-btn" style="font-size: 13px; padding: 0; background: none; border: none; cursor: pointer;" onclick="apriGiardinoOverlay(\'' + safeTitle + '\', \'' + tipo + '\')" title="Pianta nel giardino">🌱</button>';
+        }
+
         function elementoGiardino_(tipo, titolo) {
             const lista = (tipo === 'anime' ? (typeof animeList !== 'undefined' ? animeList : []) : (typeof mangaList !== 'undefined' ? mangaList : []));
             for (let i = 0; i < lista.length; i++) {
@@ -3926,6 +3934,10 @@
         }
 
         function apriGiardinoOverlay(titolo, tipo) {
+            if (!window.GIARDINO_IS_OWNER_) {
+                showToast('Funzione riservata al proprietario.', 'error');
+                return;
+            }
             GIARDINO_TITOLO_ = titolo;
             GIARDINO_TIPO_ = tipo;
             let box = document.getElementById('giardinoOverlay');
@@ -4286,7 +4298,7 @@
                                     <span>${item.titolo || 'Senza Titolo'}</span>
                                     <button class="action-icon-btn" style="font-size: 13px; padding: 0; background: none; border: none; cursor: pointer;" onclick="mostraSinossi('${safeTitle}', 'anime')" title="Visualizza Sinossi">ℹ️</button>
                                     <button class="action-icon-btn" style="font-size: 13px; padding: 0; background: none; border: none; cursor: pointer;" onclick="apriGestioneEpisodi('${safeTitle}')" title="Gestisci Episodi">📺</button>
-                                    <button class="action-icon-btn" style="font-size: 13px; padding: 0; background: none; border: none; cursor: pointer;" onclick="apriGiardinoOverlay('${safeTitle}', 'anime')" title="Pianta nel giardino">🌱</button>
+                                    ${giardinoBtn_('anime', safeTitle)}
                                 </div>
                                 <div style="font-size: 12px; color: var(--text-muted); font-weight: normal;">
                                     Stagioni: <b>${stagioniViste}/${stagioniTotali}</b> | Film: <b>${filmVisti}/${filmTotali}</b>${item.abbandonata ? ' <span style="color:#f87171; font-weight:700;">⛔ Abbandonato</span>' : ''}
@@ -7268,7 +7280,7 @@ filtered.sort((a, b) => {
                                 <div style="font-weight: 600; display: flex; align-items: center; gap: 6px;">
                                     <span>${item.titolo || 'Senza Titolo'}</span>
                                     <button class="action-icon-btn" style="font-size: 13px; padding: 0; background: none; border: none; cursor: pointer;" onclick="mostraSinossi('${safeTitle}', 'manga')" title="Visualizza Sinossi">ℹ️</button>
-                                    <button class="action-icon-btn" style="font-size: 13px; padding: 0; background: none; border: none; cursor: pointer;" onclick="apriGiardinoOverlay('${safeTitle}', 'manga')" title="Pianta nel giardino">🌱</button>
+                                    ${giardinoBtn_('manga', safeTitle)}
                                 </div>
                                 ${genresHTML}
                             </div>
@@ -8288,7 +8300,7 @@ function apriLightbox(url) {
         // ==========================================
         const PATCH_NOTES = [
             { v: '1.0.40', titolo: 'Semi nel giardino per anime e manga', data: '12/10/2026', punti: [
-                'Bottone 🌱 in ogni riga anime/manga: overlay di scrittura che crea/aggiorna la nota nel giardino.',
+                'Bottone 🌱 in ogni riga anime/manga (solo proprietario): overlay di scrittura che crea/aggiorna la nota nel giardino.',
                 'Una nota per titolo (mai duplicati), tags tipo + generi, precarica il testo precedente.'
             ] },
             { v: '1.0.39', titolo: 'Titolo libro in italiano', data: '11/10/2026', punti: [
