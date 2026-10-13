@@ -3944,25 +3944,26 @@
             if (!box) {
                 box = document.createElement('div');
                 box.id = 'giardinoOverlay';
-                box.style.cssText = 'position:fixed;inset:0;z-index:9999;display:flex;align-items:center;justify-content:center;padding:16px;background:rgba(0,0,0,0.55);';
+                box.className = 'modal-overlay';
                 box.innerHTML =
-                    '<div style="width:520px;max-width:100%;max-height:calc(100vh - 32px);overflow:auto;background:var(--surface-solid);color:var(--text);border:1px solid var(--border-color);border-radius:14px;padding:18px;">' +
-                    '<h3 id="giardinoOverlayTitolo" style="margin:0 0 12px;font-size:17px;">🌱 Pianta nel giardino</h3>' +
+                    '<div class="modal">' +
+                    '<div class="modal-header"><h2 id="giardinoOverlayTitolo">🌱 Pianta nel giardino</h2>' +
+                    '<button class="close-modal" onclick="chiudiGiardinoOverlay()">&times;</button></div>' +
                     '<div id="giardinoOverlayCarico" style="font-size:13px;opacity:0.7;display:none;">Caricamento nota…</div>' +
-                    '<label style="display:block;font-size:13px;margin-bottom:10px;">Titolo<input id="giardinoTitolo" maxlength="200" style="width:100%;margin-top:4px;padding:8px 10px;border-radius:8px;border:1px solid var(--border-color);background:var(--bg-dark);color:var(--text);box-sizing:border-box;"></label>' +
-                    '<label style="display:block;font-size:13px;margin-bottom:6px;">Nota<textarea id="giardinoTesto" rows="8" style="width:100%;margin-top:4px;padding:8px 10px;border-radius:8px;border:1px solid var(--border-color);background:var(--bg-dark);color:var(--text);box-sizing:border-box;resize:vertical;"></textarea></label>' +
+                    '<div class="form-group"><label>Titolo</label><input id="giardinoTitolo" maxlength="200"></div>' +
+                    '<div class="form-group"><label>Nota</label><textarea id="giardinoTesto" rows="8" style="resize:vertical;"></textarea></div>' +
                     '<p id="giardinoStadio" style="font-size:12px;opacity:0.7;margin:0 0 10px;"></p>' +
                     '<p id="giardinoMsg" style="font-size:13px;margin:0 0 10px;display:none;"></p>' +
-                    '<p id="giardinoLinkWrap" style="font-size:13px;margin:0 0 10px;display:none;"><a id="giardinoLink" href="#" target="_blank" rel="noreferrer" style="text-decoration:underline;">Vedi nel giardino →</a></p>' +
-                    '<div style="display:flex;justify-content:flex-end;gap:8px;">' +
-                    '<button onclick="chiudiGiardinoOverlay()" style="padding:7px 14px;border-radius:8px;border:1px solid var(--border-color);background:none;color:inherit;cursor:pointer;font-size:13px;">Annulla</button>' +
-                    '<button onclick="giardinoSalva_()" style="padding:7px 14px;border-radius:8px;border:none;background:var(--primary);color:#fff;cursor:pointer;font-size:13px;font-weight:700;">Salva nel giardino</button>' +
+                    '<p id="giardinoLinkWrap" style="font-size:13px;margin:0 0 10px;display:none;"><a id="giardinoLink" href="#" target="_blank" rel="noreferrer" style="color:var(--info);text-decoration:underline;">Vedi nel giardino →</a></p>' +
+                    '<div class="modal-footer">' +
+                    '<button class="btn" onclick="chiudiGiardinoOverlay()">Annulla</button>' +
+                    '<button class="btn" style="background:var(--primary);color:#fff;" onclick="giardinoSalva_()">Salva nel giardino</button>' +
                     '</div></div>';
                 box.addEventListener('click', function(e) { if (e.target === box) chiudiGiardinoOverlay(); });
                 document.body.appendChild(box);
                 document.getElementById('giardinoTesto').addEventListener('input', aggiornaStadioGiardino_);
             }
-            box.style.display = 'flex';
+            box.classList.add('active');
             document.getElementById('giardinoOverlayTitolo').textContent = '🌱 Pianta nel giardino';
             document.getElementById('giardinoMsg').style.display = 'none';
             document.getElementById('giardinoLinkWrap').style.display = 'none';
@@ -3980,7 +3981,7 @@
                 if (!slug) return null;
                 return giardinoLeggi_(decodeURIComponent(slug));
             }).then(function(nota) {
-                if (nota && document.getElementById('giardinoOverlay').style.display !== 'none') {
+                if (nota && document.getElementById('giardinoOverlay').classList.contains('active')) {
                     document.getElementById('giardinoTitolo').value = nota.title || titolo;
                     document.getElementById('giardinoTesto').value = nota.content || '';
                     aggiornaStadioGiardino_();
@@ -4010,7 +4011,7 @@
 
         function chiudiGiardinoOverlay() {
             const box = document.getElementById('giardinoOverlay');
-            if (box) box.style.display = 'none';
+            if (box) box.classList.remove('active');
         }
 
         async function giardinoSalva_() {
