@@ -629,6 +629,8 @@
         .form-group input, .form-group select, .form-group textarea { background: #10111d; border: 1px solid var(--border-color); color: white; padding: 10px; border-radius: 8px; font-size: 14px; font-family: inherit; outline: none; transition: border-color 0.2s, box-shadow 0.2s; }
         .form-group input:focus, .form-group select:focus, .form-group textarea:focus { border-color: var(--primary); box-shadow: 0 0 0 3px var(--primary-glow); }
         .modal-footer { display: flex; justify-content: flex-end; gap: 12px; margin-top: 24px; }
+        .sugg-trama { cursor: pointer; }
+        .sugg-trama.trama-aperta { display: block !important; }
 
         /* --- Sottotitolo di sezione generico (usato nell'overlay episodi Anime e nella view Cinema) --- */
         .section-title-label { font-size: 15px; color: var(--primary); font-family: 'Courier New', monospace; border-left: 4px solid var(--accent); padding-left: 12px; margin: 30px 0 16px 0; text-transform: uppercase; letter-spacing: 1.5px; font-weight: bold; }
@@ -5626,7 +5628,7 @@
                     return '<div style="display:flex;gap:12px;">' + img +
                         '<div style="min-width:0;"><div style="font-weight:600;">' + escapeHtmlSugg_(c.titolo) + '</div>' +
                         '<div id="suggMeta' + i + '" style="font-size:12px;opacity:0.7;">' + escapeHtmlSugg_(meta) + '</div>' +
-                        '<div id="suggTrama' + i + '" style="font-size:12px;opacity:0.85;margin-top:4px;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;"></div></div></div>';
+                        '<div id="suggTrama' + i + '" class="sugg-trama" title="Clicca per espandere/comprimere" onclick="this.classList.toggle(\'trama-aperta\')" style="font-size:12px;opacity:0.85;margin-top:4px;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;"></div></div></div>';
                 }).join('');
                 arricchisciSuggSerieTv_(candidati);
             }
