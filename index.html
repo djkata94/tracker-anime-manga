@@ -5618,17 +5618,38 @@
             if (candidati.length === 0) {
                 lista.innerHTML = '<p style="font-size:13px;opacity:0.7;">Nessun suggerimento disponibile.</p>';
             } else {
-                lista.innerHTML = candidati.map(function(c) {
+                lista.innerHTML = candidati.map(function(c, i) {
                     const img = c.immagine
                         ? '<img src="' + c.immagine + '" alt="" style="width:45px;height:65px;border-radius:6px;object-fit:cover;flex-shrink:0;border:1px solid var(--border-color);" loading="lazy">'
                         : '<div style="width:45px;height:65px;border-radius:6px;flex-shrink:0;border:1px solid var(--border-color);"></div>';
                     const meta = (c.anno ? c.anno : '') + ((c.voto !== null && c.voto !== undefined) ? ' · ⭐ ' + c.voto : '');
-                    return '<div style="display:flex;align-items:center;gap:12px;">' + img +
-                        '<div><div style="font-weight:600;">' + escapeHtmlSugg_(c.titolo) + '</div>' +
-                        '<div style="font-size:12px;opacity:0.7;">' + escapeHtmlSugg_(meta) + '</div></div></div>';
+                    return '<div style="display:flex;gap:12px;">' + img +
+                        '<div style="min-width:0;"><div style="font-weight:600;">' + escapeHtmlSugg_(c.titolo) + '</div>' +
+                        '<div id="suggMeta' + i + '" style="font-size:12px;opacity:0.7;">' + escapeHtmlSugg_(meta) + '</div>' +
+                        '<div id="suggTrama' + i + '" style="font-size:12px;opacity:0.85;margin-top:4px;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;"></div></div></div>';
                 }).join('');
+                arricchisciSuggSerieTv_(candidati);
             }
             box.classList.add('active');
+        }
+
+        // Dettagli progressivi: trama, stato e stagioni per ogni suggerimento.
+        function arricchisciSuggSerieTv_(candidati) {
+            candidati.slice(0, 5).forEach(function(c, i) {
+                if (!c || !c.id) return;
+                getDettaglioSerieTvTMDBSB_(c.id).then(function(d) {
+                    if (!d) return;
+                    const metaEl = document.getElementById('suggMeta' + i);
+                    if (metaEl) {
+                        const pezzi = [c.anno || '', d.stato || ''].filter(Boolean);
+                        if (d.stagioni && d.stagioni.length > 0) pezzi.push(d.stagioni.length + (d.stagioni.length === 1 ? ' stagione' : ' stagioni'));
+                        if (c.voto !== null && c.voto !== undefined) pezzi.push('⭐ ' + c.voto);
+                        metaEl.textContent = pezzi.join(' · ');
+                    }
+                    const tramaEl = document.getElementById('suggTrama' + i);
+                    if (tramaEl && d.trama) tramaEl.textContent = d.trama;
+                }).catch(function() {});
+            });
         }
 
         function escapeHtmlSugg_(s) {
