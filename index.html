@@ -5636,8 +5636,8 @@
                     const meta = (c.anno ? c.anno : '') + ((c.voto !== null && c.voto !== undefined) ? ' · ⭐ ' + c.voto : '');
                     const safeSugg = String(c.titolo || '').replace(/'/g, "\\'");
                     const addBtn = (kind === 'serie')
-                        ? '<button class="action-icon-btn" style="flex-shrink:0;" onclick="suggAggiungiSerieTv_(' + c.id + ')" title="Carica nella scheda nuova serie">＋</button>'
-                        : '<button class="action-icon-btn" style="flex-shrink:0;" onclick="suggAggiungiCinema_(' + c.id + ', \'' + safeSugg + '\')" title="Carica nella scheda nuovo film">＋</button>';
+                        ? '<button class="action-icon-btn" style="flex-shrink:0;color:var(--primary);font-size:16px;font-weight:700;" onclick="suggAggiungiSerieTv_(' + c.id + ')" title="Carica nella scheda nuova serie">＋</button>'
+                        : '<button class="action-icon-btn" style="flex-shrink:0;color:var(--primary);font-size:16px;font-weight:700;" onclick="suggAggiungiCinema_(' + c.id + ', \'' + safeSugg + '\')" title="Carica nella scheda nuovo film">＋</button>';
                     return '<div style="display:flex;gap:12px;align-items:flex-start;">' + img +
                         '<div style="min-width:0;flex:1;"><div style="font-weight:600;">' + escapeHtmlSugg_(c.titolo) + '</div>' +
                         '<div id="suggMeta' + i + '" style="font-size:12px;opacity:0.7;">' + escapeHtmlSugg_(meta) + '</div>' +
@@ -5714,10 +5714,17 @@
         window.suggAggiungiSerieTv_ = suggAggiungiSerieTv_;
 
         // ＋ da un suggerimento film: modale nuovo film + stesso precaricamento.
+        // Il contenitore preview esiste solo dopo una search: lo si crea qui.
         function suggAggiungiCinema_(tmdbId, titolo) {
             chiudiSuggOverlay();
             apriModaleNuovoCinema();
-            selezionaCandidatoCinema_(tmdbId, titolo || '');
+            const wrapper = document.getElementById('cinemaCandidatiWrapper');
+            if (wrapper) wrapper.innerHTML = costruisciFooterCinemaManuale_();
+            try {
+                selezionaCandidatoCinema_(tmdbId, titolo || '');
+            } catch (err) {
+                showToast((err && err.message) || 'Apertura non riuscita.', 'error');
+            }
         }
 
         window.suggAggiungiCinema_ = suggAggiungiCinema_;
