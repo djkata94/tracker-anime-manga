@@ -5607,7 +5607,7 @@
         // dettagli sono in volo, le risposte vecchie vengono scartate.
         let suggGen_ = 0;
 
-        function mostraSuggOverlay_(titoloBase, candidati) {
+        function mostraSuggOverlay_(titoloBase, candidati, kind) {
             suggGen_ += 1;
             let box = document.getElementById('suggOverlay');
             if (!box) {
@@ -5634,10 +5634,14 @@
                         ? '<img src="' + c.immagine + '" alt="" style="width:45px;height:65px;border-radius:6px;object-fit:cover;flex-shrink:0;border:1px solid var(--border-color);cursor:zoom-in;" loading="lazy" onclick="apriLightbox(\'' + imgFull + '\')">'
                         : '<div style="width:45px;height:65px;border-radius:6px;flex-shrink:0;border:1px solid var(--border-color);"></div>';
                     const meta = (c.anno ? c.anno : '') + ((c.voto !== null && c.voto !== undefined) ? ' · ⭐ ' + c.voto : '');
-                    return '<div style="display:flex;gap:12px;">' + img +
-                        '<div style="min-width:0;"><div style="font-weight:600;">' + escapeHtmlSugg_(c.titolo) + '</div>' +
+                    const safeSugg = String(c.titolo || '').replace(/'/g, "\\'");
+                    const addBtn = (kind === 'serie')
+                        ? '<button class="action-icon-btn" style="flex-shrink:0;" onclick="suggAggiungiSerieTv_(' + c.id + ')" title="Carica nella scheda nuova serie">＋</button>'
+                        : '<button class="action-icon-btn" style="flex-shrink:0;" onclick="suggAggiungiCinema_(' + c.id + ', \'' + safeSugg + '\')" title="Carica nella scheda nuovo film">＋</button>';
+                    return '<div style="display:flex;gap:12px;align-items:flex-start;">' + img +
+                        '<div style="min-width:0;flex:1;"><div style="font-weight:600;">' + escapeHtmlSugg_(c.titolo) + '</div>' +
                         '<div id="suggMeta' + i + '" style="font-size:12px;opacity:0.7;">' + escapeHtmlSugg_(meta) + '</div>' +
-                        '<div id="suggTrama' + i + '" class="sugg-trama" title="Clicca per espandere/comprimere" onclick="this.classList.toggle(\'trama-aperta\')" style="font-size:12px;opacity:0.85;margin-top:4px;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;"></div></div></div>';
+                        '<div id="suggTrama' + i + '" class="sugg-trama" title="Clicca per espandere/comprimere" onclick="this.classList.toggle(\'trama-aperta\')" style="font-size:12px;opacity:0.85;margin-top:4px;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;"></div></div>' + addBtn + '</div>';
                 }).join('');
             }
             box.classList.add('active');
@@ -5688,7 +5692,7 @@
                 posseduti[normTitoloSugg_(titolo)] = true;
                 const res = await getSuggSerieTv_(item.tmdbId);
                 const top = res.filter(function(c) { return !posseduti[normTitoloSugg_(c.titolo)]; }).slice(0, 5);
-                mostraSuggOverlay_(titolo, top);
+                mostraSuggOverlay_(titolo, top, 'serie');
                 arricchisciSuggSerieTv_(top);
             } catch (err) {
                 showToast(err.message || 'Suggerimenti non disponibili.', 'error');
@@ -5697,6 +5701,26 @@
 
         window.suggSerieTv_ = suggSerieTv_;
         window.chiudiSuggOverlay = chiudiSuggOverlay;
+
+        // ＋ da un suggerimento: apre la modale nuova serie e lancia lo stesso
+        // precaricamento TMDB (stagioni incluse) del flusso manuale.
+        function suggAggiungiSerieTv_(tmdbId) {
+            chiudiSuggOverlay();
+            const btn = document.getElementById('btnNuovaSerieTv');
+            if (btn) btn.click();
+            selezionaCandidatoSerieTvTMDB_(tmdbId);
+        }
+
+        window.suggAggiungiSerieTv_ = suggAggiungiSerieTv_;
+
+        // ＋ da un suggerimento film: modale nuovo film + stesso precaricamento.
+        function suggAggiungiCinema_(tmdbId, titolo) {
+            chiudiSuggOverlay();
+            apriModaleNuovoCinema();
+            selezionaCandidatoCinema_(tmdbId, titolo || '');
+        }
+
+        window.suggAggiungiCinema_ = suggAggiungiCinema_;
 
         function renderListSerieTv() {
             const tbody = document.getElementById('serietvTableBody');
@@ -8834,7 +8858,7 @@ function apriLightbox(url) {
                 posseduti[normTitoloSugg_(titolo)] = true;
                 const res = await getSuggCinema_(titolo);
                 const top = res.filter(function(c) { return !posseduti[normTitoloSugg_(c.titolo)]; }).slice(0, 5);
-                mostraSuggOverlay_(titolo, top);
+                mostraSuggOverlay_(titolo, top, 'cinema');
                 arricchisciSuggCinema_(top);
             } catch (err) {
                 showToast(err.message || 'Suggerimenti non disponibili.', 'error');
