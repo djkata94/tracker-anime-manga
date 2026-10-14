@@ -1805,3 +1805,27 @@ l'account di login).
 ## Richiesta 33 — Semi nel giardino per anime e manga (patch v1.0.40)
 
 Bottone 🌱 in ogni riga anime/manga (accanto alle altre icone): apre un overlay di scrittura (titolo + nota, hint Diventerà) che crea/aggiorna la nota nel giardino digitale via `POST /api/seed` (source `tracker`, source_id stabile `anime-<slug>`/`manga-<slug>`: mai duplicati). Se il titolo ha già un seme, precarica titolo e testo dalla nota. Tags automatici: tipo + generi della scheda. Token giardino in costante `GIARDINO_SEED_TOKEN` (visibile nel bundle, basso privilegio). Solo `index.html` (backup `index_backup_pre_giardino.html`, fuori repo), niente DB/Edge. Richiede `https://djkata94.github.io` in `ALLOWED_ORIGINS` del giardino. Patch notes v1.0.40. Deployati su GitHub `index.html` e `guida_migrazione.md`.
+
+## Richiesta 34 — Suggerimenti serie TV (patch v1.0.41)
+
+Bottone 💡 in fondo alla riga serie TV (solo righe con `tmdb_id`, accanto al cestino): overlay con top 5 recommendations TMDB (locandina, titolo, anno, voto), esclusi i titoli già in lista (match normalizzato). PREREQUISITO Edge (deployare PRIMA di testare): aggiungere la action `tv_recommendations` in `tmdb-proxy` (stesso schema delle altre action):
+
+```typescript
+if (action === 'tv_recommendations') {
+  const id = body.id || '';
+  const tmdbUrl = 'https://api.themoviedb.org/3/tv/' + encodeURIComponent(id)
+    + '/recommendations?api_key=' + encodeURIComponent(apiKey) + '&language=it-IT&page=1';
+  const resp = await fetch(tmdbUrl);
+  const json = await resp.json();
+  const risultati = (json.results || []).slice(0, 10).map((m: any) => ({
+    id: m.id,
+    titolo: m.name || m.original_name || 'Senza titolo',
+    anno: (m.first_air_date || '').substring(0, 4),
+    voto: (typeof m.vote_average === 'number' && m.vote_average > 0) ? Math.round(m.vote_average * 10) / 10 : null,
+    immagine: m.poster_path ? ('https://image.tmdb.org/t/p/w342' + m.poster_path) : ''
+  }));
+  return new Response(JSON.stringify(risultati), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+}
+```
+
+Solo `index.html` + Edge (backup `index_backup_pre_suggserie.html`, fuori repo). Patch notes v1.0.41. Deployati su GitHub `index.html` e `guida_migrazione.md`.

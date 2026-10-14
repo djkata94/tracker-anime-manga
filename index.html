@@ -5581,6 +5581,87 @@
                 });
         }
 
+        // --- SUGGERIMENTI "POTREBBERO PIACERTI ANCHE" (Richiesta 34) ---
+        // Bottone 💡 in fondo alla riga serie TV (solo con tmdb_id): top 5
+        // recommendations TMDB via proxy, esclusi i titoli già in lista.
+        function normTitoloSugg_(s) {
+            return String(s || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
+        }
+
+        async function getSuggSerieTv_(tmdbId) {
+            const res = await supabaseClient.functions.invoke('tmdb-proxy', {
+                body: { action: 'tv_recommendations', id: tmdbId }
+            });
+            if (res.error) throw new Error('Impossibile contattare TMDB. Riprova più tardi.');
+            const data = res.data;
+            if (data && data.error) throw new Error(data.error);
+            return Array.isArray(data) ? data : [];
+        }
+
+        function mostraSuggOverlay_(titoloBase, candidati) {
+            let box = document.getElementById('suggOverlay');
+            if (!box) {
+                box = document.createElement('div');
+                box.id = 'suggOverlay';
+                box.className = 'modal-overlay';
+                box.innerHTML =
+                    '<div class="modal">' +
+                    '<div class="modal-header"><h2 id="suggOverlayTitolo">Potrebbero piacerti anche</h2>' +
+                    '<button class="close-modal" onclick="chiudiSuggOverlay()">&times;</button></div>' +
+                    '<div id="suggOverlayLista" style="display:flex;flex-direction:column;gap:10px;"></div>' +
+                    '</div>';
+                box.addEventListener('click', function(e) { if (e.target === box) chiudiSuggOverlay(); });
+                document.body.appendChild(box);
+            }
+            document.getElementById('suggOverlayTitolo').textContent = 'Potrebbero piacerti anche (da: ' + titoloBase + ')';
+            const lista = document.getElementById('suggOverlayLista');
+            if (candidati.length === 0) {
+                lista.innerHTML = '<p style="font-size:13px;opacity:0.7;">Nessun suggerimento disponibile.</p>';
+            } else {
+                lista.innerHTML = candidati.map(function(c) {
+                    const img = c.immagine
+                        ? '<img src="' + c.immagine + '" alt="" style="width:45px;height:65px;border-radius:6px;object-fit:cover;flex-shrink:0;border:1px solid var(--border-color);" loading="lazy">'
+                        : '<div style="width:45px;height:65px;border-radius:6px;flex-shrink:0;border:1px solid var(--border-color);"></div>';
+                    const meta = (c.anno ? c.anno : '') + ((c.voto !== null && c.voto !== undefined) ? ' · ⭐ ' + c.voto : '');
+                    return '<div style="display:flex;align-items:center;gap:12px;">' + img +
+                        '<div><div style="font-weight:600;">' + escapeHtmlSugg_(c.titolo) + '</div>' +
+                        '<div style="font-size:12px;opacity:0.7;">' + escapeHtmlSugg_(meta) + '</div></div></div>';
+                }).join('');
+            }
+            box.classList.add('active');
+        }
+
+        function escapeHtmlSugg_(s) {
+            return String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+        }
+
+        function chiudiSuggOverlay() {
+            const box = document.getElementById('suggOverlay');
+            if (box) box.classList.remove('active');
+        }
+
+        async function suggSerieTv_(titolo) {
+            const item = (typeof serieTvList !== 'undefined' ? serieTvList : []).find(function(x) { return x && x.titolo === titolo; });
+            if (!item || !item.tmdbId) {
+                showToast('Suggerimenti non disponibili senza ID TMDB.', 'error');
+                return;
+            }
+            showToast('Cerco suggerimenti…');
+            try {
+                const posseduti = {};
+                serieTvList.forEach(function(x) { if (x && x.titolo) posseduti[normTitoloSugg_(x.titolo)] = true; });
+                posseduti[normTitoloSugg_(titolo)] = true;
+                const res = await getSuggSerieTv_(item.tmdbId);
+                const top = res.filter(function(c) { return !posseduti[normTitoloSugg_(c.titolo)]; }).slice(0, 5);
+                mostraSuggOverlay_(titolo, top);
+            } catch (err) {
+                showToast(err.message || 'Suggerimenti non disponibili.', 'error');
+            }
+        }
+
+        window.suggSerieTv_ = suggSerieTv_;
+        window.chiudiSuggOverlay = chiudiSuggOverlay;
+
         function renderListSerieTv() {
             const tbody = document.getElementById('serietvTableBody');
             if (!tbody) return;
@@ -5750,6 +5831,7 @@
                     <td style="text-align: center; white-space: nowrap;">
 
                         ${item.tmdbId ? `<button class="action-icon-btn" onclick="apriSeriesGraphSerieTv(${item.tmdbId})" title="Voti episodi su Series Graph">📊</button>` : ''}
+                        ${item.tmdbId ? `<button class="action-icon-btn" onclick="suggSerieTv_('${safeTitle}')" title="Potrebbero piacerti anche">💡</button>` : ''}
                         <button class="action-icon-btn" onclick="aggiornaStagioniSerieTvDaTMDB('${safeTitle}')" title="Rileggi da TMDB: aggiunge eventuali nuove stagioni uscite">🔄</button>
                         <button class="action-icon-btn" onclick="apriModificaSerieTv('${safeTitle}')">✏️</button>
                         <button class="action-icon-btn" onclick="rimuoviSerieTv('${safeTitle}')">🗑️</button>
@@ -8300,6 +8382,10 @@ function apriLightbox(url) {
         //   Nuove voci: aggiungere in CIMA all'array.
         // ==========================================
         const PATCH_NOTES = [
+            { v: '1.0.41', titolo: 'Suggerimenti serie TV', data: '12/10/2026', punti: [
+                'Bottone 💡 in fondo alla riga (solo serie con ID TMDB): top 5 da TMDB, esclusi i titoli che hai già.',
+                'Richiede la action tv_recommendations nella Edge Function tmdb-proxy (vedi guida).'
+            ] },
             { v: '1.0.40', titolo: 'Semi nel giardino per anime e manga', data: '12/10/2026', punti: [
                 'Bottone 🌱 in ogni riga anime/manga (solo proprietario): overlay di scrittura che crea/aggiorna la nota nel giardino.',
                 'Una nota per titolo (mai duplicati), tags tipo + generi, precarica il testo precedente.'
