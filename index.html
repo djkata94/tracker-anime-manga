@@ -5603,7 +5603,13 @@
             return lista.filter(function(m) { return !m.tipo || m.tipo === 'tv'; });
         }
 
+        // Generazione overlay: se l'utente apre un altro overlay mentre i
+        // dettagli sono in volo, le risposte vecchie vengono scartate.
+        let suggGen_ = 0;
+
         function mostraSuggOverlay_(titoloBase, candidati) {
+            suggGen_ += 1;
+            let box = document.getElementById('suggOverlay');
             let box = document.getElementById('suggOverlay');
             if (!box) {
                 box = document.createElement('div');
@@ -5641,10 +5647,11 @@
 
         // Dettagli progressivi: trama, stato e stagioni per ogni suggerimento.
         function arricchisciSuggSerieTv_(candidati) {
+            const gen = suggGen_;
             candidati.slice(0, 5).forEach(function(c, i) {
                 if (!c || !c.id) return;
                 getDettaglioSerieTvTMDBSB_(c.id).then(function(d) {
-                    if (!d) return;
+                    if (!d || gen !== suggGen_) return;
                     const metaEl = document.getElementById('suggMeta' + i);
                     if (metaEl) {
                         const pezzi = [c.anno || '', d.stato || ''].filter(Boolean);
@@ -5663,6 +5670,7 @@
         }
 
         function chiudiSuggOverlay() {
+            suggGen_ += 1;
             const box = document.getElementById('suggOverlay');
             if (box) box.classList.remove('active');
         }
@@ -8806,10 +8814,11 @@ function apriLightbox(url) {
         }
 
         function arricchisciSuggCinema_(candidati) {
+            const gen = suggGen_;
             candidati.slice(0, 5).forEach(function(c, i) {
                 if (!c || !c.id) return;
                 getDettaglioCinemaTMDBSB_(c.id).then(function(d) {
-                    if (!d) return;
+                    if (!d || gen !== suggGen_) return;
                     const tramaEl = document.getElementById('suggTrama' + i);
                     if (tramaEl && d.trama) tramaEl.textContent = d.trama;
                 }).catch(function() {});
