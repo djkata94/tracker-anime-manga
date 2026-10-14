@@ -5639,12 +5639,13 @@
                         '<div id="suggMeta' + i + '" style="font-size:12px;opacity:0.7;">' + escapeHtmlSugg_(meta) + '</div>' +
                         '<div id="suggTrama' + i + '" class="sugg-trama" title="Clicca per espandere/comprimere" onclick="this.classList.toggle(\'trama-aperta\')" style="font-size:12px;opacity:0.85;margin-top:4px;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;"></div></div></div>';
                 }).join('');
-                arricchisciSuggSerieTv_(candidati);
             }
             box.classList.add('active');
         }
 
         // Dettagli progressivi: trama, stato e stagioni per ogni suggerimento.
+        // (Chiamato dal flusso serie/cinema DOPO mostra: mai da dentro mostra,
+        // altrimenti i dettagli serie finirebbero anche sulle card dei film.)
         function arricchisciSuggSerieTv_(candidati) {
             const gen = suggGen_;
             candidati.slice(0, 5).forEach(function(c, i) {
@@ -5688,6 +5689,7 @@
                 const res = await getSuggSerieTv_(item.tmdbId);
                 const top = res.filter(function(c) { return !posseduti[normTitoloSugg_(c.titolo)]; }).slice(0, 5);
                 mostraSuggOverlay_(titolo, top);
+                arricchisciSuggSerieTv_(top);
             } catch (err) {
                 showToast(err.message || 'Suggerimenti non disponibili.', 'error');
             }
