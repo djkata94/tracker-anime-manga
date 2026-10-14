@@ -1819,6 +1819,7 @@ if (action === 'tv_recommendations') {
   const json = await resp.json();
   const risultati = (json.results || []).slice(0, 10).map((m: any) => ({
     id: m.id,
+    tipo: m.media_type || '',
     titolo: m.name || m.original_name || 'Senza titolo',
     anno: (m.first_air_date || '').substring(0, 4),
     voto: (typeof m.vote_average === 'number' && m.vote_average > 0) ? Math.round(m.vote_average * 10) / 10 : null,
@@ -1843,6 +1844,7 @@ if (action === 'movie_recommendations') {
   const json = await resp.json();
   const risultati = (json.results || []).slice(0, 10).map((m: any) => ({
     id: m.id,
+    tipo: m.media_type || '',
     titolo: m.title || m.original_title || 'Senza titolo',
     anno: (m.release_date || '').substring(0, 4),
     voto: (typeof m.vote_average === 'number' && m.vote_average > 0) ? Math.round(m.vote_average * 10) / 10 : null,

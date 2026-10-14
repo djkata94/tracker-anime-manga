@@ -5597,7 +5597,10 @@
             if (res.error) throw new Error('Impossibile contattare TMDB. Riprova più tardi.');
             const data = res.data;
             if (data && data.error) throw new Error(data.error);
-            return Array.isArray(data) ? data : [];
+            const lista = Array.isArray(data) ? data : [];
+            // TMDB mischia film e serie: tieni solo serie (se l'Edge non
+            // passa ancora il tipo, non filtrare per non svuotare tutto).
+            return lista.filter(function(m) { return !m.tipo || m.tipo === 'tv'; });
         }
 
         function mostraSuggOverlay_(titoloBase, candidati) {
@@ -8796,7 +8799,10 @@ function apriLightbox(url) {
             if (rres.error) throw new Error('Impossibile contattare TMDB. Riprova più tardi.');
             const data = rres.data;
             if (data && data.error) throw new Error(data.error);
-            return Array.isArray(data) ? data : [];
+            const lista = Array.isArray(data) ? data : [];
+            // TMDB mischia film e serie: tieni solo film (se l'Edge non
+            // passa ancora il tipo, non filtrare per non svuotare tutto).
+            return lista.filter(function(m) { return !m.tipo || m.tipo === 'movie'; });
         }
 
         function arricchisciSuggCinema_(candidati) {
