@@ -8405,6 +8405,10 @@ function apriLightbox(url) {
         //   Nuove voci: aggiungere in CIMA all'array.
         // ==========================================
         const PATCH_NOTES = [
+            { v: '1.0.42', titolo: 'Suggerimenti cinema', data: '12/10/2026', punti: [
+                'Bottone 💡 in fondo alla riga film: top 5 da TMDB (search sul titolo + recommendations), esclusi i già in lista.',
+                'Trama progressiva cliccabile. Richiede la action movie_recommendations nella Edge Function.'
+            ] },
             { v: '1.0.41', titolo: 'Suggerimenti serie TV', data: '12/10/2026', punti: [
                 'Bottone 💡 in fondo alla riga (solo serie con ID TMDB): top 5 da TMDB, esclusi i titoli che hai già.',
                 'Richiede la action tv_recommendations nella Edge Function tmdb-proxy (vedi guida).'
@@ -8772,6 +8776,56 @@ function apriLightbox(url) {
             return aaaa + '-' + mm + '-' + gg;
         }
 
+        // --- SUGGERIMENTI CINEMA (Richiesta 35) ---
+        // Niente id salvato: search-first sul titolo, poi recommendations.
+        // Stesso overlay delle serie (mostraSuggOverlay_), trama progressiva.
+        async function getSuggCinema_(titolo) {
+            const sres = await supabaseClient.functions.invoke('tmdb-proxy', {
+                body: { action: 'search', query: titolo }
+            });
+            if (sres.error) throw new Error('Impossibile contattare TMDB. Riprova più tardi.');
+            const cand = sres.data;
+            if (cand && cand.error) throw new Error(cand.error);
+            if (!Array.isArray(cand) || cand.length === 0 || !cand[0].id) {
+                throw new Error('Film non trovato su TMDB.');
+            }
+            const rres = await supabaseClient.functions.invoke('tmdb-proxy', {
+                body: { action: 'movie_recommendations', id: cand[0].id }
+            });
+            if (rres.error) throw new Error('Impossibile contattare TMDB. Riprova più tardi.');
+            const data = rres.data;
+            if (data && data.error) throw new Error(data.error);
+            return Array.isArray(data) ? data : [];
+        }
+
+        function arricchisciSuggCinema_(candidati) {
+            candidati.slice(0, 5).forEach(function(c, i) {
+                if (!c || !c.id) return;
+                getDettaglioCinemaTMDBSB_(c.id).then(function(d) {
+                    if (!d) return;
+                    const tramaEl = document.getElementById('suggTrama' + i);
+                    if (tramaEl && d.trama) tramaEl.textContent = d.trama;
+                }).catch(function() {});
+            });
+        }
+
+        async function suggCinema_(titolo) {
+            showToast('Cerco suggerimenti…');
+            try {
+                const posseduti = {};
+                cinemaList.forEach(function(x) { if (x && x.titolo) posseduti[normTitoloSugg_(x.titolo)] = true; });
+                posseduti[normTitoloSugg_(titolo)] = true;
+                const res = await getSuggCinema_(titolo);
+                const top = res.filter(function(c) { return !posseduti[normTitoloSugg_(c.titolo)]; }).slice(0, 5);
+                mostraSuggOverlay_(titolo, top);
+                arricchisciSuggCinema_(top);
+            } catch (err) {
+                showToast(err.message || 'Suggerimenti non disponibili.', 'error');
+            }
+        }
+
+        window.suggCinema_ = suggCinema_;
+
         function renderListCinema() {
             const tbodyDaVedere = document.getElementById('cinemaTableBodyDaVedere');
             const tbodyStreaming = document.getElementById('cinemaTableBodyStreaming');
@@ -9050,6 +9104,7 @@ function apriLightbox(url) {
                 <td style="text-align:center;">
                     ${infoBtn}
                     ${streamingBtn}
+                    <button class="action-icon-btn" onclick="suggCinema_('${safeTitle}')" title="Potrebbero piacerti anche">💡</button>
                     <button class="action-icon-btn" ${trashDisabled}>🗑️</button>
                 </td>
             `;

@@ -1829,3 +1829,27 @@ if (action === 'tv_recommendations') {
 ```
 
 Solo `index.html` + Edge (backup `index_backup_pre_suggserie.html`, fuori repo). Patch notes v1.0.41. Deployati su GitHub `index.html` e `guida_migrazione.md`.
+
+## Richiesta 35 — Suggerimenti cinema (patch v1.0.42)
+
+Bottone 💡 in fondo alla riga film (sempre attivo: niente id salvato, search-first). Overlay condiviso con le serie + trama progressiva via action `detail` esistente. PREREQUISITO Edge (deployare PRIMA di testare): aggiungere la action `movie_recommendations` in `tmdb-proxy`:
+
+```typescript
+if (action === 'movie_recommendations') {
+  const id = body.id || '';
+  const tmdbUrl = 'https://api.themoviedb.org/3/movie/' + encodeURIComponent(id)
+    + '/recommendations?api_key=' + encodeURIComponent(apiKey) + '&language=it-IT&region=IT&page=1';
+  const resp = await fetch(tmdbUrl);
+  const json = await resp.json();
+  const risultati = (json.results || []).slice(0, 10).map((m: any) => ({
+    id: m.id,
+    titolo: m.title || m.original_title || 'Senza titolo',
+    anno: (m.release_date || '').substring(0, 4),
+    voto: (typeof m.vote_average === 'number' && m.vote_average > 0) ? Math.round(m.vote_average * 10) / 10 : null,
+    immagine: m.poster_path ? ('https://image.tmdb.org/t/p/w342' + m.poster_path) : ''
+  }));
+  return new Response(JSON.stringify(risultati), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+}
+```
+
+Solo `index.html` + Edge (backup `index_backup_pre_suggcinema.html`, fuori repo). Patch notes v1.0.42. Deployati su GitHub `index.html` e `guida_migrazione.md`.
