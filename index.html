@@ -4055,6 +4055,69 @@
         window.chiudiGiardinoOverlay = chiudiGiardinoOverlay;
         window.giardinoSalva_ = giardinoSalva_;
 
+        // --- SUGGERIMENTI ANIME via AniList (Richiesta 36) ---
+        // Niente id salvato: search sul titolo, poi recommendations (tutto dal
+        // browser, gratis). Dati già completi: niente secondo giro di rete.
+        function pulisciTramaAniList_(s) {
+            return String(s || '').replace(/<br\s*\/?>/gi, ' ').replace(/<[^>]+>/g, '').replace(/\s+/g, ' ').trim();
+        }
+
+        async function getSuggAnime_(titolo) {
+            const hits = await cercaCandidatiAniListSB_(titolo, 'ANIME');
+            if (!hits || hits.length === 0 || !hits[0].id) {
+                throw new Error('Titolo non trovato su AniList.');
+            }
+            const gql = 'query ($id: Int) { Media(id: $id) { recommendations(sort: RATING_DESC, perPage: 10) { nodes { rating mediaRecommendation { id title { romaji english } startDate { year } coverImage { medium large } genres averageScore description(asHtml: false) } } } } }';
+            const json = await eseguireRichiestaAniList_(gql, { id: hits[0].id });
+            const nodes = ((((json.data || {}).Media || {}).recommendations || {}).nodes) || [];
+            return nodes.map(function(n) {
+                const m = n.mediaRecommendation || {};
+                const t = m.title || {};
+                return {
+                    id: m.id,
+                    titolo: t.english || t.romaji || 'Senza titolo',
+                    anno: (m.startDate && m.startDate.year) ? m.startDate.year : '',
+                    voto: (typeof m.averageScore === 'number' && m.averageScore > 0) ? Math.round(m.averageScore) / 10 : null,
+                    immagine: (m.coverImage && (m.coverImage.large || m.coverImage.medium)) || '',
+                    generi: Array.isArray(m.genres) ? m.genres.join(', ') : '',
+                    trama: pulisciTramaAniList_(m.description || '')
+                };
+            }).filter(function(c) { return c.id; });
+        }
+
+        // Scrive subito meta+trama (dati già in mano, niente rete).
+        function arricchisciSuggLocali_(candidati) {
+            const gen = suggGen_;
+            candidati.slice(0, 5).forEach(function(c, i) {
+                if (gen !== suggGen_) return;
+                const metaEl = document.getElementById('suggMeta' + i);
+                if (metaEl) {
+                    const pezzi = [c.anno || '', c.generi || ''].filter(Boolean);
+                    if (c.voto !== null && c.voto !== undefined) pezzi.push('⭐ ' + c.voto);
+                    metaEl.textContent = pezzi.join(' · ');
+                }
+                const tramaEl = document.getElementById('suggTrama' + i);
+                if (tramaEl && c.trama) tramaEl.textContent = c.trama;
+            });
+        }
+
+        async function suggAnime_(titolo) {
+            showToast('Cerco suggerimenti…');
+            try {
+                const posseduti = {};
+                animeList.forEach(function(x) { if (x && x.titolo) posseduti[normTitoloSugg_(x.titolo)] = true; });
+                posseduti[normTitoloSugg_(titolo)] = true;
+                const res = await getSuggAnime_(titolo);
+                const top = res.filter(function(c) { return !posseduti[normTitoloSugg_(c.titolo)]; }).slice(0, 5);
+                mostraSuggOverlay_(titolo, top, 'anime');
+                arricchisciSuggLocali_(top);
+            } catch (err) {
+                showToast(err.message || 'Suggerimenti non disponibili.', 'error');
+            }
+        }
+
+        window.suggAnime_ = suggAnime_;
+
         function renderListAnime() {
             const tbody = document.getElementById('animeTableBody');
             if (!tbody) return;
@@ -4318,6 +4381,7 @@
                     </td>
                     <td style="text-align: center;">
                         <button class="action-icon-btn" onclick="apriModificaAnime('${safeTitle}')">✏️</button>
+                        <button class="action-icon-btn" onclick="suggAnime_('${safeTitle}')" title="Potrebbero piacerti anche">💡</button>
                         <button class="action-icon-btn" onclick="rimuoviAnime('${safeTitle}')">🗑️</button>
                         <button class="action-icon-btn" style="${item.abbandonata ? '' : 'opacity:0.45;'}" onclick="toggleAbbandonataAnime('${safeTitle}')" title="${item.abbandonata ? 'Riprendi l\'anime' : 'Abbandona l\'anime'}">⛔</button>
                     </td>
@@ -5637,7 +5701,9 @@
                     const safeSugg = String(c.titolo || '').replace(/'/g, "\\'");
                     const addBtn = (kind === 'serie')
                         ? '<button class="action-icon-btn" style="flex-shrink:0;color:var(--primary);font-size:16px;font-weight:700;" onclick="suggAggiungiSerieTv_(' + c.id + ')" title="Carica nella scheda nuova serie">＋</button>'
-                        : '<button class="action-icon-btn" style="flex-shrink:0;color:var(--primary);font-size:16px;font-weight:700;" onclick="suggAggiungiCinema_(' + c.id + ', \'' + safeSugg + '\')" title="Carica nella scheda nuovo film">＋</button>';
+                        : (kind === 'cinema')
+                        ? '<button class="action-icon-btn" style="flex-shrink:0;color:var(--primary);font-size:16px;font-weight:700;" onclick="suggAggiungiCinema_(' + c.id + ', \'' + safeSugg + '\')" title="Carica nella scheda nuovo film">＋</button>'
+                        : '';
                     return '<div style="display:flex;gap:12px;align-items:flex-start;">' + img +
                         '<div style="min-width:0;flex:1;"><div style="font-weight:600;">' + escapeHtmlSugg_(c.titolo) + '</div>' +
                         '<div id="suggMeta' + i + '" style="font-size:12px;opacity:0.7;">' + escapeHtmlSugg_(meta) + '</div>' +
@@ -8449,6 +8515,10 @@ function apriLightbox(url) {
         //   Nuove voci: aggiungere in CIMA all'array.
         // ==========================================
         const PATCH_NOTES = [
+            { v: '1.0.43', titolo: 'Suggerimenti anime', data: '14/10/2026', punti: [
+                'Bottone 💡 in fondo alla riga anime: top 5 da AniList (search + recommendations), esclusi i già in lista.',
+                'Trama, anno, voto e generi subito visibili, niente Edge né chiavi.'
+            ] },
             { v: '1.0.42', titolo: 'Suggerimenti cinema', data: '12/10/2026', punti: [
                 'Bottone 💡 in fondo alla riga film: top 5 da TMDB (search sul titolo + recommendations), esclusi i già in lista.',
                 'Trama progressiva cliccabile. Richiede la action movie_recommendations nella Edge Function.'

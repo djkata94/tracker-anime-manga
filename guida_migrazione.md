@@ -1855,3 +1855,7 @@ if (action === 'movie_recommendations') {
 ```
 
 Solo `index.html` + Edge (backup `index_backup_pre_suggcinema.html`, fuori repo). Patch notes v1.0.42. Deployati su GitHub `index.html` e `guida_migrazione.md`.
+
+## Richiesta 36 — Suggerimenti anime via AniList (patch v1.0.43)
+
+Bottone 💡 in fondo alla riga anime. Niente id salvato e niente Edge: search AniList esistente per prendere l'id del top hit, poi query `recommendations(sort: RATING_DESC)` dal browser (gratis, CORS aperto). Trama/anno/voto/generi già inclusi: scritti subito nell'overlay condiviso, generi nella meta. Filtro duplicati per titolo normalizzato. Solo `index.html` (backup `index_backup_pre_sugganime.html`, fuori repo). Patch notes v1.0.43. Deployati su GitHub `index.html` e `guida_migrazione.md`.
