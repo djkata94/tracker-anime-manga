@@ -4085,7 +4085,8 @@
             }).filter(function(c) { return c.id; });
         }
 
-        // Scrive subito meta+trama (dati già in mano, niente rete).
+        // Scrive subito meta+trama (dati già in mano, niente rete), poi prova
+        // la traduzione IT con lo stesso traduttore gratis dei manga.
         function arricchisciSuggLocali_(candidati) {
             const gen = suggGen_;
             candidati.slice(0, 5).forEach(function(c, i) {
@@ -4098,6 +4099,13 @@
                 }
                 const tramaEl = document.getElementById('suggTrama' + i);
                 if (tramaEl && c.trama) tramaEl.textContent = c.trama;
+                if (c.trama) {
+                    tradurreTestoGoogleFree_(c.trama, 'en', 'it').then(function(t) {
+                        if (gen !== suggGen_) return;
+                        const el = document.getElementById('suggTrama' + i);
+                        if (el && t && t !== c.trama) el.textContent = t;
+                    }).catch(function() {});
+                }
             });
         }
 
