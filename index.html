@@ -6006,11 +6006,11 @@
                     <td style="text-align: center; white-space: nowrap;">
 
                         ${item.tmdbId ? `<button class="action-icon-btn" onclick="apriSeriesGraphSerieTv(${item.tmdbId})" title="Voti episodi su Series Graph">📊</button>` : ''}
-                        <span style="display:inline-grid;grid-template-columns:repeat(2,max-content);gap:2px;justify-items:center;justify-content:center;">${item.tmdbId ? `<button class="action-icon-btn" onclick="suggSerieTv_('${safeTitle}')" title="Potrebbero piacerti anche">💡</button>` : ''}
+                        ${item.tmdbId ? `<button class="action-icon-btn" onclick="suggSerieTv_('${safeTitle}')" title="Potrebbero piacerti anche">💡</button>` : ''}
                         <button class="action-icon-btn" onclick="aggiornaStagioniSerieTvDaTMDB('${safeTitle}')" title="Rileggi da TMDB: aggiunge eventuali nuove stagioni uscite">🔄</button>
                         <button class="action-icon-btn" onclick="apriModificaSerieTv('${safeTitle}')">✏️</button>
                         <button class="action-icon-btn" onclick="rimuoviSerieTv('${safeTitle}')">🗑️</button>
-                        <button class="action-icon-btn" style="${item.abbandonata ? '' : 'opacity:0.45;'}" onclick="toggleAbbandonataSerieTv('${safeTitle}')" title="${item.abbandonata ? 'Riprendi la serie' : 'Abbandona la serie'}">⛔</button></span>
+                        <button class="action-icon-btn" style="${item.abbandonata ? '' : 'opacity:0.45;'}" onclick="toggleAbbandonataSerieTv('${safeTitle}')" title="${item.abbandonata ? 'Riprendi la serie' : 'Abbandona la serie'}">⛔</button>
                     </td>
                 `;
                 tbody.appendChild(tr);
@@ -7556,8 +7556,8 @@ filtered.sort((a, b) => {
                     <td style="color: var(--text-muted); font-size: 13px;">${item.note || '-'}</td>
                     <td style="text-align: center;"><span class="vision-box box-${coloreLettura}"></span></td>
                     <td style="text-align: center;">
-                        <span style="display:inline-grid;grid-template-columns:repeat(2,max-content);gap:2px;justify-items:center;justify-content:center;"><button class="action-icon-btn" onclick="apriModificaManga('${safeTitle}')">✏️</button>
-                        <button class="action-icon-btn" onclick="rimuoviManga('${safeTitle}')">🗑️</button></span>
+                        <button class="action-icon-btn" onclick="apriModificaManga('${safeTitle}')">✏️</button>
+                        <button class="action-icon-btn" onclick="rimuoviManga('${safeTitle}')">🗑️</button>
                     </td>
                 `;
                 tbody.appendChild(tr);
@@ -9264,8 +9264,8 @@ function apriLightbox(url) {
                 <td style="text-align:center;">
                     ${infoBtn}
                     ${streamingBtn}
-                    <span style="display:inline-grid;grid-template-columns:repeat(2,max-content);gap:2px;justify-items:center;justify-content:center;"><button class="action-icon-btn" onclick="suggCinema_('${safeTitle}')" title="Potrebbero piacerti anche">💡</button>
-                    <button class="action-icon-btn" ${trashDisabled}>🗑️</button></span>
+                    <button class="action-icon-btn" onclick="suggCinema_('${safeTitle}')" title="Potrebbero piacerti anche">💡</button>
+                    <button class="action-icon-btn" ${trashDisabled}>🗑️</button>
                 </td>
             `;
             return tr;
