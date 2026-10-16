@@ -4094,7 +4094,9 @@
                 if (gen !== suggGen_) return;
                 const metaEl = document.getElementById('suggMeta' + i);
                 if (metaEl) {
-                    const pezzi = [c.anno || '', c.generi || ''].filter(Boolean);
+                    const pezzi = [c.anno || '', c.stato || ''].filter(Boolean);
+                    if (c.volumi) pezzi.push(c.volumi + (c.volumi === 1 ? ' volume' : ' volumi'));
+                    if (c.generi) pezzi.push(c.generi);
                     if (c.voto !== null && c.voto !== undefined) pezzi.push('⭐ ' + c.voto);
                     metaEl.textContent = pezzi.join(' · ');
                 }
@@ -4152,13 +4154,27 @@
 
         window.suggAggiungiManga_ = suggAggiungiManga_;
 
-        // --- SUGGERIMENTI MANGA via AniList (Richiesta 37): mirror anime ---
+        // Stessa mappatura dell'import manga (guida: RELEASING→In corso, ecc).
+        function statoMangaSugg_(s) {
+            if (s === 'FINISHED' || s === 'CANCELLED') return 'Concluso';
+            if (s === 'NOT_YET_RELEASED') return 'In arrivo';
+            if (s === 'RELEASING' || s === 'HIATUS') return 'In corso';
+            return '';
+        }
+        // Stessa mappatura dell'import manga (RELEASING→In corso, ecc).
+        function statoMangaSugg_(s) {
+            if (s === 'FINISHED' || s === 'CANCELLED') return 'Concluso';
+            if (s === 'NOT_YET_RELEASED') return 'In arrivo';
+            if (s === 'RELEASING' || s === 'HIATUS') return 'In corso';
+            return '';
+        }
+
         async function getSuggManga_(titolo) {
             const hits = await cercaCandidatiAniListSB_(titolo, 'MANGA');
             if (!hits || hits.length === 0 || !hits[0].id) {
                 throw new Error('Titolo non trovato su AniList.');
             }
-            const gql = 'query ($id: Int) { Media(id: $id) { recommendations(sort: RATING_DESC, perPage: 10) { nodes { rating mediaRecommendation { id title { romaji english } startDate { year } coverImage { medium large } genres averageScore description(asHtml: false) } } } } }';
+            const gql = 'query ($id: Int) { Media(id: $id) { recommendations(sort: RATING_DESC, perPage: 10) { nodes { rating mediaRecommendation { id title { romaji english } startDate { year } coverImage { medium large } genres averageScore status volumes description(asHtml: false) } } } } }';
             const json = await eseguireRichiestaAniList_(gql, { id: hits[0].id });
             const nodes = ((((json.data || {}).Media || {}).recommendations || {}).nodes) || [];
             return nodes.map(function(n) {
@@ -4172,6 +4188,8 @@
                     voto: (typeof m.averageScore === 'number' && m.averageScore > 0) ? Math.round(m.averageScore) / 10 : null,
                     immagine: (m.coverImage && (m.coverImage.large || m.coverImage.medium)) || '',
                     generi: Array.isArray(m.genres) ? m.genres.join(', ') : '',
+                    stato: statoMangaSugg_(m.status),
+                    volumi: (typeof m.volumes === 'number' && m.volumes > 0) ? m.volumes : null,
                     trama: pulisciTramaAniList_(m.description || '')
                 };
             }).filter(function(c) { return c.id; });
