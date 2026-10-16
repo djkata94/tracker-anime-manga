@@ -4141,6 +4141,61 @@
 
         window.suggAggiungiAnime_ = suggAggiungiAnime_;
 
+        // ＋ da un suggerimento manga: apre Nuovo Manga col titolo pronto.
+        function suggAggiungiManga_(titolo) {
+            chiudiSuggOverlay();
+            const btn = document.getElementById('btnNuovoManga');
+            if (btn) btn.click();
+            const inp = document.getElementById('inpTitoloManga');
+            if (inp) inp.value = titolo || '';
+        }
+
+        window.suggAggiungiManga_ = suggAggiungiManga_;
+
+        // --- SUGGERIMENTI MANGA via AniList (Richiesta 37): mirror anime ---
+        async function getSuggManga_(titolo) {
+            const hits = await cercaCandidatiAniListSB_(titolo, 'MANGA');
+            if (!hits || hits.length === 0 || !hits[0].id) {
+                throw new Error('Titolo non trovato su AniList.');
+            }
+            const gql = 'query ($id: Int) { Media(id: $id) { recommendations(sort: RATING_DESC, perPage: 10) { nodes { rating mediaRecommendation { id title { romaji english } startDate { year } coverImage { medium large } genres averageScore description(asHtml: false) } } } } }';
+            const json = await eseguireRichiestaAniList_(gql, { id: hits[0].id });
+            const nodes = ((((json.data || {}).Media || {}).recommendations || {}).nodes) || [];
+            return nodes.map(function(n) {
+                const m = n.mediaRecommendation || {};
+                const t = m.title || {};
+                return {
+                    id: m.id,
+                    titolo: t.english || t.romaji || 'Senza titolo',
+                    titoloAlt: t.romaji || '',
+                    anno: (m.startDate && m.startDate.year) ? m.startDate.year : '',
+                    voto: (typeof m.averageScore === 'number' && m.averageScore > 0) ? Math.round(m.averageScore) / 10 : null,
+                    immagine: (m.coverImage && (m.coverImage.large || m.coverImage.medium)) || '',
+                    generi: Array.isArray(m.genres) ? m.genres.join(', ') : '',
+                    trama: pulisciTramaAniList_(m.description || '')
+                };
+            }).filter(function(c) { return c.id; });
+        }
+
+        async function suggManga_(titolo) {
+            showToast('Cerco suggerimenti…');
+            try {
+                const posseduti = {};
+                mangaList.forEach(function(x) { if (x && x.titolo) posseduti[normTitoloSugg_(x.titolo)] = true; });
+                posseduti[normTitoloSugg_(titolo)] = true;
+                const res = await getSuggManga_(titolo);
+                const top = res.filter(function(c) {
+                    return !posseduti[normTitoloSugg_(c.titolo)] && !posseduti[normTitoloSugg_(c.titoloAlt)];
+                }).slice(0, 5);
+                mostraSuggOverlay_(titolo, top, 'manga');
+                arricchisciSuggLocali_(top);
+            } catch (err) {
+                showToast(err.message || 'Suggerimenti non disponibili.', 'error');
+            }
+        }
+
+        window.suggManga_ = suggManga_;
+
         // Traduzione a pezzi (il traduttore gratis taglia i testi lunghi):
         // spezza a fine frase sotto i 900 caratteri e ricuce.
         async function traduciLungoSugg_(testo) {
@@ -5745,6 +5800,8 @@
                         ? '<button class="action-icon-btn" style="flex-shrink:0;color:var(--primary);font-size:16px;font-weight:700;" onclick="suggAggiungiSerieTv_(' + c.id + ')" title="Carica nella scheda nuova serie">＋</button>'
                         : (kind === 'cinema')
                         ? '<button class="action-icon-btn" style="flex-shrink:0;color:var(--primary);font-size:16px;font-weight:700;" onclick="suggAggiungiCinema_(' + c.id + ', \'' + safeSugg + '\')" title="Carica nella scheda nuovo film">＋</button>'
+                        : (kind === 'manga')
+                        ? '<button class="action-icon-btn" style="flex-shrink:0;color:var(--primary);font-size:16px;font-weight:700;" onclick="suggAggiungiManga_(\'' + safeSugg + '\')" title="Nuovo manga con questo titolo">＋</button>'
                         : '<button class="action-icon-btn" style="flex-shrink:0;color:var(--primary);font-size:16px;font-weight:700;" onclick="suggAggiungiAnime_(\'' + safeSugg + '\')" title="Nuovo anime con questo titolo">＋</button>';
                     return '<div style="display:flex;gap:12px;align-items:flex-start;">' + img +
                         '<div style="min-width:0;flex:1;"><div style="font-weight:600;">' + escapeHtmlSugg_(c.titolo) + '</div>' +
@@ -7557,6 +7614,7 @@ filtered.sort((a, b) => {
                     <td style="text-align: center;"><span class="vision-box box-${coloreLettura}"></span></td>
                     <td style="text-align: center;">
                         <button class="action-icon-btn" onclick="apriModificaManga('${safeTitle}')">✏️</button>
+                        <button class="action-icon-btn" onclick="suggManga_('${safeTitle}')" title="Potrebbero piacerti anche">💡</button>
                         <button class="action-icon-btn" onclick="rimuoviManga('${safeTitle}')">🗑️</button>
                     </td>
                 `;
@@ -8557,6 +8615,10 @@ function apriLightbox(url) {
         //   Nuove voci: aggiungere in CIMA all'array.
         // ==========================================
         const PATCH_NOTES = [
+            { v: '1.0.44', titolo: 'Suggerimenti manga', data: '14/10/2026', punti: [
+                'Bottone 💡 in fondo alla riga manga: top 5 da AniList, esclusi i già in lista (controllo su entrambi i titoli).',
+                'Trama tradotta a pezzi, ＋ apre Nuovo Manga col titolo pronto.'
+            ] },
             { v: '1.0.43', titolo: 'Suggerimenti anime', data: '14/10/2026', punti: [
                 'Bottone 💡 in fondo alla riga anime: top 5 da AniList (search + recommendations), esclusi i già in lista.',
                 'Trama, anno, voto e generi subito visibili, niente Edge né chiavi.'
