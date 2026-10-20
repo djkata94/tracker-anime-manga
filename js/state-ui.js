@@ -1,4 +1,34 @@
-function buildGenresForms() {
+// Lista Globale dei Generi unificata
+        const MASTER_GENRES_LIST = [
+            "Action", "Adventure", "Avant Garde", "Award Winning", "Boys Love", "Comedy", "Crime", 
+            "Cyberpunk", "Dark Fantasy", "Drama", "Ecchi", "Erotica", "Fantasy", 
+            "Girls Love", "Gourmet", "Harem", "Historical", "Horror", "Isekai", 
+            "Iyashikei", "Josei", "Martial Arts", "Mecha", "Military", "Music", 
+            "Mystery", "Mythology", "Parody", "Post-Apocalyptic", "Psychological", 
+            "Romance", "Romantic Comedy", "School", "Sci-Fi", "Seinen", "Shoujo", 
+            "Shounen", "Slice of Life", "Space", "Sports", "Super Power", 
+            "Supernatural", "Suspense", "Thriller", "Vampire", "Workplace"
+        ];
+		
+        // Lista statica dei generi "film" ufficiali di TMDB (stabile da anni,
+        // nessun bisogno di interrogare l'API per recuperarla). Nomi in
+        // italiano, esattamente come restituiti da TMDB con language=it-IT.
+        const TMDB_GENRES_LIST = [
+            "Azione", "Avventura", "Animazione", "Commedia", "Crime", "Documentario",
+            "Dramma", "Famiglia", "Fantasy", "Storia", "Horror", "Musica", "Mistero",
+            "Romantico", "Fantascienza", "Film TV", "Thriller", "Guerra", "Western"
+        ];
+
+        // Stessa idea per le serie TV: i 16 generi ufficiali TMDB per il
+        // mezzo televisivo, nomi in italiano come restituiti con language=it-IT.
+        const TMDB_TV_GENRES_LIST = [
+            "Azione e Avventura", "Animazione", "Commedia", "Crime", "Documentario",
+            "Dramma", "Famiglia", "Kids", "Mistero", "News", "Reality",
+            "Fantascienza e Fantasy", "Soap", "Talk", "Guerra e Politica", "Western"
+        ];
+
+        // Generazione automatica dei checkbox nelle modali e nei filtri avanzati fluttuanti all'avvio
+        function buildGenresForms() {
             const animeGrid = document.getElementById('animeGenresGrid');
             const mangaGrid = document.getElementById('mangaGenresGrid');
             const libriGrid = document.getElementById('libriGenresGrid');
