@@ -1,4 +1,4 @@
-﻿        function switchView(viewName) {
+function switchView(viewName) {
             document.getElementById('homeView').style.display = 'none';
             document.getElementById('animeView').style.display = 'none';
             document.getElementById('mangaView').style.display = 'none';
@@ -52,11 +52,11 @@
         //                  LOGICA ANIME
         // ==========================================
         // ==========================================
-        //   FASE 11 â€” GRUPPO ANIME (Supabase diretto)
+        //   FASE 11 — GRUPPO ANIME (Supabase diretto)
         // ==========================================
 
-        // Porting 1:1 di calcolaColoreVisioneAnime_ da codice.gs â€” pura
-        // logica, nessuna chiamata al server, quindi la traduzione Ã¨
+        // Porting 1:1 di calcolaColoreVisioneAnime_ da codice.gs — pura
+        // logica, nessuna chiamata al server, quindi la traduzione è
         // identica riga per riga.
         function calcolaColoreVisioneAnime_(stagioniTotali, stagioniViste, filmTotali, filmVisti, stato, haProgressoParziale, abbandonata) {
             if (abbandonata) return 'rosso';
@@ -168,7 +168,7 @@
         }
 
         // Segna come viste tutte le righe con totale noto, sia Stagioni che
-        // Film (usato dal flag "Anime giÃ  visto per intero"). Le righe a
+        // Film (usato dal flag "Anime già visto per intero"). Le righe a
         // totale 0 restano a 0: vanno corrette a mano con la matita, come per
         // le Serie TV.
         async function segnaEpisodiComeVistiAnimeSB_(titolo) {
@@ -322,14 +322,14 @@
                     await aggiungiRigheEpisodiSB_(nuovoTitoloEffettivo, 'Stagione', vecchieStagioniTotaliLog + 1, nuoveStagioniTotaliEp, dati.episodiPerStagione);
                 } else if (nuoveStagioniTotaliEp < vecchieStagioniTotaliLog) {
                     const avevaProgresso = await rimuoviRigheEpisodiEccedentiSB_(nuovoTitoloEffettivo, 'Stagione', nuoveStagioniTotaliEp + 1);
-                    if (avevaProgresso) console.warn("Rimosse righe stagioni con episodi giÃ  visti per '" + nuovoTitoloEffettivo + "'.");
+                    if (avevaProgresso) console.warn("Rimosse righe stagioni con episodi già visti per '" + nuovoTitoloEffettivo + "'.");
                 }
 
                 if (nuoviFilmTotaliEp > vecchiFilmTotaliLog) {
                     await aggiungiRigheEpisodiSB_(nuovoTitoloEffettivo, 'Film', vecchiFilmTotaliLog + 1, nuoviFilmTotaliEp);
                 } else if (nuoviFilmTotaliEp < vecchiFilmTotaliLog) {
                     const avevaProgresso = await rimuoviRigheEpisodiEccedentiSB_(nuovoTitoloEffettivo, 'Film', nuoviFilmTotaliEp + 1);
-                    if (avevaProgresso) console.warn("Rimosse righe film con episodi giÃ  visti per '" + nuovoTitoloEffettivo + "'.");
+                    if (avevaProgresso) console.warn("Rimosse righe film con episodi già visti per '" + nuovoTitoloEffettivo + "'.");
                 }
 
                 if (dati.segnaComeVista) {
@@ -397,7 +397,7 @@
 
             const vecchiaValutazione = righe[0].valutazione;
             if (vecchiaValutazione !== null && vecchiaValutazione !== undefined) {
-                return { errore: 'Questa opera ha giÃ  un voto: per modificarlo usa la modale di modifica.' };
+                return { errore: 'Questa opera ha già un voto: per modificarlo usa la modale di modifica.' };
             }
 
             const { error: errUpd } = await supabaseClient.from('anime').update({ valutazione: votoNumerico }).eq('titolo', String(titolo).trim());
@@ -418,7 +418,7 @@
         }
 		
         // ==========================================
-        //   â­ VOTO ANIME (overlay griglia 0.5-10)
+        //   ⭐ VOTO ANIME (overlay griglia 0.5-10)
         //   Si apre dal pill "Vota" in lista (solo senza voto: se votato apre
         //   la modale di modifica) e in automatico al + che completa tutto
         //   l'anime Concluso mai votato. Salvataggio via impostaVotoAnimeSB_
@@ -460,9 +460,9 @@
             votoAnimeTargetTitolo = titolo;
             votoAnimeSelezionato = 0;
             disegnaGrigliaVotoAnime_();
-            document.getElementById('votoAnimeValore').textContent = 'â€“';
+            document.getElementById('votoAnimeValore').textContent = '–';
             document.getElementById('btnConfermaVotoAnime').disabled = true;
-            document.getElementById('votoAnimeModalTitle').innerText = 'â­ Vota â€” ' + titolo;
+            document.getElementById('votoAnimeModalTitle').innerText = '⭐ Vota — ' + titolo;
             document.getElementById('btnSaltaVotoAnime').style.display = automatico ? '' : 'none';
             document.getElementById('modalOverlayVotoAnime').classList.add('active');
         };
@@ -497,7 +497,7 @@
                 })
                 .catch(function(err) {
                     btn.innerText = 'Conferma voto';
-                    showToast('âŒ Errore salvataggio voto: ' + err.message, 'error');
+                    showToast('❌ Errore salvataggio voto: ' + err.message, 'error');
                 });
         };
 
@@ -520,12 +520,12 @@
                 .catch(function(err) {
                     console.error('Errore caricamento dati Anime da Supabase:', err);
                     document.getElementById('loadingAnime').style.display = 'none';
-                    alert('âŒ Errore nel caricamento degli anime. Controlla la console per i dettagli.');
+                    alert('❌ Errore nel caricamento degli anime. Controlla la console per i dettagli.');
                 });
         }
 
         // --- GIARDINO DIGITALE (mind-garden): un seme per titolo (Richiesta 33) ---
-        // Bottone ðŸŒ± in ogni riga anime/manga: overlay di scrittura, salva crea/aggiorna
+        // Bottone 🌱 in ogni riga anime/manga: overlay di scrittura, salva crea/aggiorna
         // la nota nel giardino (upsert su tipo+titolo, mai duplicati). Tags: tipo + generi.
         const GIARDINO_URL = 'https://mind-garden-tau.vercel.app';
         // Token di scrittura del giardino (SEED_TOKEN di mind-garden). Gira nel browser:
@@ -556,7 +556,7 @@
         // Bottone riga solo per il proprietario (come driveShortcutBtn).
         function giardinoBtn_(tipo, safeTitle) {
             if (!window.GIARDINO_IS_OWNER_) return '';
-            return '<button class="action-icon-btn" style="font-size: 13px; padding: 0; background: none; border: none; cursor: pointer;" onclick="apriGiardinoOverlay(\'' + safeTitle + '\', \'' + tipo + '\')" title="Pianta nel giardino">ðŸŒ±</button>';
+            return '<button class="action-icon-btn" style="font-size: 13px; padding: 0; background: none; border: none; cursor: pointer;" onclick="apriGiardinoOverlay(\'' + safeTitle + '\', \'' + tipo + '\')" title="Pianta nel giardino">🌱</button>';
         }
 
         function elementoGiardino_(tipo, titolo) {
@@ -608,14 +608,14 @@
                 box.className = 'modal-overlay';
                 box.innerHTML =
                     '<div class="modal">' +
-                    '<div class="modal-header"><h2 id="giardinoOverlayTitolo">ðŸŒ± Pianta nel giardino</h2>' +
+                    '<div class="modal-header"><h2 id="giardinoOverlayTitolo">🌱 Pianta nel giardino</h2>' +
                     '<button class="close-modal" onclick="chiudiGiardinoOverlay()">&times;</button></div>' +
-                    '<div id="giardinoOverlayCarico" style="font-size:13px;opacity:0.7;display:none;">Caricamento notaâ€¦</div>' +
+                    '<div id="giardinoOverlayCarico" style="font-size:13px;opacity:0.7;display:none;">Caricamento nota…</div>' +
                     '<div class="form-group"><label>Titolo</label><input id="giardinoTitolo" maxlength="200"></div>' +
                     '<div class="form-group"><label>Nota</label><textarea id="giardinoTesto" rows="8" style="resize:vertical;"></textarea></div>' +
                     '<p id="giardinoStadio" style="font-size:12px;opacity:0.7;margin:0 0 10px;"></p>' +
                     '<p id="giardinoMsg" style="font-size:13px;margin:0 0 10px;display:none;"></p>' +
-                    '<p id="giardinoLinkWrap" style="font-size:13px;margin:0 0 10px;display:none;"><a id="giardinoLink" href="#" target="_blank" rel="noreferrer" style="color:var(--info);text-decoration:underline;">Vedi nel giardino â†’</a></p>' +
+                    '<p id="giardinoLinkWrap" style="font-size:13px;margin:0 0 10px;display:none;"><a id="giardinoLink" href="#" target="_blank" rel="noreferrer" style="color:var(--info);text-decoration:underline;">Vedi nel giardino →</a></p>' +
                     '<div class="modal-footer">' +
                     '<button class="btn" onclick="chiudiGiardinoOverlay()">Annulla</button>' +
                     '<button class="btn" style="background:var(--primary);color:#fff;" onclick="giardinoSalva_()">Salva nel giardino</button>' +
@@ -625,7 +625,7 @@
                 document.getElementById('giardinoTesto').addEventListener('input', aggiornaStadioGiardino_);
             }
             box.classList.add('active');
-            document.getElementById('giardinoOverlayTitolo').textContent = 'ðŸŒ± Pianta nel giardino';
+            document.getElementById('giardinoOverlayTitolo').textContent = '🌱 Pianta nel giardino';
             document.getElementById('giardinoMsg').style.display = 'none';
             document.getElementById('giardinoLinkWrap').style.display = 'none';
             const item = elementoGiardino_(tipo, titolo);
@@ -633,11 +633,11 @@
             document.getElementById('giardinoTitolo').value = titolo;
             document.getElementById('giardinoTesto').value = base;
             aggiornaStadioGiardino_();
-            // Se il titolo ha giÃ  un seme, precarica titolo e testo dalla nota.
+            // Se il titolo ha già un seme, precarica titolo e testo dalla nota.
             document.getElementById('giardinoOverlayCarico').style.display = 'block';
             giardinoCheck_(tipo, titolo).then(function(url) {
                 if (!url) return null;
-                document.getElementById('giardinoOverlayTitolo').textContent = 'ðŸŒ± Aggiorna nel giardino';
+                document.getElementById('giardinoOverlayTitolo').textContent = '🌱 Aggiorna nel giardino';
                 const slug = url.split('/notes/')[1];
                 if (!slug) return null;
                 return giardinoLeggi_(decodeURIComponent(slug));
@@ -660,7 +660,7 @@
         function aggiornaStadioGiardino_() {
             const t = document.getElementById('giardinoTesto');
             if (!t) return;
-            document.getElementById('giardinoStadio').textContent = 'DiventerÃ : ' + stadioPerGiardino_(t.value) + ' (' + t.value.length + ' caratteri)';
+            document.getElementById('giardinoStadio').textContent = 'Diventerà: ' + stadioPerGiardino_(t.value) + ' (' + t.value.length + ' caratteri)';
         }
 
         function giardinoAvviso_(testo) {
@@ -679,12 +679,12 @@
             const titolo = document.getElementById('giardinoTitolo').value.trim();
             const testo = document.getElementById('giardinoTesto').value;
             if (!titolo) {
-                giardinoAvviso_('Il titolo Ã¨ obbligatorio.');
+                giardinoAvviso_('Il titolo è obbligatorio.');
                 return;
             }
             const item = elementoGiardino_(GIARDINO_TIPO_, GIARDINO_TITOLO_);
             const tags = generiPerGiardino_(GIARDINO_TIPO_, item);
-            giardinoAvviso_('Salvataggioâ€¦');
+            giardinoAvviso_('Salvataggio…');
             try {
                 const res = await fetch(GIARDINO_URL + '/api/seed', {
                     method: 'POST',
@@ -699,7 +699,7 @@
                 });
                 const data = await res.json().catch(function() { return {}; });
                 if (!res.ok) throw new Error((data && data.error) || 'Salvataggio non riuscito.');
-                document.getElementById('giardinoOverlayTitolo').textContent = 'ðŸŒ± Aggiorna nel giardino';
+                document.getElementById('giardinoOverlayTitolo').textContent = '🌱 Aggiorna nel giardino';
                 const lw = document.getElementById('giardinoLinkWrap');
                 lw.style.display = 'block';
                 document.getElementById('giardinoLink').href = GIARDINO_URL + data.url;
@@ -716,7 +716,7 @@
 
         // --- SUGGERIMENTI ANIME via AniList (Richiesta 36) ---
         // Niente id salvato: search sul titolo, poi recommendations (tutto dal
-        // browser, gratis). Dati giÃ  completi: niente secondo giro di rete.
+        // browser, gratis). Dati già completi: niente secondo giro di rete.
         function pulisciTramaAniList_(s) {
             return String(s || '').replace(/<br\s*\/?>/gi, ' ').replace(/<[^>]+>/g, '').replace(/\s+/g, ' ').trim();
         }
@@ -745,7 +745,7 @@
             }).filter(function(c) { return c.id; });
         }
 
-        // Scrive subito meta+trama (dati giÃ  in mano, niente rete), poi prova
+        // Scrive subito meta+trama (dati già in mano, niente rete), poi prova
         // la traduzione IT con lo stesso traduttore gratis dei manga.
         function arricchisciSuggLocali_(candidati) {
             const gen = suggGen_;
@@ -756,8 +756,8 @@
                     const pezzi = [c.anno || '', c.stato || ''].filter(Boolean);
                     if (c.volumi) pezzi.push(c.volumi + (c.volumi === 1 ? ' volume' : ' volumi'));
                     if (c.generi) pezzi.push(c.generi);
-                    if (c.voto !== null && c.voto !== undefined) pezzi.push('â­ ' + c.voto);
-                    metaEl.textContent = pezzi.join(' Â· ');
+                    if (c.voto !== null && c.voto !== undefined) pezzi.push('⭐ ' + c.voto);
+                    metaEl.textContent = pezzi.join(' · ');
                 }
                 const tramaEl = document.getElementById('suggTrama' + i);
                 if (tramaEl && c.trama) tramaEl.textContent = c.trama;
@@ -772,7 +772,7 @@
         }
 
         async function suggAnime_(titolo) {
-            showToast('Cerco suggerimentiâ€¦');
+            showToast('Cerco suggerimenti…');
             try {
                 const posseduti = {};
                 animeList.forEach(function(x) { if (x && x.titolo) posseduti[normTitoloSugg_(x.titolo)] = true; });
@@ -790,7 +790,7 @@
 
         window.suggAnime_ = suggAnime_;
 
-        // ï¼‹ da un suggerimento anime: apre Nuovo Anime col titolo pronto
+        // ＋ da un suggerimento anime: apre Nuovo Anime col titolo pronto
         // (l'import resta manuale, come da modale).
         function suggAggiungiAnime_(titolo) {
             chiudiSuggOverlay();
@@ -802,7 +802,7 @@
 
         window.suggAggiungiAnime_ = suggAggiungiAnime_;
 
-        // ï¼‹ da un suggerimento manga: apre Nuovo Manga col titolo pronto.
+        // ＋ da un suggerimento manga: apre Nuovo Manga col titolo pronto.
         function suggAggiungiManga_(titolo) {
             chiudiSuggOverlay();
             const btn = document.getElementById('btnNuovoManga');
@@ -813,14 +813,14 @@
 
         window.suggAggiungiManga_ = suggAggiungiManga_;
 
-        // Stessa mappatura dell'import manga (guida: RELEASINGâ†’In corso, ecc).
+        // Stessa mappatura dell'import manga (guida: RELEASING→In corso, ecc).
         function statoMangaSugg_(s) {
             if (s === 'FINISHED' || s === 'CANCELLED') return 'Concluso';
             if (s === 'NOT_YET_RELEASED') return 'In arrivo';
             if (s === 'RELEASING' || s === 'HIATUS') return 'In corso';
             return '';
         }
-        // Stessa mappatura dell'import manga (RELEASINGâ†’In corso, ecc).
+        // Stessa mappatura dell'import manga (RELEASING→In corso, ecc).
         function statoMangaSugg_(s) {
             if (s === 'FINISHED' || s === 'CANCELLED') return 'Concluso';
             if (s === 'NOT_YET_RELEASED') return 'In arrivo';
@@ -855,7 +855,7 @@
         }
 
         async function suggManga_(titolo) {
-            showToast('Cerco suggerimentiâ€¦');
+            showToast('Cerco suggerimenti…');
             try {
                 const posseduti = {};
                 mangaList.forEach(function(x) { if (x && x.titolo) posseduti[normTitoloSugg_(x.titolo)] = true; });
@@ -1032,7 +1032,7 @@
 
             const sortVal = document.getElementById('sortSelAnime').value;
             filtered.sort((a, b) => {
-                // NUOVO: le opere contrassegnate come prioritarie (ðŸ“Œ) vengono sempre
+                // NUOVO: le opere contrassegnate come prioritarie (📌) vengono sempre
                 // mostrate per prime, indipendentemente dal criterio di ordinamento scelto
                 const pA = a.priorita ? 1 : 0;
                 const pB = b.priorita ? 1 : 0;
@@ -1097,10 +1097,10 @@
                 // Renderizzazione Generi sotto alle informazioni stagioni/film
                 let genresHTML = '';
                 if (item.generi && item.generi.trim() !== '') {
-                    genresHTML = `<div class="genre-tags-list" style="color: var(--primary);">ðŸŽ­ ${item.generi}</div>`;
+                    genresHTML = `<div class="genre-tags-list" style="color: var(--primary);">🎭 ${item.generi}</div>`;
                 }
 
-                // Cella Voto: pill "Vota" che apre l'overlay griglia; se giÃ  votato
+                // Cella Voto: pill "Vota" che apre l'overlay griglia; se già votato
                 // mostra il voto e apre la modale di modifica (unica via di modifica).
                 const haVotoGiaAssegnato = item.valutazione !== undefined && item.valutazione !== null &&
                     String(item.valutazione).trim() !== '' && item.valutazione !== '-';
@@ -1110,11 +1110,11 @@
 
                 // Definizione dinamica di classe e icona della stella per l'Anime
                 const starClass = item.preferito ? 'action-icon-btn is-favorite' : 'action-icon-btn';
-                const starIcon = item.preferito ? 'â˜…' : 'â˜†';
+                const starIcon = item.preferito ? '★' : '☆';
 
-                // NUOVO: Definizione dinamica di classe e titolo per il pin di prioritÃ  (ðŸ“Œ)
+                // NUOVO: Definizione dinamica di classe e titolo per il pin di priorità (📌)
                 const pinClass = item.priorita ? 'pin-btn is-priority' : 'pin-btn';
-                const pinTitle = item.priorita ? 'Rimuovi dalle prioritÃ ' : 'Contrassegna come prioritario';
+                const pinTitle = item.priorita ? 'Rimuovi dalle priorità' : 'Contrassegna come prioritario';
 
                 // --- GESTIONE COSTRUZIONE AVATAR MODIFICATA CON EFFETTO ZOOM E LIGHTBOX ---
                 let avatarHTML = '';
@@ -1129,19 +1129,19 @@
                     <td class="media-title">
                         <div style="display: flex; align-items: center; gap: 12px;">
                             <button class="${starClass}" style="color: var(--warning); font-size: 16px; flex-shrink: 0;" onclick="toggleFavoriteAnime('${safeTitle}', this)">${starIcon}</button>
-                            <button class="${pinClass}" onclick="togglePinAnime('${safeTitle}', this, event)" title="${pinTitle}">ðŸ“Œ</button>
+                            <button class="${pinClass}" onclick="togglePinAnime('${safeTitle}', this, event)" title="${pinTitle}">📌</button>
                             
                             ${avatarHTML}
                             
                             <div style="display: flex; flex-direction: column; gap: 3px;">
                                 <div style="font-weight: 600; display: flex; align-items: center; gap: 6px;">
                                     <span>${item.titolo || 'Senza Titolo'}</span>
-                                    <button class="action-icon-btn" style="font-size: 13px; padding: 0; background: none; border: none; cursor: pointer;" onclick="mostraSinossi('${safeTitle}', 'anime')" title="Visualizza Sinossi">â„¹ï¸</button>
-                                    <button class="action-icon-btn" style="font-size: 13px; padding: 0; background: none; border: none; cursor: pointer;" onclick="apriGestioneEpisodi('${safeTitle}')" title="Gestisci Episodi">ðŸ“º</button>
+                                    <button class="action-icon-btn" style="font-size: 13px; padding: 0; background: none; border: none; cursor: pointer;" onclick="mostraSinossi('${safeTitle}', 'anime')" title="Visualizza Sinossi">ℹ️</button>
+                                    <button class="action-icon-btn" style="font-size: 13px; padding: 0; background: none; border: none; cursor: pointer;" onclick="apriGestioneEpisodi('${safeTitle}')" title="Gestisci Episodi">📺</button>
                                     ${giardinoBtn_('anime', safeTitle)}
                                 </div>
                                 <div style="font-size: 12px; color: var(--text-muted); font-weight: normal;">
-                                    Stagioni: <b>${stagioniViste}/${stagioniTotali}</b> | Film: <b>${filmVisti}/${filmTotali}</b>${item.abbandonata ? ' <span style="color:#f87171; font-weight:700;">â›” Abbandonato</span>' : ''}
+                                    Stagioni: <b>${stagioniViste}/${stagioniTotali}</b> | Film: <b>${filmVisti}/${filmTotali}</b>${item.abbandonata ? ' <span style="color:#f87171; font-weight:700;">⛔ Abbandonato</span>' : ''}
                                 </div>
                                 ${genresHTML}
                             </div>
@@ -1154,10 +1154,10 @@
                         <span class="vision-box box-${coloreVisione}"></span>
                     </td>
                     <td style="text-align: center;">
-                        <span style="display:inline-grid;grid-template-columns:repeat(2,max-content);gap:2px;justify-items:center;justify-content:center;"><button class="action-icon-btn" onclick="apriModificaAnime('${safeTitle}')">âœï¸</button>
-                        <button class="action-icon-btn" onclick="suggAnime_('${safeTitle}')" title="Potrebbero piacerti anche">ðŸ’¡</button>
-                        <button class="action-icon-btn" onclick="rimuoviAnime('${safeTitle}')">ðŸ—‘ï¸</button>
-                        <button class="action-icon-btn" style="${item.abbandonata ? '' : 'opacity:0.45;'}" onclick="toggleAbbandonataAnime('${safeTitle}')" title="${item.abbandonata ? 'Riprendi l\'anime' : 'Abbandona l\'anime'}">â›”</button></span>
+                        <span style="display:inline-grid;grid-template-columns:repeat(2,max-content);gap:2px;justify-items:center;justify-content:center;"><button class="action-icon-btn" onclick="apriModificaAnime('${safeTitle}')">✏️</button>
+                        <button class="action-icon-btn" onclick="suggAnime_('${safeTitle}')" title="Potrebbero piacerti anche">💡</button>
+                        <button class="action-icon-btn" onclick="rimuoviAnime('${safeTitle}')">🗑️</button>
+                        <button class="action-icon-btn" style="${item.abbandonata ? '' : 'opacity:0.45;'}" onclick="toggleAbbandonataAnime('${safeTitle}')" title="${item.abbandonata ? 'Riprendi l\'anime' : 'Abbandona l\'anime'}">⛔</button></span>
                     </td>
                 `;
                 tbody.appendChild(tr);
@@ -1201,8 +1201,8 @@
             document.getElementById('inpNoteAnime').value = item.note || '';
             document.getElementById('inpValutazioneAnime').value = item.valutazione || '';
             document.getElementById('inpImmagineAnime').value = item.immagine || ''; // <--- NUOVO: Carica l'immagine esistente
-            // In modifica il flag nasce spuntato se l'anime Ã¨ giÃ  tutto visto
-            // (stagioni e film in pari), cosÃ¬ riflette la situazione reale.
+            // In modifica il flag nasce spuntato se l'anime è già tutto visto
+            // (stagioni e film in pari), così riflette la situazione reale.
             const giaTuttoVistoAnime = ((parseInt(item.stagioniTotali) || 0) + (parseInt(item.filmTotali) || 0)) > 0 &&
                 (parseInt(item.stagioniViste) || 0) >= (parseInt(item.stagioniTotali) || 0) &&
                 (parseInt(item.filmVisti) || 0) >= (parseInt(item.filmTotali) || 0);
@@ -1224,7 +1224,7 @@
             document.getElementById('modalOverlayAnime').classList.add('active');
         };
 
-        // "GiÃ  visto" e "Abbandonato" si escludono a vicenda.
+        // "Già visto" e "Abbandonato" si escludono a vicenda.
         document.getElementById('inpGiaVistoAnime').onchange = function() {
             if (this.checked) document.getElementById('inpAbbandonataAnime').checked = false;
         };
@@ -1246,19 +1246,19 @@
             const fTot = parseInt(document.getElementById('inpFilmTotaliAnime').value) || 0;
             let fVis = parseInt(document.getElementById('inpFilmVistiAnime').value) || 0;
 			if (sVis > sTot) {
-				alert("âŒ Le stagioni viste non possono superare le stagioni totali.");
+				alert("❌ Le stagioni viste non possono superare le stagioni totali.");
 				document.getElementById('btnSalvaAnime').innerText = "Salva";
 				return;
 			}
 			
 			if (fVis > fTot) {
-				alert("âŒ I film visti non possono superare i film totali.");
+				alert("❌ I film visti non possono superare i film totali.");
 				document.getElementById('btnSalvaAnime').innerText = "Salva";
 				return;
 			}
 
-            // Flag "ðŸ“º Anime giÃ  visto per intero": stesso ragionamento delle
-            // Serie TV, valutato prima del salvataggio perchÃ© puÃ² interromperlo.
+            // Flag "📺 Anime già visto per intero": stesso ragionamento delle
+            // Serie TV, valutato prima del salvataggio perché può interromperlo.
             // Porta viste = totali e marca le righe episodi via segnaComeVista
             // (solo quelle con totale noto, come per le serie).
             const flagGiaVistoAnime = document.getElementById('inpGiaVistoAnime').checked;
@@ -1266,7 +1266,7 @@
             let segnaComeVistaAnime = false;
             if (flagGiaVistoAnime) {
                 if (sTot + fTot <= 0) {
-                    alert('âŒ Con "Anime giÃ  visto" devi indicare almeno 1 stagione o 1 film totale.');
+                    alert('❌ Con "Anime già visto" devi indicare almeno 1 stagione o 1 film totale.');
                     document.getElementById('btnSalvaAnime').innerText = "Salva";
                     return;
                 }
@@ -1287,16 +1287,16 @@
                 segnaComeVistaAnime = true;
             }
 
-            // Flag "â›” Anime abbandonato": congela l'anime (flag rosso, fuori
+            // Flag "⛔ Anime abbandonato": congela l'anime (flag rosso, fuori
             // dal widget In Corso). Conferma solo sulla transizione, non a ogni
-            // salvataggio. Prevale su "giÃ  visto".
+            // salvataggio. Prevale su "già visto".
             const flagAbbandonataAnime = document.getElementById('inpAbbandonataAnime').checked;
             const itemCorrenteAbbAnime = isEditAnimeFlag ? animeList.find(a => a.titolo === targetEditTitleAnime) : null;
             const eraAbbandonataAnime = !!(itemCorrenteAbbAnime && itemCorrenteAbbAnime.abbandonata);
             let abbandonataNuovaAnime = false;
             if (flagAbbandonataAnime) {
                 if (!eraAbbandonataAnime) {
-                    const okAbbandonoAnime = confirm('Segno "' + document.getElementById('inpTitoloAnime').value.trim() + '" come abbandonato: uscirÃ  dal widget "In Corso", il flag visione diventerÃ  rosso e il progresso resterÃ  congelato. Potrai riprenderlo quando vuoi.\n\nProcedo con il salvataggio?');
+                    const okAbbandonoAnime = confirm('Segno "' + document.getElementById('inpTitoloAnime').value.trim() + '" come abbandonato: uscirà dal widget "In Corso", il flag visione diventerà rosso e il progresso resterà congelato. Potrai riprenderlo quando vuoi.\n\nProcedo con il salvataggio?');
                     if (!okAbbandonoAnime) {
                         document.getElementById('btnSalvaAnime').innerText = "Salva";
                         return;
@@ -1358,14 +1358,14 @@
             const cb = function(data) {
                 animeList = data || [];
                 episodiPerStagionePendenteAnime = null;
-                // Se in questa sessione del modale Ã¨ stata scelta una sinossi da AniList,
+                // Se in questa sessione del modale è stata scelta una sinossi da AniList,
                 // la scriviamo ora sul foglio satellite: a questo punto la riga in SinossiAnime
-                // esiste di sicuro (creata da addAnime, o giÃ  presente in caso di modifica).
+                // esiste di sicuro (creata da addAnime, o già presente in caso di modifica).
                 if (sinossiPendenteAnime) {
                     impostaSinossiSB_(dati.titolo, 'anime', sinossiPendenteAnime)
                         .catch(function(err) {
                             console.error('Errore salvataggio sinossi AniList: ' + err);
-                            showToast('Opera salvata, ma la sinossi AniList non Ã¨ stata scritta. Riprova dal pulsante ðŸ”Ž.', 'error');
+                            showToast('Opera salvata, ma la sinossi AniList non è stata scritta. Riprova dal pulsante 🔎.', 'error');
                         });
                     sinossiPendenteAnime = null;
                 }
@@ -1382,7 +1382,7 @@
                 showToast(isEditAnime ? 'Anime aggiornato con successo' : 'Anime aggiunto con successo', 'success');
             };
             const errorCb = function(err) {
-                alert("âŒ Errore durante il salvataggio Anime: " + err.message);
+                alert("❌ Errore durante il salvataggio Anime: " + err.message);
                 document.getElementById('btnSalvaAnime').innerText = "Salva";
             };
             
@@ -1404,7 +1404,7 @@
                     showToast('Anime eliminato', 'success');
                 }).catch(function(err) {
                     console.error('Errore eliminazione anime:', err);
-                    alert("âŒ Errore durante l'eliminazione.");
+                    alert("❌ Errore durante l'eliminazione.");
                 });
             }
         };
@@ -1417,10 +1417,10 @@
         // Il secondo parametro (facoltativo) viene passato solo dalle card del
         // widget "In Corso" della Home: in quel caso di fianco all'elenco delle
         // stagioni si vede la copertina dell'opera e l'overlay si allarga un po'.
-        // Aperto dall'icona ðŸ“º della vista Anime resta identico a prima.
+        // Aperto dall'icona 📺 della vista Anime resta identico a prima.
         window.apriGestioneEpisodi = function(titolo, mostraCopertina) {
             episodiOverlayTitoloCorrente = titolo;
-            document.getElementById('episodiModalTitle').innerText = 'ðŸ“º Episodi â€” ' + titolo;
+            document.getElementById('episodiModalTitle').innerText = '📺 Episodi — ' + titolo;
 
             let conCopertina = false;
             if (mostraCopertina) {
@@ -1430,7 +1430,7 @@
                 nascondiCopertinaOverlay('episodiCopertina');
             }
 
-            // L'overlay si allarga solo se la copertina c'Ã¨ davvero: senza
+            // L'overlay si allarga solo se la copertina c'è davvero: senza
             // immagine resta della larghezza di sempre.
             const modaleEl = document.querySelector('#modalOverlayEpisodi .modal');
             if (modaleEl) modaleEl.style.maxWidth = conCopertina ? '640px' : '560px';
@@ -1458,21 +1458,21 @@
                 });
 
             if (righe.length === 0) {
-                container.innerHTML = `<p style="color:var(--text-muted); padding: 20px 0; text-align:center;">Nessuna stagione o film registrato per questo titolo. Imposta le "Stagioni Totali" / "Film Totali" dal pulsante âœï¸ per generare le righe.</p>`;
+                container.innerHTML = `<p style="color:var(--text-muted); padding: 20px 0; text-align:center;">Nessuna stagione o film registrato per questo titolo. Imposta le "Stagioni Totali" / "Film Totali" dal pulsante ✏️ per generare le righe.</p>`;
                 return;
             }
 
-            // Determina, per ciascun tipo, se la riga precedente Ã¨ completa (per il vincolo sequenziale lato UI)
+            // Determina, per ciascun tipo, se la riga precedente è completa (per il vincolo sequenziale lato UI)
             let html = '';
             const stagioni = righe.filter(r => r.tipo === 'Stagione');
             const film = righe.filter(r => r.tipo === 'Film');
 
             // Anime abbandonato: i visti sono congelati (banner + controlli
-            // disabilitati/nascosti), i totali restano modificabili con âœï¸.
+            // disabilitati/nascosti), i totali restano modificabili con ✏️.
             const animeCorrenteOverlay = (animeList || []).find(function(x) { return (x.titolo || '').trim() === episodiOverlayTitoloCorrente.trim(); });
             const overlayCongelatoAnime = !!(animeCorrenteOverlay && animeCorrenteOverlay.abbandonata);
             if (overlayCongelatoAnime) {
-                html += `<p style="color:#f87171; font-size:12.5px; font-weight:600; margin:0 0 6px 0;">â›” Anime abbandonato: i progressi sono congelati. Riprendilo (â›” nella lista) per modificarli â€” i totali restano modificabili con âœï¸.</p>`;
+                html += `<p style="color:#f87171; font-size:12.5px; font-weight:600; margin:0 0 6px 0;">⛔ Anime abbandonato: i progressi sono congelati. Riprendilo (⛔ nella lista) per modificarli — i totali restano modificabili con ✏️.</p>`;
             }
 
             function renderGruppo(gruppo, iconaTipo) {
@@ -1488,20 +1488,20 @@
                     const disabledMeno = (visti <= 0 || overlayCongelatoAnime) ? 'disabled' : '';
                     const disabledPiu = (bloccata || overlayCongelatoAnime || (totali > 0 && visti >= totali)) ? 'disabled' : '';
 
-                    // âœ… = segna l'unitÃ  come tutta vista (solo se sbloccata e non
-                    // giÃ  completa); ðŸ”¢ = imposta a mano gli episodi visti.
+                    // ✅ = segna l'unità come tutta vista (solo se sbloccata e non
+                    // già completa); 🔢 = imposta a mano gli episodi visti.
                     const btnTuttaVista = (!completa && !bloccata && !overlayCongelatoAnime)
-                        ? `<button class="episodi-btn-edit" onclick="segnaUnitaComeVistaAnime('${safeTitle}', '${ep.tipo}', ${ep.numero})" title="Segna ${ep.tipo} ${ep.numero} come tutto visto">âœ…</button>`
+                        ? `<button class="episodi-btn-edit" onclick="segnaUnitaComeVistaAnime('${safeTitle}', '${ep.tipo}', ${ep.numero})" title="Segna ${ep.tipo} ${ep.numero} come tutto visto">✅</button>`
                         : '';
                     const btnVistiManualAnime = overlayCongelatoAnime
                         ? ''
-                        : `<button class="episodi-btn-edit" onclick="modificaVistiEpisodi('${safeTitle}', '${ep.tipo}', ${ep.numero}, ${visti}, ${totali})" title="Imposta manualmente gli episodi visti">ðŸ”¢</button>`;
+                        : `<button class="episodi-btn-edit" onclick="modificaVistiEpisodi('${safeTitle}', '${ep.tipo}', ${ep.numero}, ${visti}, ${totali})" title="Imposta manualmente gli episodi visti">🔢</button>`;
 
                     out += `
                         <div class="episodi-row ${bloccata ? 'locked' : ''}">
                             <div class="episodi-row-info">
-                                <div class="episodi-row-title">${iconaTipo} ${ep.tipo} ${ep.numero} ${completa ? 'âœ…' : (bloccata ? 'ðŸ”’' : '')}
-                                    <button class="episodi-btn-edit" onclick="modificaTotaleEpisodi('${safeTitle}', '${ep.tipo}', ${ep.numero}, ${totali})" title="Modifica episodi totali">âœï¸</button>
+                                <div class="episodi-row-title">${iconaTipo} ${ep.tipo} ${ep.numero} ${completa ? '✅' : (bloccata ? '🔒' : '')}
+                                    <button class="episodi-btn-edit" onclick="modificaTotaleEpisodi('${safeTitle}', '${ep.tipo}', ${ep.numero}, ${totali})" title="Modifica episodi totali">✏️</button>
                                     ${btnVistiManualAnime}
                                     ${btnTuttaVista}
                                 </div>
@@ -1509,7 +1509,7 @@
                                 <div class="episodi-progress-outer"><div class="episodi-progress-inner" style="width:${percentuale}%;"></div></div>
                             </div>
                             <div class="episodi-row-actions">
-                                <button class="episodi-btn" ${disabledMeno} onclick="incrementaEpisodio('${safeTitle}', '${ep.tipo}', ${ep.numero}, -1)">âˆ’</button>
+                                <button class="episodi-btn" ${disabledMeno} onclick="incrementaEpisodio('${safeTitle}', '${ep.tipo}', ${ep.numero}, -1)">−</button>
                                 <button class="episodi-btn" ${disabledPiu} onclick="incrementaEpisodio('${safeTitle}', '${ep.tipo}', ${ep.numero}, 1)">+</button>
                             </div>
                         </div>`;
@@ -1519,11 +1519,11 @@
 
             if (stagioni.length > 0) {
                 html += `<div class="section-title-label" style="margin:14px 0 10px 0; font-size:12px;">Stagioni</div>`;
-                html += renderGruppo(stagioni, 'ðŸŽžï¸');
+                html += renderGruppo(stagioni, '🎞️');
             }
             if (film.length > 0) {
                 html += `<div class="section-title-label" style="margin:14px 0 10px 0; font-size:12px;">Film</div>`;
-                html += renderGruppo(film, 'ðŸŽ¬');
+                html += renderGruppo(film, '🎬');
             }
 
             container.innerHTML = html;
@@ -1547,7 +1547,7 @@
             }
         }
 
-        // senzaLogEpisodio = true per âœ…/ðŸ”¢ da overlay (popolamento archivio):
+        // senzaLogEpisodio = true per ✅/🔢 da overlay (popolamento archivio):
         // aggiorna i visti e ricalcola, ma non scrive righe nel log episodi.
         async function updateEpisodioVistiSB_(titolo, tipo, numero, delta, senzaLogEpisodio) {
             const titoloTrim = String(titolo).trim();
@@ -1642,7 +1642,7 @@
                         renderWidgetInCorso();
                     }
                     // Auto-voto: solo + che completa TUTTO l'anime Concluso
-                    // (verde) mai votato. Niente âœ…/ðŸ”¢/matita, niente singole
+                    // (verde) mai votato. Niente ✅/🔢/matita, niente singole
                     // stagioni, niente modale flag.
                     if (parseInt(delta) > 0 && colorePrimaAutoVoto !== 'verde') {
                         const itemDopo = (animeList || []).find(function(a) { return a.titolo === titolo; });
@@ -1654,7 +1654,7 @@
                     }
                 })
                 .catch(function(err) {
-                    showToast('âŒ Errore aggiornamento episodio: ' + err.message, 'error');
+                    showToast('❌ Errore aggiornamento episodio: ' + err.message, 'error');
                 });
         };
 
@@ -1663,7 +1663,7 @@
             if (nuovoTotaleStr === null) return; // annullato
             const nuovoTotale = parseInt(nuovoTotaleStr);
             if (isNaN(nuovoTotale) || nuovoTotale < 0) {
-                showToast('âŒ Inserisci un numero valido', 'error');
+                showToast('❌ Inserisci un numero valido', 'error');
                 return;
             }
 			
@@ -1680,29 +1680,29 @@
                     showToast('Totale episodi aggiornato', 'success');
                 })
                 .catch(function(err) {
-                    showToast('âŒ Errore aggiornamento totale episodi: ' + err.message, 'error');
+                    showToast('❌ Errore aggiornamento totale episodi: ' + err.message, 'error');
                 });
         };
 
-        // âœ… Segna l'unitÃ  come tutta vista in un colpo solo (es. 3 stagioni
-        // giÃ  viste su 5). Delega a updateEpisodioVistiSB_ con il delta
-        // mancante, cosÃ¬ restano validi vincolo sequenziale, log e ricalcolo.
+        // ✅ Segna l'unità come tutta vista in un colpo solo (es. 3 stagioni
+        // già viste su 5). Delega a updateEpisodioVistiSB_ con il delta
+        // mancante, così restano validi vincolo sequenziale, log e ricalcolo.
         window.segnaUnitaComeVistaAnime = function(titolo, tipo, numero) {
             const riga = (episodiAnimeList || []).find(function(e) {
                 return (e.titolo || '').trim() === String(titolo).trim() && e.tipo === tipo && parseInt(e.numero) === parseInt(numero);
             });
             if (!riga) {
-                showToast('âŒ Riga non trovata', 'error');
+                showToast('❌ Riga non trovata', 'error');
                 return;
             }
             const totali = parseInt(riga.episodiTotali) || 0;
             const visti = parseInt(riga.episodiVisti) || 0;
             if (totali <= 0) {
-                showToast('âŒ Imposta prima gli episodi totali con la matita âœï¸, poi segna come vista.', 'error');
+                showToast('❌ Imposta prima gli episodi totali con la matita ✏️, poi segna come vista.', 'error');
                 return;
             }
             if (visti >= totali) {
-                showToast('UnitÃ  giÃ  completa.', 'success');
+                showToast('Unità già completa.', 'success');
                 return;
             }
             updateEpisodioVistiSB_(titolo, tipo, numero, totali - visti, true)
@@ -1719,28 +1719,28 @@
                     renderEpisodiOverlay();
                     renderListAnime();
                     aggiornaLogEpisodiSeVisibile();
-                    showToast('âœ… ' + tipo + ' ' + numero + ' segnata come tutta vista', 'success');
+                    showToast('✅ ' + tipo + ' ' + numero + ' segnata come tutta vista', 'success');
                 })
                 .catch(function(err) {
-                    showToast('âŒ Errore aggiornamento episodio: ' + err.message, 'error');
+                    showToast('❌ Errore aggiornamento episodio: ' + err.message, 'error');
                 });
         };
 
-        // ðŸ”¢ Imposta a mano gli episodi visti (es. 450 su 800 senza premere
+        // 🔢 Imposta a mano gli episodi visti (es. 450 su 800 senza premere
         // + 450 volte). Stessa delega: aumenti vincolati alla sequenza,
         // diminuzioni sempre permesse, clamp al totale come il +.
         window.modificaVistiEpisodi = function(titolo, tipo, numero, vistiAttuali, totaleAttuale) {
             const totali = parseInt(totaleAttuale) || 0;
-            const intervallo = totali > 0 ? ' (0â€“' + totali + ')' : '';
+            const intervallo = totali > 0 ? ' (0–' + totali + ')' : '';
             const nuovoVistiStr = prompt(`Episodi visti per ${tipo} ${numero}${intervallo}:`, vistiAttuali);
             if (nuovoVistiStr === null) return; // annullato
             const nuovoVisti = parseInt(nuovoVistiStr);
             if (isNaN(nuovoVisti) || nuovoVisti < 0) {
-                showToast('âŒ Inserisci un numero valido', 'error');
+                showToast('❌ Inserisci un numero valido', 'error');
                 return;
             }
             if (totali > 0 && nuovoVisti > totali) {
-                showToast('âŒ Il massimo per ' + tipo + ' ' + numero + ' Ã¨ ' + totali + ' episodi.', 'error');
+                showToast('❌ Il massimo per ' + tipo + ' ' + numero + ' è ' + totali + ' episodi.', 'error');
                 return;
             }
             const visti = parseInt(vistiAttuali) || 0;
@@ -1765,12 +1765,12 @@
                     showToast('Episodi visti aggiornati', 'success');
                 })
                 .catch(function(err) {
-                    showToast('âŒ Errore aggiornamento episodi visti: ' + err.message, 'error');
+                    showToast('❌ Errore aggiornamento episodi visti: ' + err.message, 'error');
                 });
         };
 
         // ==========================================================
-        // ðŸ•˜ NUOVO: LOG EPISODI (tab dedicato dentro la vista Anime)
+        // 🕘 NUOVO: LOG EPISODI (tab dedicato dentro la vista Anime)
         // ==========================================================
         // Switch tra la lista classica e il log storico dei singoli episodi.
         // Il widget "Log di Sistema" della Home non viene mai toccato da
@@ -1797,7 +1797,7 @@
         }
 
         // ==========================================
-        //   FASE 11 â€” GRUPPO LOG (Supabase diretto)
+        //   FASE 11 — GRUPPO LOG (Supabase diretto)
         // ==========================================
 
         async function ottieniUltimiLogSB_(filtroTipoMedia, filtroTipoEvento, filtroTitolo, ordineAsc) {
@@ -1876,7 +1876,7 @@
 
             if (loadingEl) {
                 loadingEl.style.display = 'block';
-                loadingEl.innerText = 'â³ Caricamento log episodi...';
+                loadingEl.innerText = '⏳ Caricamento log episodi...';
             }
             tableEl.style.display = 'none';
             if (btnRefresh) {
@@ -1914,7 +1914,7 @@
                     console.error('Errore nel caricamento del Log Episodi:', err);
                     if (loadingEl) {
                         loadingEl.style.display = 'block';
-                        loadingEl.innerText = 'âš ï¸ Impossibile caricare il log episodi.';
+                        loadingEl.innerText = '⚠️ Impossibile caricare il log episodi.';
                     }
                     if (btnRefresh) {
                         btnRefresh.classList.remove('spinning');
@@ -1938,8 +1938,8 @@
                 if (emptyEl) {
                     emptyEl.style.display = 'block';
                     emptyEl.innerText = filtriAttivi
-                        ? 'Nessun episodio trovato con i filtri selezionati. ðŸ”'
-                        : 'Nessun episodio registrato finora. ðŸ“º';
+                        ? 'Nessun episodio trovato con i filtri selezionati. 🔍'
+                        : 'Nessun episodio registrato finora. 📺';
                 }
                 return;
             }
@@ -1949,7 +1949,7 @@
                 const tr = document.createElement('tr');
 
                 const tipoClass = (log.tipo === 'Film') ? 'ep-log-badge-film' : 'ep-log-badge-stagione';
-                const tipoIcona = (log.tipo === 'Film') ? 'ðŸŽ¬' : 'ðŸŽžï¸';
+                const tipoIcona = (log.tipo === 'Film') ? '🎬' : '🎞️';
 
                 const isVisto = String(log.azione).toUpperCase() === 'VISTO';
 
@@ -1958,22 +1958,22 @@
                 const epLabel = 'Ep. ' + log.episodioInteressato + (log.episodiTotali > 0 ? ('/' + log.episodiTotali) : '');
 
                 // L'azione "Visto" che raggiunge l'ultimo episodio della stagione/film
-                // (episodioInteressato === episodiTotali) porta con sÃ© anche l'esito di
+                // (episodioInteressato === episodiTotali) porta con sé anche l'esito di
                 // completamento calcolato lato server (stessa identica logica del
                 // widget "Log di Sistema" della Home): COMPLETAMENTO -> Anime Completato,
                 // altrimenti -> Stagione completata / Film completato.
                 const haCompletatoUnita = isVisto && log.episodiTotali > 0 && log.episodioInteressato === log.episodiTotali;
 
                 let azioneClass = isVisto ? 'ep-log-azione-visto' : 'ep-log-azione-rimosso';
-                let azioneLabel = isVisto ? 'âœ… Visto' : 'â†©ï¸ Rimosso';
+                let azioneLabel = isVisto ? '✅ Visto' : '↩️ Rimosso';
 
                 if (haCompletatoUnita) {
                     if (String(log.esito).toUpperCase() === 'COMPLETAMENTO') {
                         azioneClass = 'ep-log-azione-completato-anime';
-                        azioneLabel = 'âœ… Visto â€” ðŸ† Anime Completato';
+                        azioneLabel = '✅ Visto — 🏆 Anime Completato';
                     } else {
                         azioneClass = 'ep-log-azione-completato-unita';
-                        azioneLabel = 'âœ… Visto â€” ðŸŽ¬ ' + (log.tipo === 'Film' ? 'Film completato' : 'Stagione completata');
+                        azioneLabel = '✅ Visto — 🎬 ' + (log.tipo === 'Film' ? 'Film completato' : 'Stagione completata');
                     }
                 }
 
@@ -1988,7 +1988,7 @@
             });
         }
 
-        // ðŸ” Filtri di testata (Titolo, Tipo, Azione, Dal/Al): la ricerca per
+        // 🔍 Filtri di testata (Titolo, Tipo, Azione, Dal/Al): la ricerca per
         // titolo usa un debounce di 350ms, tutti gli altri ricaricano subito.
         (function initEpisodiLogFilters() {
             const inputTitolo = document.getElementById('filterEpLogTitolo');
@@ -2016,7 +2016,7 @@
             });
         })();
 
-        // ðŸ”ƒ / â†º / ðŸ”„ Ordinamento, reset filtri e refresh manuale
+        // 🔃 / ↺ / 🔄 Ordinamento, reset filtri e refresh manuale
         (function initEpisodiLogActions() {
             const btnOrdine = document.getElementById('btnToggleEpLogOrdine');
             const btnReset = document.getElementById('btnResetEpLogFiltri');
@@ -2032,8 +2032,8 @@
                     const isAsc = btnOrdine.getAttribute('data-asc') === 'true';
                     const nuovoStato = !isAsc;
                     btnOrdine.setAttribute('data-asc', String(nuovoStato));
-                    btnOrdine.innerHTML = nuovoStato ? 'â¬†ï¸ Meno recenti' : 'â¬‡ï¸ Recenti';
-                    btnOrdine.title = nuovoStato ? 'Inverti ordinamento (dal piÃ¹ recente)' : 'Inverti ordinamento (dal piÃ¹ vecchio)';
+                    btnOrdine.innerHTML = nuovoStato ? '⬆️ Meno recenti' : '⬇️ Recenti';
+                    btnOrdine.title = nuovoStato ? 'Inverti ordinamento (dal più recente)' : 'Inverti ordinamento (dal più vecchio)';
                     btnOrdine.classList.toggle('filter-active', nuovoStato);
                     caricaLogEpisodi();
                 });
@@ -2048,8 +2048,8 @@
                     if (inputAl) inputAl.value = '';
                     if (btnOrdine) {
                         btnOrdine.setAttribute('data-asc', 'false');
-                        btnOrdine.innerHTML = 'â¬‡ï¸ Recenti';
-                        btnOrdine.title = 'Inverti ordinamento (dal piÃ¹ vecchio)';
+                        btnOrdine.innerHTML = '⬇️ Recenti';
+                        btnOrdine.title = 'Inverti ordinamento (dal più vecchio)';
                         btnOrdine.classList.remove('filter-active');
                     }
                     caricaLogEpisodi();
@@ -2061,12 +2061,29 @@
             }
         })();
 
-        // Se il tab "Log Episodi" Ã¨ attualmente visibile, lo ricarica: usata
-        // dopo un'azione (+/-/âœï¸) sull'overlay episodi, cosÃ¬ il log resta
+        // Se il tab "Log Episodi" è attualmente visibile, lo ricarica: usata
+        // dopo un'azione (+/-/✏️) sull'overlay episodi, così il log resta
         // coerente con quanto appena segnato, senza dover cambiare tab.
-function aggiornaLogEpisodiSeVisibile() {
-    const paneLog = document.getElementById('animePaneLog');
-    if (paneLog && paneLog.style.display !== 'none') {
-        caricaLogEpisodi();
-    }
-}
+        function aggiornaLogEpisodiSeVisibile() {
+            const paneLog = document.getElementById('animePaneLog');
+            if (paneLog && paneLog.style.display !== 'none') {
+                caricaLogEpisodi();
+            }
+        }
+
+        // ==========================================
+        //                  LOGICA MANGA
+        // ==========================================
+
+        // ==========================================
+        //   📡 TRACKER SERIE TV (view "Serie TV")
+        //   Stesso disegno della vista Anime (serie ad episodi), semplificato:
+        //   niente film collegati, niente voto, niente priorita. Generi e
+        //   stagioni arrivano da TMDB via Edge Function tmdb-proxy
+        //   (action tv_search / tv_detail), come il Gruppo Cinema.
+        // ==========================================
+        let serieTvList = [];
+        let episodiSerieTvList = []; // righe di episodi_serie_tv per TUTTI i titoli
+
+        // true se il titolo ha almeno un episodio segnato come visto, anche se
+        // nessuna stagione risulta ancora completata (colore "In Visione").

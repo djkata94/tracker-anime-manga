@@ -1,4 +1,4 @@
-﻿        function statoBadgeLibro_(stato) {
+function statoBadgeLibro_(stato) {
             const s = String(stato || 'Da leggere');
             if (s === 'Letto') return 'status-concluso';
             if (s === 'Abbandonato') return 'status-altro-anime';
@@ -132,7 +132,7 @@
             }).catch(function(err) {
                 console.error('Errore caricamento dati Libri da Supabase:', err);
                 document.getElementById('loadingLibri').style.display = 'none';
-                alert('âŒ Errore nel caricamento dei libri. Controlla la console per i dettagli.');
+                alert('❌ Errore nel caricamento dei libri. Controlla la console per i dettagli.');
             });
         }
 
@@ -218,22 +218,22 @@
 
                 let genresHTML = '';
                 if (item.generi && item.generi.trim() !== '') {
-                    genresHTML = `<div class="genre-tags-list" style="color: var(--accent);">ðŸŽ­ ${item.generi}</div>`;
+                    genresHTML = `<div class="genre-tags-list" style="color: var(--accent);">🎭 ${item.generi}</div>`;
                 }
                 let sagaHTML = '';
                 if (item.sagaNome && item.sagaNome.trim() !== '') {
                     const numTxt = (item.sagaNumero !== null && item.sagaNumero !== undefined) ? ' #' + item.sagaNumero : '';
-                    sagaHTML = `<div class="genre-tags-list" style="color: var(--success);">ðŸ“š ${item.sagaNome}${numTxt}</div>`;
+                    sagaHTML = `<div class="genre-tags-list" style="color: var(--success);">📚 ${item.sagaNome}${numTxt}</div>`;
                 }
                 let autoreHTML = '';
                 if (item.autore && item.autore.trim() !== '') {
-                    autoreHTML = `<div style="font-size:12px; color:var(--text-muted);">âœï¸ ${item.autore}</div>`;
+                    autoreHTML = `<div style="font-size:12px; color:var(--text-muted);">✍️ ${item.autore}</div>`;
                 }
 
                 let starClass = item.preferito ? 'star-btn is-favorite' : 'star-btn';
-                let starIcon = item.preferito ? 'â˜…' : 'â˜†';
+                let starIcon = item.preferito ? '★' : '☆';
                 let pinClass = item.priorita ? 'pin-btn is-priority' : 'pin-btn';
-                let pinTitle = item.priorita ? 'Rimuovi dalle prioritÃ ' : 'Contrassegna come prioritario';
+                let pinTitle = item.priorita ? 'Rimuovi dalle priorità' : 'Contrassegna come prioritario';
 
                 let avatarHTML = '';
                 if (item.immagine && item.immagine.trim() !== '') {
@@ -247,12 +247,12 @@
                     <td class="media-title">
                         <div style="display: flex; align-items: center; gap: 12px;">
                             <button class="${starClass}" style="flex-shrink: 0;" onclick="toggleFavoriteLibri('${safeTitle}', this)">${starIcon}</button>
-                            <button class="${pinClass}" onclick="togglePinLibri('${safeTitle}', this, event)" title="${pinTitle}">ðŸ“Œ</button>
+                            <button class="${pinClass}" onclick="togglePinLibri('${safeTitle}', this, event)" title="${pinTitle}">📌</button>
                             ${avatarHTML}
                             <div style="display: flex; flex-direction: column; gap: 3px;">
                                 <div style="font-weight: 600; display: flex; align-items: center; gap: 6px;">
                                     <span>${item.titolo || 'Senza Titolo'}</span>
-                                    <button class="action-icon-btn" style="font-size: 13px; padding: 0; background: none; border: none; cursor: pointer;" onclick="mostraSinossi('${safeTitle}', 'libri')" title="Visualizza Trama">â„¹ï¸</button>
+                                    <button class="action-icon-btn" style="font-size: 13px; padding: 0; background: none; border: none; cursor: pointer;" onclick="mostraSinossi('${safeTitle}', 'libri')" title="Visualizza Trama">ℹ️</button>
                                 </div>
                                 ${autoreHTML}
                                 ${sagaHTML}
@@ -264,8 +264,8 @@
                     <td><span class="status-badge ${badgeClass}">${item.stato || 'Da leggere'}</span></td>
                     <td style="color: var(--text-muted); font-size: 13px;">${item.note || '-'}</td>
                     <td style="text-align: center; white-space:nowrap;">
-                        <button class="action-icon-btn" onclick="apriModificaLibro('${safeTitle}')">âœï¸</button>
-                        <button class="action-icon-btn" onclick="rimuoviLibro('${safeTitle}')">ðŸ—‘ï¸</button>
+                        <button class="action-icon-btn" onclick="apriModificaLibro('${safeTitle}')">✏️</button>
+                        <button class="action-icon-btn" onclick="rimuoviLibro('${safeTitle}')">🗑️</button>
                     </td>
                 `;
                 tbody.appendChild(tr);
@@ -398,7 +398,7 @@
                     impostaSinossiSB_(dati.titolo, 'libri', sinossiPendenteLibri)
                         .catch(function(err) {
                             console.error('Errore salvataggio trama Hardcover: ' + err);
-                            showToast('Libro salvato, ma la trama non Ã¨ stata scritta. Riprova dal pulsante ðŸ”Ž.', 'error');
+                            showToast('Libro salvato, ma la trama non è stata scritta. Riprova dal pulsante 🔎.', 'error');
                         });
                     sinossiPendenteLibri = null;
                 }
@@ -411,7 +411,7 @@
                 showToast(isEdit ? 'Libro aggiornato con successo' : 'Libro aggiunto con successo', 'success');
             };
             const errorCb = function(err) {
-                alert('âŒ Errore durante il salvataggio: ' + (err && err.message ? err.message : err));
+                alert('❌ Errore durante il salvataggio: ' + (err && err.message ? err.message : err));
                 document.getElementById('btnSalvaLibri').innerText = 'Salva';
             };
 
@@ -431,7 +431,7 @@
                     showToast('Libro eliminato', 'success');
                 }).catch(function(err) {
                     console.error('Errore eliminazione libro:', err);
-                    alert("âŒ Errore durante l'eliminazione.");
+                    alert("❌ Errore durante l'eliminazione.");
                 });
             }
         };
@@ -443,7 +443,7 @@
             item.preferito = nuovoStato;
             if (btn) {
                 btn.classList.toggle('is-favorite', nuovoStato);
-                btn.innerText = nuovoStato ? 'â˜…' : 'â˜†';
+                btn.innerText = nuovoStato ? '★' : '☆';
             }
             if (currentFavFilterLibri === 'yes' && !nuovoStato) renderListLibri();
             toggleLibroPreferitoSB_(titolo, nuovoStato).catch(function(err) {
@@ -462,11 +462,11 @@
             item.priorita = nuovoStato;
             if (btn) {
                 btn.classList.toggle('is-priority', nuovoStato);
-                btn.title = nuovoStato ? 'Rimuovi dalle prioritÃ ' : 'Contrassegna come prioritario';
+                btn.title = nuovoStato ? 'Rimuovi dalle priorità' : 'Contrassegna come prioritario';
             }
             renderListLibri();
             toggleLibroPrioritaSB_(titolo, nuovoStato).catch(function(err) {
-                console.error('Errore toggle prioritÃ  libro:', err);
+                console.error('Errore toggle priorità libro:', err);
                 item.priorita = !nuovoStato;
                 renderListLibri();
             });
@@ -474,12 +474,12 @@
         window.togglePinLibri = togglePinLibri;
 
         // ------------------------------------------
-        // ðŸ”Ž GOOGLE BOOKS (chiamata diretta, nessuna chiave)
+        // 🔎 GOOGLE BOOKS (chiamata diretta, nessuna chiave)
         // ------------------------------------------
 
         // Euristica lingua trama (Richiesta 38): Hardcover non dichiara la
         // lingua della descrizione. Se il testo contiene parole tipicamente
-        // italiane lo tengo cosÃ¬ com'Ã¨, altrimenti traduco ENâ†’IT (stesso
+        // italiane lo tengo così com'è, altrimenti traduco EN→IT (stesso
         // traduttore di AniList; se fallisce resta l'originale).
         function sembraItaliano_(testo) {
             const paroleIT = ['che', 'della', 'nella', 'delle', 'degli', 'sono', 'come', 'quando', 'questo', 'questa', 'questi', 'queste', 'libro', 'storia', 'mondo', 'vita', 'tempo', 'uomo', 'donna', 'grande', 'nuovo', 'vecchio', 'giorno', 'notte', 'casa', 'famiglia', 'amore', 'guerra', 'regno', 'magia', 'potere', 'ragazzo', 'anni', 'dopo', 'prima', 'ancora', 'sempre', 'molto'];
@@ -493,8 +493,8 @@
 
         // Ricerca libri via Hardcover (Richiesta 38): il browser chiama solo
         // la Edge Function `hardcover-proxy` (stesso schema di `tmdb-proxy`
-        // per TMDB) â€” il token resta secret lato server. Un'unica chiamata dÃ 
-        // giÃ  tutto (trama, generi, copertina, saga): niente secondo dettaglio.
+        // per TMDB) — il token resta secret lato server. Un'unica chiamata dà
+        // già tutto (trama, generi, copertina, saga): niente secondo dettaglio.
         async function cercaCandidatiLibriHC_(query) {
             const q = String(query || '').trim();
             if (!q) throw new Error('Inserisci prima un titolo da cercare.');
@@ -539,18 +539,18 @@
                 return;
             }
             const wrap = document.getElementById('libriCandidatiWrapper');
-            wrap.innerHTML = `<div style="color:var(--success); font-weight:600; font-size:13px; margin-bottom:12px;">â³ Ricerca su Hardcover in corso...</div>`;
+            wrap.innerHTML = `<div style="color:var(--success); font-weight:600; font-size:13px; margin-bottom:12px;">⏳ Ricerca su Hardcover in corso...</div>`;
             cercaCandidatiLibriHC_(titolo)
                 .then(function(candidati) { renderCandidatiLibriHC_(candidati, titolo); })
                 .catch(function(err) {
-                    wrap.innerHTML = `<div style="color:var(--danger); font-size:13px; margin-bottom:12px;">âŒ ${String(err && err.message ? err.message : err)}</div>`;
+                    wrap.innerHTML = `<div style="color:var(--danger); font-size:13px; margin-bottom:12px;">❌ ${String(err && err.message ? err.message : err)}</div>`;
                 });
         }
         window.apriRicercaHardcover = apriRicercaHardcover;
 
         // ------------------------------------------
-        // ðŸ“š DETTAGLIO LIBRO: nessun secondo giro di rete (Richiesta 38).
-        // La search Hardcover restituisce giÃ  trama/generi/saga per ogni
+        // 📚 DETTAGLIO LIBRO: nessun secondo giro di rete (Richiesta 38).
+        // La search Hardcover restituisce già trama/generi/saga per ogni
         // candidato: la selezione li prende dai dati in memoria
         // (ultimiCandidatiLibri_), traduce la trama se serve e apre
         // direttamente l'anteprima. Euristica titolo solo se Hardcover non
@@ -581,18 +581,18 @@
         }
 
         // Ultimi candidati mostrati nel picker (Richiesta 38): la search
-        // Hardcover restituisce giÃ  i dati completi, la selezione li riusa
+        // Hardcover restituisce già i dati completi, la selezione li riusa
         // da qui senza altre chiamate di rete.
         let ultimiCandidatiLibri_ = [];
-        // Ultima query digitata (Richiesta 39): se Ã¨ un titolo intero in
-        // italiano la riuso come titolo proposto, cosÃ¬ la biblioteca non si
+        // Ultima query digitata (Richiesta 39): se è un titolo intero in
+        // italiano la riuso come titolo proposto, così la biblioteca non si
         // riempie di titoli inglesi da correggere a mano.
         let ultimaQueryLibri_ = '';
 
         // Titolo da proporre nella scheda (Richiesta 39): query lunga (3+
-        // parole = hai scritto il titolo intero con parole tue) â†’ mi fido di
+        // parole = hai scritto il titolo intero con parole tue) → mi fido di
         // te con capitalizzazione leggera; query corta (frammento tipo
-        // "dune") â†’ il titolo ufficiale Ã¨ piÃ¹ completo, tengo quello.
+        // "dune") → il titolo ufficiale è più completo, tengo quello.
         function scegliTitoloDaProporre_(query, titoloHC) {
             const q = String(query || '').trim();
             const t = String(titoloHC || '').trim();
@@ -604,7 +604,7 @@
 
         // Capitalizza ogni parola tranne articoli/preposizioni/congiunzioni
         // (vale per italiano e inglese): "harry potter e la pietra
-        // filosofale" â†’ "Harry Potter e la Pietra Filosofale".
+        // filosofale" → "Harry Potter e la Pietra Filosofale".
         function maiuscolaTitolo_(s) {
             const minuscole = ['e', 'ed', 'o', 'od', 'di', 'a', 'da', 'in', 'con', 'su', 'per', 'tra', 'fra', 'il', 'lo', 'la', 'i', 'gli', 'le', 'un', 'uno', 'una', 'dei', 'degli', 'delle', 'al', 'allo', 'alla', 'ai', 'agli', 'alle', 'dal', 'dallo', 'dalla', 'dai', 'dagli', 'dalle', 'del', 'dello', 'della', 'nel', 'nello', 'nella', 'nei', 'negli', 'nelle', 'sul', 'sullo', 'sulla', 'sui', 'sugli', 'sulle', 'and', 'the', 'of', 'a', 'an', 'on', 'at', 'to', 'for', 'with'];
             return String(s || '').toLowerCase().split(/\s+/).filter(function(w) { return w; }).map(function(w, i) {
@@ -617,7 +617,7 @@
             const wrap = document.getElementById('libriCandidatiWrapper');
             const cand = (ultimiCandidatiLibri_ || []).find(function(x) { return x.id === idLibro; });
             if (!cand) {
-                wrap.innerHTML = `<div style="color:var(--danger); font-size:13px; margin-bottom:12px;">âŒ Candidato non piÃ¹ disponibile: cerca di nuovo il libro.</div>`;
+                wrap.innerHTML = `<div style="color:var(--danger); font-size:13px; margin-bottom:12px;">❌ Candidato non più disponibile: cerca di nuovo il libro.</div>`;
                 return;
             }
             const sinossiPulita = String(cand.descrizione || '').replace(/\n{3,}/g, '\n\n').trim();
@@ -636,9 +636,9 @@
                     sagaFonte: cand.sagaNome ? 'hardcover' : ((sagaEur && sagaEur.nome) ? 'euristica' : 'nessuna')
                 });
             };
-            // Trama non italiana â†’ traduzione automatica (stesso di AniList).
+            // Trama non italiana → traduzione automatica (stesso di AniList).
             if (sinossiPulita && !sembraItaliano_(sinossiPulita)) {
-                wrap.innerHTML = `<div style="color:var(--success); font-weight:600; font-size:13px; margin-bottom:12px;">â³ Traduzione della trama in corso...</div>`;
+                wrap.innerHTML = `<div style="color:var(--success); font-weight:600; font-size:13px; margin-bottom:12px;">⏳ Traduzione della trama in corso...</div>`;
                 tradurreTestoGoogleFree_(sinossiPulita, 'en', 'it').then(completaAnteprima);
             } else {
                 completaAnteprima(sinossiPulita);
@@ -647,8 +647,8 @@
         window.selezionaCandidatoLibroHC_ = selezionaCandidatoLibroHC_;
 
         // Pertinenza client-side (Richiesta 37, tenuta anche con Hardcover):
-        // Typesense ordina giÃ  bene, ma qui vince comunque chi contiene tutta
-        // la query, poi chi inizia con essa, poi chi condivide piÃ¹ parole
+        // Typesense ordina già bene, ma qui vince comunque chi contiene tutta
+        // la query, poi chi inizia con essa, poi chi condivide più parole
         // (il titolo pesa doppio dell'autore). Rete di sicurezza a costo zero.
         function ordinaCandidatiPerPertinenza_(candidati, query) {
             const normalizza = function(s) {
@@ -684,7 +684,7 @@
             wrap.innerHTML = '';
             const label = document.createElement('div');
             label.style = 'font-size:12px; color:var(--text-muted); font-weight:600; margin-bottom:8px;';
-            label.innerText = 'ðŸ”Ž Scegli il libro corretto (' + candidati.length + ' risultati â€” via Hardcover):';
+            label.innerText = '🔎 Scegli il libro corretto (' + candidati.length + ' risultati — via Hardcover):';
             wrap.appendChild(label);
 
             const grid = document.createElement('div');
@@ -696,7 +696,7 @@
                 card.onmouseout = function() { card.style.transform = 'translateY(0)'; card.style.borderColor = 'var(--border-color)'; };
                 const imgHtml = c.immagine
                     ? `<img src="${c.immagine}" style="width:100%; height:170px; object-fit:cover; display:block; background:#222;">`
-                    : `<div style="width:100%; height:170px; display:flex; align-items:center; justify-content:center; background:#222; font-size:28px;">ðŸ“—</div>`;
+                    : `<div style="width:100%; height:170px; display:flex; align-items:center; justify-content:center; background:#222; font-size:28px;">📗</div>`;
                 const sub = (c.autori ? c.autori : '') + (c.anno ? ' (' + c.anno + ')' : '');
                 card.innerHTML = imgHtml + `<div style="padding:6px; font-size:11px; line-height:1.3;"><div style="font-weight:700;">${c.titolo}</div><div style="color:var(--text-muted); margin-top:2px;">${sub}</div></div>`;
                 card.onclick = function() { selezionaCandidatoLibroHC_(c.id, c.titolo); };
@@ -714,15 +714,15 @@
             box.style = 'display:flex; gap:14px; align-items:flex-start; flex-wrap:wrap; background:rgba(52,211,153,0.06); border:1px solid var(--border-color); border-radius:10px; padding:12px; margin-bottom:12px;';
             const imgHtml = dettaglio.immagine
                 ? `<img src="${dettaglio.immagine}" style="width:110px; border-radius:8px; flex-shrink:0; background:#222;">`
-                : `<div style="width:110px; height:160px; border-radius:8px; flex-shrink:0; background:#222; display:flex; align-items:center; justify-content:center; font-size:32px;">ðŸ“—</div>`;
+                : `<div style="width:110px; height:160px; border-radius:8px; flex-shrink:0; background:#222; display:flex; align-items:center; justify-content:center; font-size:32px;">📗</div>`;
             box.innerHTML = imgHtml + `
                 <div style="flex:1; min-width:220px; display:flex; flex-direction:column; gap:8px;">
-                    <label style="font-size:12px; color:var(--text-muted); font-weight:600;">Titolo (modificabile â€” verrÃ  riportato nella scheda)</label>
+                    <label style="font-size:12px; color:var(--text-muted); font-weight:600;">Titolo (modificabile — verrà riportato nella scheda)</label>
                     <input type="text" id="hcTitoloInput" style="width:100%; background:rgba(255,255,255,0.04); border:1px solid var(--border-color); border-radius:8px; color:var(--text); padding:8px; font-size:13px;">
                     <label style="font-size:12px; color:var(--text-muted); font-weight:600;">Trama (modificabile prima di confermare)</label>
                     <textarea id="hcSinossiTextarea" rows="6" style="width:100%; background:rgba(255,255,255,0.04); border:1px solid var(--border-color); border-radius:8px; color:var(--text); padding:8px; font-size:13px; line-height:1.5; resize:vertical;"></textarea>
-                    <div style="font-size:12.5px; color:var(--text);">âœï¸ <b>Autore:</b> ${dettaglio.autori || 'sconosciuto'} &nbsp;Â·&nbsp; ðŸ“… <b>Anno:</b> ${dettaglio.anno || 'sconosciuto'}</div>
-                    <div style="font-size:12.5px; color:var(--text);">ðŸ“š <b>Saga suggerita:</b> ${(dettaglio.sagaNome || 'â€”') + ((dettaglio.sagaNumero !== null && dettaglio.sagaNumero !== undefined) ? ' #' + dettaglio.sagaNumero : '')}
+                    <div style="font-size:12.5px; color:var(--text);">✍️ <b>Autore:</b> ${dettaglio.autori || 'sconosciuto'} &nbsp;·&nbsp; 📅 <b>Anno:</b> ${dettaglio.anno || 'sconosciuto'}</div>
+                    <div style="font-size:12.5px; color:var(--text);">📚 <b>Saga suggerita:</b> ${(dettaglio.sagaNome || '—') + ((dettaglio.sagaNumero !== null && dettaglio.sagaNumero !== undefined) ? ' #' + dettaglio.sagaNumero : '')}
                         <span style="color:var(--text-muted);">${dettaglio.sagaFonte === 'nessuna' ? '(non rilevata: compila a mano)' : '(da verificare, resta modificabile)'}</span>
                     </div>
                 </div>`;
@@ -740,7 +740,7 @@
             if (generiCorrispondenti.length > 0) {
                 genreSection.innerHTML = `
                     <label style="display:block; margin-bottom:6px; font-weight:600; color:var(--text-muted); font-size:12px;">
-                        Generi rilevati (deseleziona quelli da scartare â€” aggiunti ai tuoi senza toglierne)
+                        Generi rilevati (deseleziona quelli da scartare — aggiunti ai tuoi senza toglierne)
                     </label>
                     <div id="hcGenresPicker" class="genres-grid-container">
                         ${generiCorrispondenti.map(function(g) {
@@ -756,7 +756,7 @@
             footer.style = 'display:flex; justify-content:flex-end; gap:8px; margin-bottom:12px;';
             footer.innerHTML = `
                 <button type="button" class="btn btn-danger" id="hcAnnullaBtn">Annulla</button>
-                <button type="button" class="btn btn-libri" id="hcConfermaBtn">âœ… Usa questi dati</button>`;
+                <button type="button" class="btn btn-libri" id="hcConfermaBtn">✅ Usa questi dati</button>`;
             wrap.appendChild(footer);
             document.getElementById('hcAnnullaBtn').onclick = function() {
                 document.getElementById('libriCandidatiWrapper').innerHTML = '';
@@ -774,8 +774,8 @@
             const sinossiFinale = sinossiEl ? sinossiEl.value : d.sinossi;
 
             if (titoloFinale) document.getElementById('inpTitoloLibri').value = titoloFinale;
-            // Autore/anno: li porto dentro solo se il campo scheda Ã¨ vuoto,
-            // mai sovrascrivere ciÃ² che hai giÃ  scritto a mano.
+            // Autore/anno: li porto dentro solo se il campo scheda è vuoto,
+            // mai sovrascrivere ciò che hai già scritto a mano.
             if (d.autori && !document.getElementById('inpAutoreLibri').value.trim()) {
                 document.getElementById('inpAutoreLibri').value = d.autori;
             }
@@ -817,48 +817,48 @@
         window.confermaDatiHardcover_ = confermaDatiHardcover_;
 
         // ==========================================
-        //   ðŸ“ PATCH NOTES (note di versione)
-        //   Voci user-facing delle modifiche, dalla piÃ¹ recente alla piÃ¹
+        //   📝 PATCH NOTES (note di versione)
+        //   Voci user-facing delle modifiche, dalla più recente alla più
         //   vecchia. Versione v1.0.N = Richiesta N della guida_migrazione.md
-        //   (il diario tecnico resta lÃ¬, qui solo i riassunti brevi).
+        //   (il diario tecnico resta lì, qui solo i riassunti brevi).
         //   Nuove voci: aggiungere in CIMA all'array.
         // ==========================================
         const PATCH_NOTES = [
             { v: '1.0.44', titolo: 'Suggerimenti manga', data: '14/10/2026', punti: [
-                'Bottone ðŸ’¡ in fondo alla riga manga: top 5 da AniList, esclusi i giÃ  in lista (controllo su entrambi i titoli).',
-                'Trama tradotta a pezzi, ï¼‹ apre Nuovo Manga col titolo pronto.'
+                'Bottone 💡 in fondo alla riga manga: top 5 da AniList, esclusi i già in lista (controllo su entrambi i titoli).',
+                'Trama tradotta a pezzi, ＋ apre Nuovo Manga col titolo pronto.'
             ] },
             { v: '1.0.43', titolo: 'Suggerimenti anime', data: '14/10/2026', punti: [
-                'Bottone ðŸ’¡ in fondo alla riga anime: top 5 da AniList (search + recommendations), esclusi i giÃ  in lista.',
-                'Trama, anno, voto e generi subito visibili, niente Edge nÃ© chiavi.'
+                'Bottone 💡 in fondo alla riga anime: top 5 da AniList (search + recommendations), esclusi i già in lista.',
+                'Trama, anno, voto e generi subito visibili, niente Edge né chiavi.'
             ] },
             { v: '1.0.42', titolo: 'Suggerimenti cinema', data: '12/10/2026', punti: [
-                'Bottone ðŸ’¡ in fondo alla riga film: top 5 da TMDB (search sul titolo + recommendations), esclusi i giÃ  in lista.',
+                'Bottone 💡 in fondo alla riga film: top 5 da TMDB (search sul titolo + recommendations), esclusi i già in lista.',
                 'Trama progressiva cliccabile. Richiede la action movie_recommendations nella Edge Function.'
             ] },
             { v: '1.0.41', titolo: 'Suggerimenti serie TV', data: '12/10/2026', punti: [
-                'Bottone ðŸ’¡ in fondo alla riga (solo serie con ID TMDB): top 5 da TMDB, esclusi i titoli che hai giÃ .',
+                'Bottone 💡 in fondo alla riga (solo serie con ID TMDB): top 5 da TMDB, esclusi i titoli che hai già.',
                 'Richiede la action tv_recommendations nella Edge Function tmdb-proxy (vedi guida).'
             ] },
             { v: '1.0.40', titolo: 'Semi nel giardino per anime e manga', data: '12/10/2026', punti: [
-                'Bottone ðŸŒ± in ogni riga anime/manga (solo proprietario): overlay di scrittura che crea/aggiorna la nota nel giardino.',
+                'Bottone 🌱 in ogni riga anime/manga (solo proprietario): overlay di scrittura che crea/aggiorna la nota nel giardino.',
                 'Una nota per titolo (mai duplicati), tags tipo + generi, precarica il testo precedente.'
             ] },
             { v: '1.0.39', titolo: 'Titolo libro in italiano', data: '11/10/2026', punti: [
-                'Se cerchi il titolo intero in italiano, te lo ripropone cosÃ¬ nella scheda (niente piÃ¹ titoli inglesi).',
+                'Se cerchi il titolo intero in italiano, te lo ripropone così nella scheda (niente più titoli inglesi).',
                 'Con ricerche corte resta il titolo ufficiale completo.'
             ] },
             { v: '1.0.38', titolo: 'Ricerca libri via Hardcover', data: '11/10/2026', punti: [
                 'Nuova fonte unica Hardcover: copertina, trama, generi, autore, anno e saga automatica.',
                 'Addio errori di Google Books: il token resta al sicuro sul server.'
             ] },
-            { v: '1.0.37', titolo: 'Ricerca libri piÃ¹ precisa', data: '11/10/2026', punti: [
+            { v: '1.0.37', titolo: 'Ricerca libri più precisa', data: '11/10/2026', punti: [
                 'Trame in inglese tradotte in automatico.',
                 'Risultati riordinati per somiglianza al titolo cercato.',
                 'Supporto chiave API Google Books gratuita (alza la quota e riduce gli errori).'
             ] },
             { v: '1.0.36', titolo: 'Home compatta + Open Library', data: '11/10/2026', punti: [
-                'I 5 bottoni della Home stanno in una riga su desktop, piÃ¹ bassi e compatti.',
+                'I 5 bottoni della Home stanno in una riga su desktop, più bassi e compatti.',
                 'Se Google Books non risponde (limite richieste) la ricerca passa da sola a Open Library.'
             ] },
             { v: '1.0.35', titolo: 'Biblioteca Libri', data: '11/10/2026', punti: [
@@ -866,68 +866,68 @@
                 'Saga di livello 1: nome + numero suggeriti quando noti, sempre modificabili a mano.',
                 'Stati Da leggere / Letto / Abbandonato con log nel widget di Home e ricerca globale.'
             ] },
-            { v: '1.0.32', titolo: 'Streaming vero + badge patch', data: '06/10/2026 Â· 09:11', punti: [
+            { v: '1.0.32', titolo: 'Streaming vero + badge patch', data: '06/10/2026 · 09:11', punti: [
                 'Film in streaming archiviati tra i Visti con data e log, separati col pill Sala/Streaming.',
                 'Pallino rosso sulle patch notes con le versioni ancora da leggere (per utente).'
             ] },
-            { v: '1.0.30', titolo: 'App installabile', data: '28/09/2026 Â· 09:25', punti: [
+            { v: '1.0.30', titolo: 'App installabile', data: '28/09/2026 · 09:25', punti: [
                 'Installa il sito come app da mobile: icona joystick, niente barra indirizzi.',
                 'Su Android prompt automatico, su iPhone da Condividi > Aggiungi a Home.'
             ] },
-            { v: '1.0.29', titolo: 'Voto con overlay', data: '22/09/2026 Â· 15:08', punti: [
+            { v: '1.0.29', titolo: 'Voto con overlay', data: '22/09/2026 · 15:08', punti: [
                 'Griglia voto 0.5-10 con overlay dedicato e pill Vota in lista.',
                 'Auto-apertura al + che completa un anime Concluso mai votato, con Salta per rimandare.'
             ] },
-            { v: '1.0.28', titolo: 'Recap rimosso', data: '21/09/2026 Â· 14:53', punti: [
-                'Funzione recap Serie TV rimossa temporaneamente: presentava troppi bug, verrÃ  riprogettata.'
+            { v: '1.0.28', titolo: 'Recap rimosso', data: '21/09/2026 · 14:53', punti: [
+                'Funzione recap Serie TV rimossa temporaneamente: presentava troppi bug, verrà riprogettata.'
             ] },
-            { v: '1.0.24', titolo: 'Tema Aurora Pill', data: '17/09/2026 Â· 13:00', punti: [
+            { v: '1.0.24', titolo: 'Tema Aurora Pill', data: '17/09/2026 · 13:00', punti: [
                 'Forme morbide su colori invariati: tutto stondato, font Trebuchet, titoli non maiuscoli.'
             ] },
-            { v: '1.0.23', titolo: 'Volumi manga da AniList', data: '16/09/2026 Â· 14:56', punti: [
+            { v: '1.0.23', titolo: 'Volumi manga da AniList', data: '16/09/2026 · 14:56', punti: [
                 'La ricerca AniList nel modale manga compila anche il Numero Volumi, se li conosce.',
                 'Il tuo numero scritto a mano viene sempre rispettato.',
                 'Importa anche lo stato editoriale giapponese (solo manga, modificabile dopo).'
             ] },
-            { v: '1.0.22', titolo: 'Voti Series Graph', data: '16/09/2026 Â· 11:40', punti: [
-                'Nuovo bottone ðŸ“Š nelle azioni delle Serie TV: apre i voti IMDb per episodio su Series Graph.',
+            { v: '1.0.22', titolo: 'Voti Series Graph', data: '16/09/2026 · 11:40', punti: [
+                'Nuovo bottone 📊 nelle azioni delle Serie TV: apre i voti IMDb per episodio su Series Graph.',
                 'Visibile solo sulle serie collegate a TMDB.'
             ] },
-            { v: '1.0.21', titolo: 'Layout mobile', data: '15/09/2026 Â· 18:26', punti: [
+            { v: '1.0.21', titolo: 'Layout mobile', data: '15/09/2026 · 18:26', punti: [
                 'Navbar su telefono: mail nascosta, Patch notes ed Esci allineati; icona Esci di nuovo visibile.',
-                'Contatori Anime/Serie TV in griglia 2x2 e filtri con scorrimento interno: la pagina non sfora piÃ¹.'
+                'Contatori Anime/Serie TV in griglia 2x2 e filtri con scorrimento interno: la pagina non sfora più.'
             ] },
-            { v: '1.0.20', titolo: 'Ricerca nel widget In Corso', data: '15/09/2026 Â· 14:26', punti: [
+            { v: '1.0.20', titolo: 'Ricerca nel widget In Corso', data: '15/09/2026 · 14:26', punti: [
                 'Casella di ricerca nella testata del widget: trova anime, manga e serie TV e apre subito l\u2019overlay di avanzamento.',
                 'Al primo episodio/volume segnato l\u2019opera entra da sola nel widget, senza passare dalla vista.'
             ] },
-            { v: '1.0.19', titolo: 'âœ… e ðŸ”¢ silenziosi nel log', data: '13/09/2026 Â· 16:07', punti: [
-                'âœ… (tutta vista) e ðŸ”¢ (visti manuali) non scrivono piÃ¹ righe nel log episodi: ideali per popolare l\u2019archivio.',
-                'I pulsanti +/âˆ’ continuano a registrare ogni episodio come prima.'
+            { v: '1.0.19', titolo: '✅ e 🔢 silenziosi nel log', data: '13/09/2026 · 16:07', punti: [
+                '✅ (tutta vista) e 🔢 (visti manuali) non scrivono più righe nel log episodi: ideali per popolare l\u2019archivio.',
+                'I pulsanti +/− continuano a registrare ogni episodio come prima.'
             ] },
-            { v: '1.0.18', titolo: 'Anime abbandonati', data: '13/09/2026 Â· 15:50', punti: [
-                'Il flag â›” arriva anche negli Anime: pulsante riga e checkbox nel modale, mutua esclusione con "giÃ  visto".',
+            { v: '1.0.18', titolo: 'Anime abbandonati', data: '13/09/2026 · 15:50', punti: [
+                'Il flag ⛔ arriva anche negli Anime: pulsante riga e checkbox nel modale, mutua esclusione con "già visto".',
                 'Flag visione rosso, fuori dal widget "In Corso", overlay congelato (solo totali modificabili).'
             ] },
-            { v: '1.0.17', titolo: 'Patch notes nel sito', data: '13/09/2026 Â· 15:41', punti: [
-                'Nuovo bottone ðŸ“ Patch notes nella navbar: tendina con lo storico versioni e overlay col dettaglio.',
+            { v: '1.0.17', titolo: 'Patch notes nel sito', data: '13/09/2026 · 15:41', punti: [
+                'Nuovo bottone 📝 Patch notes nella navbar: tendina con lo storico versioni e overlay col dettaglio.',
                 'Ogni voce riporta la data di deploy.'
             ] },
-            { v: '1.0.16', titolo: 'Serie TV abbandonate', data: '13/09/2026 Â· 09:15', punti: [
-                'Pulsante â›” e flag nel modale per le serie mollate a metÃ : escono dal widget "In Corso" e il flag visione diventa rosso.',
-                'Il progresso resta congelato e si puÃ² riprendere quando vuoi; "Aggiorna tutte" le segnala a parte.'
+            { v: '1.0.16', titolo: 'Serie TV abbandonate', data: '13/09/2026 · 09:15', punti: [
+                'Pulsante ⛔ e flag nel modale per le serie mollate a metà: escono dal widget "In Corso" e il flag visione diventa rosso.',
+                'Il progresso resta congelato e si può riprendere quando vuoi; "Aggiorna tutte" le segnala a parte.'
             ] },
-            { v: '1.0.15', titolo: 'âœ… e ðŸ”¢ anche nelle Serie TV', data: '12/09/2026 Â· 22:40', punti: [
-                'âœ… segna una stagione come tutta vista in un colpo solo.',
-                'ðŸ”¢ imposta a mano gli episodi visti (es. 450 su 800).'
+            { v: '1.0.15', titolo: '✅ e 🔢 anche nelle Serie TV', data: '12/09/2026 · 22:40', punti: [
+                '✅ segna una stagione come tutta vista in un colpo solo.',
+                '🔢 imposta a mano gli episodi visti (es. 450 su 800).'
             ] },
-            { v: '1.0.14', titolo: 'Fix freccia-su e overlay pronti subito', data: '12/09/2026 Â· 21:05', punti: [
-                'La freccia â†‘ torna davvero in alto ed Ã¨ piÃ¹ piccola su mobile.',
+            { v: '1.0.14', titolo: 'Fix freccia-su e overlay pronti subito', data: '12/09/2026 · 21:05', punti: [
+                'La freccia ↑ torna davvero in alto ed è più piccola su mobile.',
                 "Dopo aver aggiunto un anime, l'overlay stagioni si apre subito senza ricaricare la pagina."
             ] },
-            { v: '1.0.13', titolo: 'Flag "giÃ  visto" negli Anime', data: '12/09/2026 Â· 18:20', punti: [
+            { v: '1.0.13', titolo: 'Flag "già visto" negli Anime', data: '12/09/2026 · 18:20', punti: [
                 'Nuovo flag nel modale per segnare un anime come tutto visto.',
-                "âœ… e ðŸ”¢ riga per riga nell'overlay episodi; l'icona stagioni delle Serie TV Ã¨ ora ðŸ“º."
+                "✅ e 🔢 riga per riga nell'overlay episodi; l'icona stagioni delle Serie TV è ora 📺."
             ] },
             { v: '1.0.12', titolo: 'Icona joystick', punti: [
                 'Icona joystick nelle schede del browser e nei preferiti.',
@@ -946,11 +946,11 @@
             { v: '1.0.8', titolo: 'Nuova sezione Serie TV', punti: [
                 'Catalogo Serie TV con ricerca TMDB, overlay stagioni, widget e log dedicati.'
             ] },
-            { v: '1.0.7', titolo: 'StabilitÃ  su iPhone', punti: [
+            { v: '1.0.7', titolo: 'Stabilità su iPhone', punti: [
                 'Tentativi automatici in caso di rete instabile durante i salvataggi.'
             ] },
-            { v: '1.0.6', titolo: 'Manga giÃ  letti', punti: [
-                'Flag "opera giÃ  letta per intero" nel modale manga; generi sistemati su iPhone.'
+            { v: '1.0.6', titolo: 'Manga già letti', punti: [
+                'Flag "opera già letta per intero" nel modale manga; generi sistemati su iPhone.'
             ] },
             { v: '1.0.5', titolo: 'Copertine negli overlay', punti: [
                 'La copertina si vede anche negli overlay aperti dal widget "In Corso".'
@@ -962,10 +962,10 @@
                 'Pulsante per trovare stagioni e film collegati e importarne i numeri reali.'
             ] },
             { v: '1.0.2', titolo: 'Trama e generi dei film', punti: [
-                'Trama e generi dai dati TMDB, con pulsante â„¹ï¸ per rileggerli.'
+                'Trama e generi dai dati TMDB, con pulsante ℹ️ per rileggerli.'
             ] },
             { v: '1.0.1', titolo: 'Ordinamento streaming', punti: [
-                '"Da vedere in streaming" ordinati per uscita piÃ¹ recente.'
+                '"Da vedere in streaming" ordinati per uscita più recente.'
             ] }
         ];
 
@@ -979,7 +979,7 @@
                 b.onclick = function() { apriPatchDetail(idx); };
                 b.innerHTML = '<span class="patch-ver">v' + p.v + '</span>'
                     + '<span class="patch-item-text"><span class="patch-item-title">' + p.titolo + '</span>'
-                    + (p.data ? '<span class="patch-date">ðŸ“… ' + p.data + '</span>' : '') + '</span>';
+                    + (p.data ? '<span class="patch-date">📅 ' + p.data + '</span>' : '') + '</span>';
                 box.appendChild(b);
             });
         }
@@ -1033,9 +1033,9 @@
         window.apriPatchDetail = function(idx) {
             const p = PATCH_NOTES[idx];
             if (!p) return;
-            document.getElementById('patchDetailTitle').innerText = 'v' + p.v + ' â€” ' + p.titolo;
+            document.getElementById('patchDetailTitle').innerText = 'v' + p.v + ' — ' + p.titolo;
             document.getElementById('patchDetailBody').innerHTML =
-                (p.data ? '<p class="patch-date" style="margin:0 0 10px 0; font-size:12px;">ðŸ“… Deploy: ' + p.data + '</p>' : '')
+                (p.data ? '<p class="patch-date" style="margin:0 0 10px 0; font-size:12px;">📅 Deploy: ' + p.data + '</p>' : '')
                 + '<ul style="margin:0; padding-left:18px; display:flex; flex-direction:column; gap:6px;">'
                 + p.punti.map(function(t) { return '<li>' + t + '</li>'; }).join('') + '</ul>';
             document.getElementById('modalOverlayPatchDetail').classList.add('active');
@@ -1051,6 +1051,5 @@
         let currentFilterModalitaCinemaVisti = 'cinema';
 
 		        // ==========================================
-        //   FASE 11 â€” GRUPPO CINEMA (Supabase diretto)
+        //   FASE 11 — GRUPPO CINEMA (Supabase diretto)
         // ==========================================
-

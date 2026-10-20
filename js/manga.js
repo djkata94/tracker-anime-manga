@@ -1,4 +1,4 @@
-﻿        function calcolaColoreLetturaManga_(volumiTotali, volumiLetti, stato) {
+function calcolaColoreLetturaManga_(volumiTotali, volumiLetti, stato) {
             const totali = parseInt(volumiTotali) || 0;
             const letti = parseInt(volumiLetti) || 0;
             const statoNorm = String(stato || '').trim().toLowerCase();
@@ -18,7 +18,7 @@
                 const coloreLettura = calcolaColoreLetturaManga_(m.volumi, m.volumi_letti, m.stato);
                 return {
                     titolo: m.titolo, tipologia: m.tipologia || 'Manga', volumi: m.volumi || 0,
-                    stato: m.stato || 'In corso', acquistato: m.acquistato ? 'SÃ¬' : 'No', note: notaTesto,
+                    stato: m.stato || 'In corso', acquistato: m.acquistato ? 'Sì' : 'No', note: notaTesto,
                     coloreLettura: coloreLettura, generi: m.generi || '', preferito: !!m.preferito,
                     immagine: m.immagine || '', volumiLetti: m.volumi_letti || 0, priorita: !!m.priorita
                 };
@@ -26,9 +26,9 @@
         }
 
         async function addMangaSB_(dati) {
-            const acquistatoBool = (dati.acquistato === 'SÃ¬');
+            const acquistatoBool = (dati.acquistato === 'Sì');
             const volumiTotaliNuovaOpera = parseInt(dati.volumi) || 0;
-            // Flag "opera giÃ  letta per intero" spuntato nel modale: l'opera nasce
+            // Flag "opera già letta per intero" spuntato nel modale: l'opera nasce
             // direttamente completata invece di partire da 0 volumi letti.
             const volumiLettiIniziali = (dati.segnaComeLetto && volumiTotaliNuovaOpera > 0) ? volumiTotaliNuovaOpera : 0;
             const { error: errIns } = await supabaseClient.from('manga').insert([{
@@ -41,7 +41,7 @@
 
             await supabaseClient.from('sinossi_manga').insert([{ manga_titolo: dati.titolo, sinossi: '' }]);
             await registraLogSB_(dati.titolo, 'MANGA', 'CREAZIONE', 'N/D', dati.stato || 'In corso');
-            if (acquistatoBool) await registraLogSB_(dati.titolo, 'MANGA', 'ACQUISTO', 'No', 'SÃ¬');
+            if (acquistatoBool) await registraLogSB_(dati.titolo, 'MANGA', 'ACQUISTO', 'No', 'Sì');
 
             return getMangaDataSB_();
         }
@@ -56,13 +56,13 @@
             const volumiTotaliNuovi = parseInt(dati.volumi) || 0;
             const statoNuovo = dati.stato || 'In corso';
             const vecchioStatoLogManga = vecchiaRiga.stato || 'In corso';
-            const vecchioAcquistatoLogManga = vecchiaRiga.acquistato ? 'SÃ¬' : 'No';
+            const vecchioAcquistatoLogManga = vecchiaRiga.acquistato ? 'Sì' : 'No';
 
             let volumiLettiEsistenti = vecchiaRiga.volumi_letti || 0;
             if (volumiTotaliNuovi > 0 && volumiLettiEsistenti > volumiTotaliNuovi) {
                 volumiLettiEsistenti = volumiTotaliNuovi;
             }
-            // Flag "opera giÃ  letta per intero" spuntato nel modale: porta i volumi
+            // Flag "opera già letta per intero" spuntato nel modale: porta i volumi
             // letti al totale. Il valore precedente serve dopo per il log AVANZAMENTO.
             const volumiLettiPrimaModifica = vecchiaRiga.volumi_letti || 0;
             if (dati.segnaComeLetto && volumiTotaliNuovi > 0) {
@@ -73,7 +73,7 @@
 
             const { error: errUpd } = await supabaseClient.from('manga').update({
                 titolo: dati.titolo || '', tipologia: dati.tipologia || 'Manga', volumi: volumiTotaliNuovi,
-                stato: statoNuovo, acquistato: (acquistatoNuovo === 'SÃ¬'), note: dati.note || '',
+                stato: statoNuovo, acquistato: (acquistatoNuovo === 'Sì'), note: dati.note || '',
                 generi: dati.generi || '', immagine: dati.immagine || '', volumi_letti: volumiLettiEsistenti
             }).eq('titolo', vecchioTitoloTrim);
             if (errUpd) throw errUpd;
@@ -84,11 +84,11 @@
                     // Come negli anime: fine pubblicazione, non fine lettura.
                     await registraLogSB_(titoloLogManga, 'MANGA', 'CAMBIO_STATO', vecchioStatoLogManga, statoNuovo);
                 }
-                if (String(acquistatoNuovo).trim() !== String(vecchioAcquistatoLogManga).trim() && acquistatoNuovo === 'SÃ¬') {
+                if (String(acquistatoNuovo).trim() !== String(vecchioAcquistatoLogManga).trim() && acquistatoNuovo === 'Sì') {
                     await registraLogSB_(titoloLogManga, 'MANGA', 'ACQUISTO', vecchioAcquistatoLogManga, acquistatoNuovo);
                 }
-                // Avanzamento dovuto al flag "opera giÃ  letta per intero": stessi eventi
-                // che registrerebbe il âž• dalla lista (vedi updateMangaVolumiLettiSB_).
+                // Avanzamento dovuto al flag "opera già letta per intero": stessi eventi
+                // che registrerebbe il ➕ dalla lista (vedi updateMangaVolumiLettiSB_).
                 if (dati.segnaComeLetto && volumiLettiEsistenti !== volumiLettiPrimaModifica) {
                     await registraLogSB_(titoloLogManga, 'MANGA', 'AVANZAMENTO', volumiLettiPrimaModifica, volumiLettiEsistenti);
                     const coloreDopoModifica = calcolaColoreLetturaManga_(volumiTotaliNuovi, volumiLettiEsistenti, statoNuovo);
@@ -155,18 +155,18 @@
             const { data: righe, error: errSel } = await supabaseClient.from('manga').select('acquistato').eq('titolo', titoloTrim);
             if (errSel) throw errSel;
             if (!righe || righe.length === 0) return false;
-            if (righe[0].acquistato === true) return { acquistato: 'SÃ¬' };
+            if (righe[0].acquistato === true) return { acquistato: 'Sì' };
 
             const { error: errUpd } = await supabaseClient.from('manga').update({ acquistato: true }).eq('titolo', titoloTrim);
             if (errUpd) throw errUpd;
 
             try {
-                await registraLogSB_(titolo, 'MANGA', 'ACQUISTO', 'No', 'SÃ¬');
+                await registraLogSB_(titolo, 'MANGA', 'ACQUISTO', 'No', 'Sì');
             } catch (logErr) {
                 console.error("Errore durante la registrazione del log per flagMangaAcquistato: " + logErr);
             }
 
-            return { acquistato: 'SÃ¬' };
+            return { acquistato: 'Sì' };
         }
 
         async function toggleMangaPrioritaSB_(titolo, prioritaStato) {
@@ -186,7 +186,7 @@
             }).catch(function(err) {
                 console.error('Errore caricamento dati Manga da Supabase:', err);
                 document.getElementById('loadingManga').style.display = 'none';
-                alert('âŒ Errore nel caricamento dei manga. Controlla la console per i dettagli.');
+                alert('❌ Errore nel caricamento dei manga. Controlla la console per i dettagli.');
             });
         }
 
@@ -212,8 +212,8 @@
                 // (non solo quelle con il flag Lettura verde attivo)
                 volumiLettiTotali += volumiLetti;
 
-                if (item.acquistato === 'SÃ¬') {
-                    mangaAcquistatiCount++; // <--- NUOVO: Incrementa se l'opera ha acquistato su "SÃ¬"
+                if (item.acquistato === 'Sì') {
+                    mangaAcquistatiCount++; // <--- NUOVO: Incrementa se l'opera ha acquistato su "Sì"
                     volumiAcquistatiTotali += volumi;
                 }
             });
@@ -281,7 +281,7 @@
 
 const sortVal = document.getElementById('sortSelManga').value;
 filtered.sort((a, b) => {
-    // NUOVO: le opere contrassegnate come prioritarie (ðŸ“Œ) vengono sempre
+    // NUOVO: le opere contrassegnate come prioritarie (📌) vengono sempre
     // mostrate per prime, indipendentemente dal criterio di ordinamento scelto
     const pA = a.priorita ? 1 : 0;
     const pB = b.priorita ? 1 : 0;
@@ -292,7 +292,7 @@ filtered.sort((a, b) => {
     if (sortVal === 'title-asc') return tA.localeCompare(tB);
     if (sortVal === 'title-desc') return tB.localeCompare(tA);
     
-    // Nuova opzione: Volumi crescenti (dal piÃ¹ piccolo al piÃ¹ grande)
+    // Nuova opzione: Volumi crescenti (dal più piccolo al più grande)
     if (sortVal === 'volumes-asc') {
         const vA = parseInt(a.volumi) || 0;
         const vB = parseInt(b.volumi) || 0;
@@ -319,25 +319,25 @@ filtered.sort((a, b) => {
                 // Se non ancora acquistato, il badge diventa un pulsante cliccabile che permette
                 // di flaggare l'acquisto direttamente dalla lista (senza aprire la modale).
                 // Lo "spegnimento" del flag, invece, resta possibile solo dalla modale di modifica.
-                let buyText = (item.acquistato === 'SÃ¬')
-                    ? '<span style="color:var(--success); font-weight:700;">âœ… SÃ¬</span>'
-                    : `<button class="action-icon-btn" style="font-size:12px; color:var(--text-muted); border:1px solid var(--border-color); border-radius:5px; padding:2px 7px; background:none; cursor:pointer;" title="Segna come acquistato" onclick="flagAcquistoManga('${safeTitle}', this)">âŒ No</button>`;
+                let buyText = (item.acquistato === 'Sì')
+                    ? '<span style="color:var(--success); font-weight:700;">✅ Sì</span>'
+                    : `<button class="action-icon-btn" style="font-size:12px; color:var(--text-muted); border:1px solid var(--border-color); border-radius:5px; padding:2px 7px; background:none; cursor:pointer;" title="Segna come acquistato" onclick="flagAcquistoManga('${safeTitle}', this)">❌ No</button>`;
     
                 const coloreLettura = item.coloreLettura || 'bianco';
                 
                 // Renderizzazione Generi sotto alle informazioni titolo del Manga
                 let genresHTML = '';
                 if (item.generi && item.generi.trim() !== '') {
-                    genresHTML = `<div class="genre-tags-list" style="color: var(--accent);">ðŸŽ­ ${item.generi}</div>`;
+                    genresHTML = `<div class="genre-tags-list" style="color: var(--accent);">🎭 ${item.generi}</div>`;
                 }
 
                 // --- CONFIGURAZIONE INTERFACCIA STELLINA PREFERITI ---
                 let starClass = item.preferito ? 'star-btn is-favorite' : 'star-btn';
-                let starIcon = item.preferito ? 'â˜…' : 'â˜†';
+                let starIcon = item.preferito ? '★' : '☆';
 
-                // NUOVO: Definizione dinamica di classe e titolo per il pin di prioritÃ  (ðŸ“Œ)
+                // NUOVO: Definizione dinamica di classe e titolo per il pin di priorità (📌)
                 let pinClass = item.priorita ? 'pin-btn is-priority' : 'pin-btn';
-                let pinTitle = item.priorita ? 'Rimuovi dalle prioritÃ ' : 'Contrassegna come prioritario';
+                let pinTitle = item.priorita ? 'Rimuovi dalle priorità' : 'Contrassegna come prioritario';
 
                 // --- GESTIONE COSTRUZIONE AVATAR MODIFICATA CON EFFETTO ZOOM E LIGHTBOX ---
                 let avatarHTML = '';
@@ -352,14 +352,14 @@ filtered.sort((a, b) => {
                     <td class="media-title">
                         <div style="display: flex; align-items: center; gap: 12px;">
                             <button class="${starClass}" style="flex-shrink: 0;" onclick="toggleFavoriteManga('${safeTitle}', this)">${starIcon}</button>
-                            <button class="${pinClass}" onclick="togglePinManga('${safeTitle}', this, event)" title="${pinTitle}">ðŸ“Œ</button>
+                            <button class="${pinClass}" onclick="togglePinManga('${safeTitle}', this, event)" title="${pinTitle}">📌</button>
                             
                             ${avatarHTML}
                             
                             <div style="display: flex; flex-direction: column; gap: 3px;">
                                 <div style="font-weight: 600; display: flex; align-items: center; gap: 6px;">
                                     <span>${item.titolo || 'Senza Titolo'}</span>
-                                    <button class="action-icon-btn" style="font-size: 13px; padding: 0; background: none; border: none; cursor: pointer;" onclick="mostraSinossi('${safeTitle}', 'manga')" title="Visualizza Sinossi">â„¹ï¸</button>
+                                    <button class="action-icon-btn" style="font-size: 13px; padding: 0; background: none; border: none; cursor: pointer;" onclick="mostraSinossi('${safeTitle}', 'manga')" title="Visualizza Sinossi">ℹ️</button>
                                     ${giardinoBtn_('manga', safeTitle)}
                                 </div>
                                 ${genresHTML}
@@ -369,18 +369,18 @@ filtered.sort((a, b) => {
                     <td><span class="type-badge">${item.tipologia || 'Manga'}</span></td>
                     <td style="text-align: center; font-weight: 700;">${parseInt(item.volumi) || 0}</td>
                     <td style="text-align: center; white-space: nowrap;">
-                        <button class="action-icon-btn" style="font-size: 13px;" onclick="modificaVolumiLettiManga('${safeTitle}', -1)" title="Diminuisci volumi letti">âž–</button>
+                        <button class="action-icon-btn" style="font-size: 13px;" onclick="modificaVolumiLettiManga('${safeTitle}', -1)" title="Diminuisci volumi letti">➖</button>
                         <span style="display: inline-block; min-width: 22px; font-weight: 700;">${parseInt(item.volumiLetti) || 0}</span>
-                        <button class="action-icon-btn" style="font-size: 13px;" onclick="modificaVolumiLettiManga('${safeTitle}', 1)" title="Aumenta volumi letti">âž•</button>
+                        <button class="action-icon-btn" style="font-size: 13px;" onclick="modificaVolumiLettiManga('${safeTitle}', 1)" title="Aumenta volumi letti">➕</button>
                     </td>
                     <td><span class="status-badge ${badgeClass}">${item.stato || 'In corso'}</span></td>
                     <td style="text-align: center;">${buyText}</td>
                     <td style="color: var(--text-muted); font-size: 13px;">${item.note || '-'}</td>
                     <td style="text-align: center;"><span class="vision-box box-${coloreLettura}"></span></td>
                     <td style="text-align: center;">
-                        <button class="action-icon-btn" onclick="apriModificaManga('${safeTitle}')">âœï¸</button>
-                        <button class="action-icon-btn" onclick="suggManga_('${safeTitle}')" title="Potrebbero piacerti anche">ðŸ’¡</button>
-                        <button class="action-icon-btn" onclick="rimuoviManga('${safeTitle}')">ðŸ—‘ï¸</button>
+                        <button class="action-icon-btn" onclick="apriModificaManga('${safeTitle}')">✏️</button>
+                        <button class="action-icon-btn" onclick="suggManga_('${safeTitle}')" title="Potrebbero piacerti anche">💡</button>
+                        <button class="action-icon-btn" onclick="rimuoviManga('${safeTitle}')">🗑️</button>
                     </td>
                 `;
                 tbody.appendChild(tr);
@@ -402,7 +402,7 @@ function apriLightbox(url) {
             document.getElementById('modalTitleManga').innerText = "Aggiungi Nuovo Manga/LN";
             document.getElementById('mangaForm').reset();
             document.getElementById('inpImmagineManga').value = ''; // <--- NUOVO: Svuota campo immagine
-            document.getElementById('inpGiaLettoManga').checked = false; // Flag "giÃ  letta per intero": sempre spento su una nuova opera
+            document.getElementById('inpGiaLettoManga').checked = false; // Flag "già letta per intero": sempre spento su una nuova opera
             // Uncheck tutti i checkbox generi manga
             document.querySelectorAll('input[name="manga_genres_cb"]').forEach(cb => cb.checked = false);
             document.getElementById('modalOverlayManga').classList.add('active');
@@ -423,8 +423,8 @@ function apriLightbox(url) {
             document.getElementById('inpNoteManga').value = item.note || '';
             document.getElementById('inpLetturaManga').value = item.coloreLettura || 'bianco';
             document.getElementById('inpImmagineManga').value = item.immagine || ''; // <--- NUOVO: Carica l'immagine esistente
-            // Flag "giÃ  letta per intero": nasce spuntato se l'opera Ã¨ di fatto giÃ  finita
-            // (volumi letti = volumi totali), cosÃ¬ riflette la situazione reale.
+            // Flag "già letta per intero": nasce spuntato se l'opera è di fatto già finita
+            // (volumi letti = volumi totali), così riflette la situazione reale.
             const volumiTotaliItem = parseInt(item.volumi) || 0;
             const volumiLettiItem = parseInt(item.volumiLetti) || 0;
             document.getElementById('inpGiaLettoManga').checked = (volumiTotaliItem > 0 && volumiLettiItem >= volumiTotaliItem);
@@ -444,19 +444,19 @@ function apriLightbox(url) {
         document.getElementById('mangaForm').onsubmit = function(e) {
             e.preventDefault();
 
-            // --- Flag "opera giÃ  letta per intero" (vedi checkbox sopra le Note) ---
-            // Va valutato PRIMA di mettere il pulsante in "Salvataggio...", perchÃ© puÃ²
+            // --- Flag "opera già letta per intero" (vedi checkbox sopra le Note) ---
+            // Va valutato PRIMA di mettere il pulsante in "Salvataggio...", perché può
             // interrompere il salvataggio (volumi mancanti o conferma annullata).
             const giaLettoManga = document.getElementById('inpGiaLettoManga').checked;
             const volumiTotaliForm = parseInt(document.getElementById('inpVolumiManga').value) || 0;
             const titoloFormManga = document.getElementById('inpTitoloManga').value;
 
             if (giaLettoManga && volumiTotaliForm <= 0) {
-                showToast('Per segnare l\'opera come giÃ  letta indica prima il Numero Volumi.', 'error');
+                showToast('Per segnare l\'opera come già letta indica prima il Numero Volumi.', 'error');
                 return;
             }
 
-            // In modifica, se l'opera risulta giÃ  completata non c'Ã¨ nulla da cambiare:
+            // In modifica, se l'opera risulta già completata non c'è nulla da cambiare:
             // niente richiesta di conferma a ogni salvataggio.
             let cambiaVolumiLettiManga = giaLettoManga;
             if (giaLettoManga && targetEditTitleManga) {
@@ -470,11 +470,11 @@ function apriLightbox(url) {
                 const coloreRisultanteManga = calcolaColoreLetturaManga_(
                     volumiTotaliForm, volumiTotaliForm, document.getElementById('inpStatoManga').value);
                 const messaggioConfermaManga =
-                    'L\'opera "' + titoloFormManga + '" Ã¨ segnata come giÃ  letta per intero.\n\n' +
+                    'L\'opera "' + titoloFormManga + '" è segnata come già letta per intero.\n\n' +
                     'Al salvataggio i volumi letti verranno impostati a ' + volumiTotaliForm + '/' + volumiTotaliForm +
                     (coloreRisultanteManga === 'verde'
-                        ? ' e lo stato di lettura diventerÃ  "Letto completamente" (quadratino verde).'
-                        : ' e lo stato di lettura resterÃ  "In lettura" (quadratino giallo), perchÃ© l\'opera Ã¨ ancora in corso di pubblicazione.') +
+                        ? ' e lo stato di lettura diventerà "Letto completamente" (quadratino verde).'
+                        : ' e lo stato di lettura resterà "In lettura" (quadratino giallo), perché l\'opera è ancora in corso di pubblicazione.') +
                     '\n\nConfermi?';
                 if (!confirm(messaggioConfermaManga)) return;
             }
@@ -501,13 +501,13 @@ function apriLightbox(url) {
             const isEditManga = !!targetEditTitleManga;
             const cb = function(data) {
                 mangaList = data || [];
-                // Se in questa sessione del modale Ã¨ stata scelta una sinossi da AniList,
+                // Se in questa sessione del modale è stata scelta una sinossi da AniList,
                 // la scriviamo ora sul foglio satellite (vedi commento analogo per l'anime).
                 if (sinossiPendenteManga) {
                     impostaSinossiSB_(dati.titolo, 'manga', sinossiPendenteManga)
                         .catch(function(err) {
                             console.error('Errore salvataggio sinossi AniList: ' + err);
-                            showToast('Opera salvata, ma la sinossi AniList non Ã¨ stata scritta. Riprova dal pulsante ðŸ”Ž.', 'error');
+                            showToast('Opera salvata, ma la sinossi AniList non è stata scritta. Riprova dal pulsante 🔎.', 'error');
                         });
                     sinossiPendenteManga = null;
                 }
@@ -517,7 +517,7 @@ function apriLightbox(url) {
                 showToast(isEditManga ? 'Manga aggiornato con successo' : 'Manga aggiunto con successo', 'success');
             };
             const errorCb = function(err) {
-                alert("âŒ Errore durante il salvataggio: " + err.message);
+                alert("❌ Errore durante il salvataggio: " + err.message);
                 document.getElementById('btnSalvaManga').innerText = "Salva";
             };
             
@@ -536,7 +536,7 @@ function apriLightbox(url) {
                     showToast('Manga eliminato', 'success');
                 }).catch(function(err) {
                     console.error('Errore eliminazione manga:', err);
-                    alert("âŒ Errore durante l'eliminazione.");
+                    alert("❌ Errore durante l'eliminazione.");
                 });
             }
         };
@@ -546,7 +546,7 @@ function apriLightbox(url) {
         };
 
         // ==========================================
-        //   ðŸ“— GRUPPO LIBRI (Supabase diretto, Richiesta 35)
+        //   📗 GRUPPO LIBRI (Supabase diretto, Richiesta 35)
         //   Schema semplificato come deciso: niente pagine/voto/acquistato,
         //   solo stati Da leggere / Letto / Abbandonato + saga Livello 1
         //   (saga_nome TEXT + saga_numero NUMERIC, sempre editabili a mano).

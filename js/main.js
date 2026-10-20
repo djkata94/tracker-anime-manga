@@ -1,14 +1,9 @@
-﻿
-
-        // ==========================================
-        //   ðŸ”” TOAST DI CONFERMA (feedback azioni CRUD)
-        // ==========================================
-        function showToast(message, type) {
+function showToast(message, type) {
             const container = document.getElementById('toastContainer');
             if (!container) return;
             const toast = document.createElement('div');
             toast.className = 'toast toast-' + (type === 'error' ? 'error' : 'success');
-            const icon = type === 'error' ? 'âš ï¸' : 'âœ…';
+            const icon = type === 'error' ? '⚠️' : '✅';
             toast.innerHTML = '<span>' + icon + '</span><span></span>';
             toast.querySelector('span:last-child').textContent = message;
             container.appendChild(toast);
@@ -19,7 +14,7 @@
         }
 
         // ==========================================
-        //   â†º RESET FILTRI (Anime / Manga)
+        //   ↺ RESET FILTRI (Anime / Manga)
         // ==========================================
         function resetFiltriAnime() {
             currentSearchAnime = '';
@@ -212,7 +207,7 @@ function modificaVolumiLettiManga(titolo, delta) {
     const volumiTotali = parseInt(item.volumi) || 0;
     let volumiLetti = (parseInt(item.volumiLetti) || 0) + delta;
 
-    // Il valore non puÃ² mai essere negativo nÃ© superare il totale dei volumi dell'opera
+    // Il valore non può mai essere negativo né superare il totale dei volumi dell'opera
     if (volumiLetti < 0) volumiLetti = 0;
     if (volumiTotali > 0 && volumiLetti > volumiTotali) volumiLetti = volumiTotali;
     if (volumiTotali === 0) volumiLetti = 0; // Nessun volume registrato: niente da incrementare
@@ -222,8 +217,8 @@ function modificaVolumiLettiManga(titolo, delta) {
 
     // Calcola lo stato di lettura: bianco (da leggere) / giallo (in lettura) / verde (letto)
     // - giallo: ha letto una parte dei volumi posseduti (0 < letti < totali)
-    // - giallo: ha letto tutti i volumi posseduti ma l'opera Ã¨ ancora "In corso"
-    // - verde: ha letto tutti i volumi posseduti e l'opera NON Ã¨ piÃ¹ "In corso"
+    // - giallo: ha letto tutti i volumi posseduti ma l'opera è ancora "In corso"
+    // - verde: ha letto tutti i volumi posseduti e l'opera NON è più "In corso"
     const statoOperaNorm = String(item.stato || 'In corso').trim().toLowerCase();
     if (volumiTotali <= 0 || volumiLetti <= 0) {
         item.coloreLettura = 'bianco';
@@ -236,14 +231,14 @@ function modificaVolumiLettiManga(titolo, delta) {
     // Ridisegna la tabella e ricalcola i contatori in tempo reale
     renderListManga();
 
-    // NUOVO: se l'overlay dei volumi (widget "In Corso" della Home) Ã¨ aperto
+    // NUOVO: se l'overlay dei volumi (widget "In Corso" della Home) è aperto
     // per questo stesso titolo, aggiorna anche il suo contenuto in tempo reale
     if (typeof volumiOverlayTitoloCorrente !== 'undefined' && volumiOverlayTitoloCorrente &&
         volumiOverlayTitoloCorrente.trim() === titolo.trim()) {
         renderVolumiOverlay();
     }
 
-    // NUOVO: se il widget "In Corso" della Home Ã¨ presente, ridisegnalo per
+    // NUOVO: se il widget "In Corso" della Home è presente, ridisegnalo per
     // riflettere subito il nuovo stato (l'opera potrebbe uscire/entrare dalla
     // categoria "in lettura" a seconda del nuovo colore calcolato)
     if (document.getElementById('homeProgressList')) {
@@ -256,23 +251,23 @@ function modificaVolumiLettiManga(titolo, delta) {
         })
         .catch(function(err) {
             console.error("Errore aggiornamento volumi letti: ", err);
-            alert("âŒ Errore di sincronizzazione dei volumi letti. Ricarica la pagina.");
+            alert("❌ Errore di sincronizzazione dei volumi letti. Ricarica la pagina.");
         });
 }
 
 // ==========================================================
-// ðŸ“– OVERLAY "Avanzamento Volumi Letti" â€” richiamato dalle card
+// 📖 OVERLAY "Avanzamento Volumi Letti" — richiamato dalle card
 // manga del widget "In Corso" nella Home.
 // ==========================================================
 let volumiOverlayTitoloCorrente = null;
 
 // ----------------------------------------------------------
-// ðŸ–¼ï¸ Copertina mostrata di fianco all'elenco negli overlay di avanzamento
+// 🖼️ Copertina mostrata di fianco all'elenco negli overlay di avanzamento
 // aperti dal widget "In Corso" della Home (stagioni per gli anime, volumi
 // per i manga). Rispetto alla card del widget qui l'immagine non viene
 // ritagliata: si vede intera, in formato ridotto. Cliccandola si apre il
 // lightbox a schermo intero, come per gli avatar nelle rispettive viste.
-// Restituisce true se la copertina Ã¨ stata effettivamente disegnata, cosÃ¬
+// Restituisce true se la copertina è stata effettivamente disegnata, così
 // chi chiama sa se allargare l'overlay o lasciarlo della misura di sempre.
 // ----------------------------------------------------------
 window.renderCopertinaOverlay = function(idContenitore, item) {
@@ -302,7 +297,7 @@ window.nascondiCopertinaOverlay = function(idContenitore) {
 window.apriAvanzamentoVolumiManga = function(titolo) {
     volumiOverlayTitoloCorrente = titolo;
     const titleEl = document.getElementById('volumiMangaModalTitle');
-    if (titleEl) titleEl.innerText = 'ðŸ“– Volumi Letti â€” ' + titolo;
+    if (titleEl) titleEl.innerText = '📖 Volumi Letti — ' + titolo;
     // La copertina si disegna una volta sola all'apertura: renderVolumiOverlay()
     // viene richiamata a ogni +/- e ricaricare l'immagine la farebbe lampeggiare.
     const item = (mangaList || []).find(x => (x.titolo || '').trim() === String(titolo).trim());
@@ -340,12 +335,12 @@ function renderVolumiOverlay() {
     container.innerHTML = `
         <div class="episodi-row">
             <div class="episodi-row-info">
-                <div class="episodi-row-title">ðŸ“– Volumi letti ${completa ? 'âœ…' : ''}</div>
+                <div class="episodi-row-title">📖 Volumi letti ${completa ? '✅' : ''}</div>
                 <div class="episodi-row-count">${letti} / ${totali} volumi</div>
                 <div class="episodi-progress-outer"><div class="episodi-progress-inner" style="width:${percentuale}%;"></div></div>
             </div>
             <div class="episodi-row-actions">
-                <button class="episodi-btn" ${disabledMeno} onclick="modificaVolumiLettiManga('${safeTitle}', -1)">âˆ’</button>
+                <button class="episodi-btn" ${disabledMeno} onclick="modificaVolumiLettiManga('${safeTitle}', -1)">−</button>
                 <button class="episodi-btn" ${disabledPiu} onclick="modificaVolumiLettiManga('${safeTitle}', 1)">+</button>
             </div>
         </div>
@@ -361,17 +356,17 @@ function toggleFavoriteManga(titolo, btn) {
     // Aggiornamento grafico istantaneo (interfaccia reattiva)
     if (nuovoStato) {
         btn.classList.add("is-favorite");
-        btn.innerHTML = "â˜…";
+        btn.innerHTML = "★";
     } else {
         btn.classList.remove("is-favorite");
-        btn.innerHTML = "â˜†";
+        btn.innerHTML = "☆";
     }
     
     // Aggiorna anche l'array dei dati locale per non perdere lo stato durante altre ricerche/filtri
     let mangaLocale = mangaList.find(x => x.titolo === titolo); // cambia mangaList con il nome della tua variabile globale dei manga
     if (mangaLocale) mangaLocale.preferito = nuovoStato;
     
-    // Se il filtro dei preferiti Ã¨ attivo e togliamo la stella, aggiorna la lista per nascondere la riga
+    // Se il filtro dei preferiti è attivo e togliamo la stella, aggiorna la lista per nascondere la riga
     if (currentFavFilterManga === 'yes' && !nuovoStato) {
         renderListManga();
     }
@@ -386,49 +381,49 @@ function toggleFavoriteManga(titolo, btn) {
 }
 
 // === NUOVA FUNZIONE: flagga l'acquisto di un manga direttamente dalla lista (senza modale) ===
-// PuÃ² solo ACCENDERE il flag. Se Ã¨ giÃ  acquistato non fa nulla: lo spegnimento resta
+// Può solo ACCENDERE il flag. Se è già acquistato non fa nulla: lo spegnimento resta
 // possibile solo dalla modale di modifica.
 function flagAcquistoManga(titolo, btn) {
     const item = mangaList.find(x => x.titolo === titolo);
-    if (!item || item.acquistato === 'SÃ¬') return;
+    if (!item || item.acquistato === 'Sì') return;
 
     // Aggiornamento grafico istantaneo (interfaccia reattiva)
     if (btn) {
         btn.disabled = true;
-        btn.innerHTML = 'â³';
+        btn.innerHTML = '⏳';
     }
 
     flagMangaAcquistatoSB_(titolo)
         .then(function(res) {
-            item.acquistato = 'SÃ¬';
+            item.acquistato = 'Sì';
             renderListManga();
-            showToast('ðŸ›’ ' + titolo + ' segnato come acquistato', 'success');
+            showToast('🛒 ' + titolo + ' segnato come acquistato', 'success');
         })
         .catch(function(err) {
             console.error("Errore aggiornamento acquistato: ", err);
-            alert("âŒ Errore durante l'aggiornamento dello stato di acquisto.");
+            alert("❌ Errore durante l'aggiornamento dello stato di acquisto.");
             if (btn) {
                 btn.disabled = false;
-                btn.innerHTML = 'âŒ No';
+                btn.innerHTML = '❌ No';
             }
         });
 }
 
 // === NUOVA FUNZIONE: inserisce il voto di un anime direttamente dalla lista (senza modale) ===
 // Funziona solo per l'INSERIMENTO di un voto non ancora presente. La modifica o la
-// cancellazione di un voto giÃ  assegnato resta possibile solo dalla modale di modifica.
+// cancellazione di un voto già assegnato resta possibile solo dalla modale di modifica.
 function impostaVotoAnimeLista(titolo, inputEl) {
     if (!inputEl) return;
     const valoreGrezzo = inputEl.value;
 
     if (valoreGrezzo === null || valoreGrezzo === undefined || String(valoreGrezzo).trim() === '') {
-        alert("âš ï¸ Inserisci un voto da 0 a 10 prima di confermare.");
+        alert("⚠️ Inserisci un voto da 0 a 10 prima di confermare.");
         return;
     }
 
     const votoNumerico = parseFloat(String(valoreGrezzo).replace(',', '.'));
     if (isNaN(votoNumerico) || votoNumerico < 0 || votoNumerico > 10) {
-        alert("âš ï¸ Il voto deve essere un numero tra 0 e 10.");
+        alert("⚠️ Il voto deve essere un numero tra 0 e 10.");
         return;
     }
 
@@ -437,18 +432,18 @@ function impostaVotoAnimeLista(titolo, inputEl) {
         impostaVotoAnimeSB_(titolo, votoNumerico)
         .then(function(res) {
             if (res && res.errore) {
-                alert("âŒ " + res.errore);
+                alert("❌ " + res.errore);
                 renderListAnime();
                 return;
             }
             const item = animeList.find(x => x.titolo === titolo);
             if (item) item.valutazione = (res && res.valutazione !== undefined) ? res.valutazione : votoNumerico;
             renderListAnime();
-            showToast('â­ Voto assegnato a ' + titolo, 'success');
+            showToast('⭐ Voto assegnato a ' + titolo, 'success');
         })
         .catch(function(err) {
             console.error("Errore assegnazione voto anime: ", err);
-            alert("âŒ Errore durante il salvataggio del voto.");
+            alert("❌ Errore durante il salvataggio del voto.");
             inputEl.disabled = false;
         });
 }
@@ -461,17 +456,17 @@ function toggleFavoriteAnime(titolo, btn) {
     // Aggiornamento grafico istantaneo (interfaccia reattiva)
     if (nuovoStato) {
         btn.classList.add("is-favorite");
-        btn.innerHTML = "â˜…";
+        btn.innerHTML = "★";
     } else {
         btn.classList.remove("is-favorite");
-        btn.innerHTML = "â˜†";
+        btn.innerHTML = "☆";
     }
     
     // Aggiorna anche l'array dei dati locale per non perdere lo stato durante altre ricerche/filtri
     let animeLocale = animeList.find(x => x.titolo === titolo);
     if (animeLocale) animeLocale.preferito = nuovoStato;
     
-    // Se il filtro dei preferiti Ã¨ attivo e togliamo la stella, aggiorna la lista per nascondere la riga
+    // Se il filtro dei preferiti è attivo e togliamo la stella, aggiorna la lista per nascondere la riga
     if (typeof currentFavFilterAnime !== 'undefined' && currentFavFilterAnime === 'yes' && !nuovoStato) {
         renderListAnime();
     }
@@ -485,19 +480,19 @@ function toggleFavoriteAnime(titolo, btn) {
         });
 }
 
-// â›” Toggle abbandono dal pulsante riga (stesso schema Serie TV): congela
+// ⛔ Toggle abbandono dal pulsante riga (stesso schema Serie TV): congela
 // (rosso, fuori dal widget) o riprende. Solo la colonna + log, mai il progresso.
 function toggleAbbandonataAnime(titolo) {
     const item = animeList.find(x => x.titolo === titolo);
     if (!item) return;
     if (item.coloreVisione === 'verde') {
-        showToast('âŒ Anime completato: non ha senso abbandonarlo.', 'error');
+        showToast('❌ Anime completato: non ha senso abbandonarlo.', 'error');
         return;
     }
     const nuovoStato = !item.abbandonata;
     const msg = nuovoStato
-        ? 'Segno "' + titolo + '" come abbandonato: uscirÃ  dal widget "In Corso", il flag visione diventerÃ  rosso e il progresso resterÃ  congelato. Potrai riprenderlo quando vuoi.\n\nProcedo?'
-        : 'Riprendo "' + titolo + '"? TornerÃ  nel widget "In Corso" se in visione.';
+        ? 'Segno "' + titolo + '" come abbandonato: uscirà dal widget "In Corso", il flag visione diventerà rosso e il progresso resterà congelato. Potrai riprenderlo quando vuoi.\n\nProcedo?'
+        : 'Riprendo "' + titolo + '"? Tornerà nel widget "In Corso" se in visione.';
     if (!confirm(msg)) return;
     toggleAnimeAbbandonataSB_(titolo, nuovoStato)
         .then(function() {
@@ -508,15 +503,15 @@ function toggleAbbandonataAnime(titolo) {
         .then(function(data) {
             animeList = data || [];
             renderListAnime();
-            showToast(nuovoStato ? 'â›” Anime abbandonato' : 'Anime ripreso', 'success');
+            showToast(nuovoStato ? '⛔ Anime abbandonato' : 'Anime ripreso', 'success');
         }).catch(function(err) {
             console.error('Errore toggle abbandonato anime:', err);
-            showToast('âŒ Errore aggiornamento: ' + err.message, 'error');
+            showToast('❌ Errore aggiornamento: ' + err.message, 'error');
         });
 }
 
 // ==========================================================
-// ðŸ“Œ NUOVO: Gestione della PRIORITÃ€ (pin) per Anime e Manga
+// 📌 NUOVO: Gestione della PRIORITÀ (pin) per Anime e Manga
 // Le opere pinnate vengono mostrate in cima alla lista (in ordine
 // alfabetico), seguite da tutte le altre (sempre in ordine alfabetico
 // all'interno del criterio di ordinamento scelto).
@@ -537,10 +532,10 @@ function togglePinAnime(titolo, btn, event) {
 
     toggleAnimePrioritaSB_(titolo, nuovoStato)
         .then(function() {
-             console.log("PrioritÃ  aggiornata su Supabase per Anime: " + titolo);
+             console.log("Priorità aggiornata su Supabase per Anime: " + titolo);
         })
         .catch(function(err) {
-             console.error("Errore aggiornamento prioritÃ  Anime: ", err);
+             console.error("Errore aggiornamento priorità Anime: ", err);
         });
 }
 
@@ -560,15 +555,15 @@ function togglePinManga(titolo, btn, event) {
 
     toggleMangaPrioritaSB_(titolo, nuovoStato)
         .then(function() {
-             console.log("PrioritÃ  aggiornata su Supabase per Manga: " + titolo);
+             console.log("Priorità aggiornata su Supabase per Manga: " + titolo);
         })
         .catch(function(err) {
-             console.error("Errore aggiornamento prioritÃ  Manga: ", err);
+             console.error("Errore aggiornamento priorità Manga: ", err);
         });
 }
 
 // ==========================================
-//   FASE 11 â€” GRUPPO SINOSSI (Supabase diretto)
+//   FASE 11 — GRUPPO SINOSSI (Supabase diretto)
 // ==========================================
 
 async function getSinossiSB_(titolo, tipo) {
@@ -639,7 +634,7 @@ function mostraSinossi(titolo, tipo) {
         `;
         
         content.innerHTML = `
-            <button id="closeSinossiBtn" style="position: absolute; top: 14px; right: 16px; background: none; border: none; color: var(--text-muted, #8890ab); font-size: 20px; cursor: pointer; transition: color 0.2s;" onmouseover="this.style.color='var(--primary)'" onmouseout="this.style.color='var(--text-muted)'">âœ•</button>
+            <button id="closeSinossiBtn" style="position: absolute; top: 14px; right: 16px; background: none; border: none; color: var(--text-muted, #8890ab); font-size: 20px; cursor: pointer; transition: color 0.2s;" onmouseover="this.style.color='var(--primary)'" onmouseout="this.style.color='var(--text-muted)'">✕</button>
             <h3 id="sinossiTitle" style="margin-top: 0; margin-bottom: 16px; color: var(--text, #f2f3fa); font-size: 18px; font-weight: 600; padding-right: 24px; border-bottom: 1px solid var(--border-color, #262a42); padding-bottom: 10px;"></h3>
             <div id="sinossiBody" style="color: var(--text, #f2f3fa); font-size: 14px; line-height: 1.6; max-height: 250px; overflow-y: auto; white-space: pre-line; padding-right: 5px;"></div>
         `;
@@ -655,7 +650,7 @@ function mostraSinossi(titolo, tipo) {
     // Configurazione testi iniziali (caricamento asincrono)
     document.getElementById('sinossiTitle').innerText = titolo;
     const colorLoading = (tipo === 'anime' || tipo === 'serietv') ? 'var(--primary, #7c6cff)' : 'var(--accent, #ff5da2)';
-    document.getElementById('sinossiBody').innerHTML = `<span style="color: ${colorLoading}; font-weight: 600; display: inline-block; animation: pulse 1.5s infinite;">â³ Recupero della sinossi...</span>`;
+    document.getElementById('sinossiBody').innerHTML = `<span style="color: ${colorLoading}; font-weight: 600; display: inline-block; animation: pulse 1.5s infinite;">⏳ Recupero della sinossi...</span>`;
     
     // Mostra l'overlay grafico
     overlay.style.pointerEvents = 'auto';
@@ -683,7 +678,7 @@ function chiudiSinossi() {
 }
 
 // ============================================================================
-// ðŸ”Ž NUOVO: INTEGRAZIONE ANILIST â€” Overlay di ricerca sinossi (tradotta) + copertina
+// 🔎 NUOVO: INTEGRAZIONE ANILIST — Overlay di ricerca sinossi (tradotta) + copertina
 //
 // Flusso a 3 fasi mostrate nello stesso overlay dinamico:
 //   1) 'loading'    -> spinner mentre si contatta AniList
@@ -694,7 +689,7 @@ function chiudiSinossi() {
 // La conferma NON scrive subito sul foglio: memorizza i dati scelti in variabili
 // di sessione del modale (immagine -> subito nel campo del form; sinossi -> in
 // sinossiPendenteAnime/Manga) che vengono scritte davvero solo al "Salva" finale
-// del modale, per garantire che la riga nel foglio satellite Sinossi esista giÃ .
+// del modale, per garantire che la riga nel foglio satellite Sinossi esista già.
 // ============================================================================
 
 let sinossiPendenteAnime = null;
@@ -738,8 +733,8 @@ function creaOverlayAniListSeAssente_() {
     `;
 
     content.innerHTML = `
-        <button id="closeAnilistBtn" style="position: absolute; top: 14px; right: 16px; background: none; border: none; color: var(--text-muted, #8890ab); font-size: 20px; cursor: pointer; transition: color 0.2s;" onmouseover="this.style.color='var(--primary)'" onmouseout="this.style.color='var(--text-muted)'">âœ•</button>
-        <h3 id="anilistTitle" style="margin-top: 0; margin-bottom: 16px; color: var(--text, #f2f3fa); font-size: 18px; font-weight: 600; padding-right: 24px; border-bottom: 1px solid var(--border-color, #262a42); padding-bottom: 10px;">ðŸ”Ž Ricerca AniList</h3>
+        <button id="closeAnilistBtn" style="position: absolute; top: 14px; right: 16px; background: none; border: none; color: var(--text-muted, #8890ab); font-size: 20px; cursor: pointer; transition: color 0.2s;" onmouseover="this.style.color='var(--primary)'" onmouseout="this.style.color='var(--text-muted)'">✕</button>
+        <h3 id="anilistTitle" style="margin-top: 0; margin-bottom: 16px; color: var(--text, #f2f3fa); font-size: 18px; font-weight: 600; padding-right: 24px; border-bottom: 1px solid var(--border-color, #262a42); padding-bottom: 10px;">🔎 Ricerca AniList</h3>
         <div id="anilistBody" style="color: var(--text, #f2f3fa); font-size: 14px; line-height: 1.6;"></div>
     `;
 
@@ -760,7 +755,7 @@ function mostraOverlayAniList_() {
 }
 
 // ==========================================
-//   FASE 11/13 â€” GRUPPO ANILIST (chiamata diretta dal browser)
+//   FASE 11/13 — GRUPPO ANILIST (chiamata diretta dal browser)
 //   L'API pubblica di AniList supporta CORS per query pubbliche: nessuna
 //   chiave necessaria, nessuna Edge Function necessaria per questo gruppo.
 // ==========================================
@@ -785,7 +780,7 @@ async function eseguireRichiestaAniList_(gqlQuery, variables) {
         console.error('AniList - HTTP ' + statusCode + ': ' + bodyText.substring(0, 500));
         let motivo;
         if (statusCode === 429) motivo = 'troppe richieste in poco tempo (rate limit di AniList). Riprova tra qualche minuto.';
-        else if (statusCode === 502 || statusCode === 503 || statusCode === 504) motivo = 'AniList Ã¨ temporaneamente non disponibile (probabile manutenzione o sovraccarico dei loro server).';
+        else if (statusCode === 502 || statusCode === 503 || statusCode === 504) motivo = 'AniList è temporaneamente non disponibile (probabile manutenzione o sovraccarico dei loro server).';
         else if (statusCode >= 500) motivo = 'errore interno del server AniList.';
         else if (statusCode === 400) motivo = 'richiesta non valida (query malformata).';
         else motivo = 'risposta HTTP inattesa.';
@@ -956,10 +951,10 @@ async function costruisciGrafoStagioniAniList_(nodoIniziale) {
     const visitati = new Set();
     const daVisitare = [nodoIniziale.id];
 
-    // Il titolo di partenza Ã¨ SEMPRE incluso nel risultato, anche quando non
-    // ha alcuna relazione (opera monostagione): finisce tra le stagioni se Ã¨
-    // una serie, tra i film se il formato AniList Ã¨ MOVIE. In entrambi i casi
-    // Ã¨ marcato "preselezionato" perchÃ© Ã¨ il titolo che hai scelto tu.
+    // Il titolo di partenza è SEMPRE incluso nel risultato, anche quando non
+    // ha alcuna relazione (opera monostagione): finisce tra le stagioni se è
+    // una serie, tra i film se il formato AniList è MOVIE. In entrambi i casi
+    // è marcato "preselezionato" perché è il titolo che hai scelto tu.
     const formatoIniziale = String(nodoIniziale.formato || '').toUpperCase();
     if (formatoIniziale === 'MOVIE') {
         filmCandidati.set(nodoIniziale.id, {
@@ -1042,10 +1037,10 @@ function apriRicercaAniList(tipo) {
     }
 
     mostraOverlayAniList_();
-    document.getElementById('anilistTitle').innerText = 'ðŸ”Ž Ricerca AniList: "' + titolo + '"';
+    document.getElementById('anilistTitle').innerText = '🔎 Ricerca AniList: "' + titolo + '"';
     const colorLoading = tipo === 'anime' ? 'var(--primary, #7c6cff)' : 'var(--accent, #ff5da2)';
     document.getElementById('anilistBody').innerHTML =
-        `<span style="color: ${colorLoading}; font-weight: 600; display: inline-block; animation: pulse 1.5s infinite;">â³ Ricerca dei candidati in corso...</span>`;
+        `<span style="color: ${colorLoading}; font-weight: 600; display: inline-block; animation: pulse 1.5s infinite;">⏳ Ricerca dei candidati in corso...</span>`;
 
     cercaCandidatiAniListSB_(titolo, tipo === 'anime' ? 'ANIME' : 'MANGA')
         .then(function(candidati) { renderCandidatiAniList_(tipo, candidati); })
@@ -1053,7 +1048,7 @@ function apriRicercaAniList(tipo) {
 }
 
 function renderCandidatiAniList_(tipo, candidati) {
-    document.getElementById('anilistTitle').innerText = 'ðŸ”Ž Scegli l\'opera corretta';
+    document.getElementById('anilistTitle').innerText = '🔎 Scegli l\'opera corretta';
     const body = document.getElementById('anilistBody');
 
     if (!candidati || candidati.length === 0) {
@@ -1092,10 +1087,10 @@ function renderCandidatiAniList_(tipo, candidati) {
 }
 
 function selezionaCandidatoAniList_(tipo, id, titoloCandidato) {
-    document.getElementById('anilistTitle').innerText = 'ðŸ”Ž ' + titoloCandidato;
+    document.getElementById('anilistTitle').innerText = '🔎 ' + titoloCandidato;
     const colorLoading = tipo === 'anime' ? 'var(--primary, #7c6cff)' : 'var(--accent, #ff5da2)';
     document.getElementById('anilistBody').innerHTML =
-        `<span style="color: ${colorLoading}; font-weight: 600; display: inline-block; animation: pulse 1.5s infinite;">â³ Recupero sinossi e traduzione in corso...</span>`;
+        `<span style="color: ${colorLoading}; font-weight: 600; display: inline-block; animation: pulse 1.5s infinite;">⏳ Recupero sinossi e traduzione in corso...</span>`;
 
 	    getDettaglioTraduzioneAniListSB_(id)
         .then(function(dettaglio) { renderDettaglioAniList_(tipo, dettaglio); })
@@ -1118,7 +1113,7 @@ function renderDettaglioAniList_(tipo, dettaglio) {
     textCol.style = 'flex:1; min-width:220px;';
     textCol.innerHTML = `
         <label style="display:block; margin-bottom:6px; font-weight:600; color: var(--text-muted, #8890ab); font-size:12px;">
-            Titolo completo (modificabile â€” verrÃ  riportato nel campo Titolo della scheda)
+            Titolo completo (modificabile — verrà riportato nel campo Titolo della scheda)
         </label>
         <input type="text" id="anilistTitoloInput" style="width:100%; background: rgba(255,255,255,0.04); border:1px solid var(--border-color, #262a42); border-radius:8px; color: var(--text, #f2f3fa); padding:8px; font-size:13px; margin-bottom:12px;">
         <label style="display:block; margin-bottom:6px; font-weight:600; color: var(--text-muted, #8890ab); font-size:12px;">
@@ -1134,8 +1129,8 @@ function renderDettaglioAniList_(tipo, dettaglio) {
     document.getElementById('anilistTitoloInput').value = dettaglio.titolo || '';
     document.getElementById('anilistSinossiTextarea').value = dettaglio.sinossi || '';
 
-    // Volumi manga in anteprima: mostra subito il numero che verrÃ  importato
-    // (solo se il campo scheda Ã¨ vuoto/zero, altrimenti resta il tuo).
+    // Volumi manga in anteprima: mostra subito il numero che verrà importato
+    // (solo se il campo scheda è vuoto/zero, altrimenti resta il tuo).
     // Stessa cosa per lo stato editoriale (riferito al Giappone): anteprima
     // e importazione solo lato manga, per gli anime resta manuale.
     if (tipo === 'manga') {
@@ -1151,15 +1146,15 @@ function renderDettaglioAniList_(tipo, dettaglio) {
         const volInfo = document.createElement('div');
         volInfo.style = 'margin-top:12px; font-size:13px; color: var(--text, #f2f3fa);';
         volInfo.innerHTML = (volumiNoti
-            ? `ðŸ“š Volumi totali su AniList: <b>${dettaglio.volumi}</b> (importati solo se il campo scheda Ã¨ vuoto)`
-            : `ðŸ“š AniList non indica i volumi di questa opera: inseriscili a mano nella scheda.`)
+            ? `📚 Volumi totali su AniList: <b>${dettaglio.volumi}</b> (importati solo se il campo scheda è vuoto)`
+            : `📚 AniList non indica i volumi di questa opera: inseriscili a mano nella scheda.`)
             + (statoMappato
-                ? `<div style="margin-top:6px;">ðŸ“° Stato in Giappone: <b>${statoMappato}</b> (verrÃ  impostato, modificabile dopo)</div>`
-                : `<div style="margin-top:6px;">ðŸ“° Stato non indicato su AniList: lascio il tuo.</div>`);
+                ? `<div style="margin-top:6px;">📰 Stato in Giappone: <b>${statoMappato}</b> (verrà impostato, modificabile dopo)</div>`
+                : `<div style="margin-top:6px;">📰 Stato non indicato su AniList: lascio il tuo.</div>`);
         body.appendChild(volInfo);
     }
 
-    // === Generi/tag rilevati: confronto testuale (case-insensitive) tra ciÃ² che AniList
+    // === Generi/tag rilevati: confronto testuale (case-insensitive) tra ciò che AniList
     // restituisce (genres + tags) e la tua lista predefinita MASTER_GENRES_LIST. Solo le
     // corrispondenze vengono mostrate, pre-selezionate, e deselezionabili una per una. ===
     const suggeriti = dettaglio.generiSuggeriti || [];
@@ -1173,7 +1168,7 @@ function renderDettaglioAniList_(tipo, dettaglio) {
     if (generiCorrispondenti.length > 0) {
         genreSection.innerHTML = `
             <label style="display:block; margin-bottom:6px; font-weight:600; color: var(--text-muted, #8890ab); font-size:12px;">
-                Generi rilevati (deseleziona quelli che non vuoi importare â€” verranno aggiunti a quelli giÃ  selezionati, senza toglierne nessuno)
+                Generi rilevati (deseleziona quelli che non vuoi importare — verranno aggiunti a quelli già selezionati, senza toglierne nessuno)
             </label>
             <div id="anilistGenresPicker" class="genres-grid-container">
                 ${generiCorrispondenti.map(function(g) {
@@ -1192,7 +1187,7 @@ function renderDettaglioAniList_(tipo, dettaglio) {
         relSection.style = 'margin-top:16px; border-top:1px solid var(--border-color, #262a42); padding-top:14px;';
         relSection.innerHTML = `
             <button type="button" class="btn btn-nav" id="anilistCercaRelazioniBtn" style="border:1px solid var(--border-color, #262a42);">
-                ðŸ”— Cerca stagioni/film collegati
+                🔗 Cerca stagioni/film collegati
             </button>
             <div id="anilistRelazioniRisultato" style="margin-top:12px;"></div>
         `;
@@ -1204,7 +1199,7 @@ function renderDettaglioAniList_(tipo, dettaglio) {
     footer.style = 'display:flex; justify-content:flex-end; gap:8px; margin-top:16px; border-top:1px solid var(--border-color, #262a42); padding-top:14px;';
     footer.innerHTML = `
         <button type="button" class="btn btn-danger" id="anilistAnnullaBtn">Annulla</button>
-        <button type="button" class="btn ${tipo === 'anime' ? 'btn-anime' : 'btn-manga'}" id="anilistConfermaBtn">âœ… Usa questi dati</button>
+        <button type="button" class="btn ${tipo === 'anime' ? 'btn-anime' : 'btn-manga'}" id="anilistConfermaBtn">✅ Usa questi dati</button>
     `;
     body.appendChild(footer);
 
@@ -1226,8 +1221,8 @@ function applicaDatiPrincipaliAniList_(tipo) {
     if (titoloFinale) document.getElementById(titoloInputId).value = titoloFinale;
     document.getElementById(imgInputId).value = immagineFinale || '';
 
-    // Volumi manga da AniList: rispetta il numero giÃ  scritto a mano, lo
-    // riempie solo se il campo Ã¨ vuoto/zero e AniList lo conosce davvero.
+    // Volumi manga da AniList: rispetta il numero già scritto a mano, lo
+    // riempie solo se il campo è vuoto/zero e AniList lo conosce davvero.
     if (tipo === 'manga') {
         const volumiAniList = (ultimoDettaglioAniList.volumi === null || ultimoDettaglioAniList.volumi === undefined)
             ? null : (parseInt(ultimoDettaglioAniList.volumi) || 0);
@@ -1261,7 +1256,7 @@ function applicaDatiPrincipaliAniList_(tipo) {
     else sinossiPendenteManga = sinossiFinale;
 
     // Applica i generi rilevati e ancora spuntati nel picker alle checkbox reali del form,
-    // in modo ADDITIVO: non deseleziona mai un genere giÃ  scelto manualmente in precedenza.
+    // in modo ADDITIVO: non deseleziona mai un genere già scelto manualmente in precedenza.
     const genresPicker = document.getElementById('anilistGenresPicker');
     if (genresPicker) {
         const generiDaAggiungere = Array.from(genresPicker.querySelectorAll('.anilist_genre_cb:checked')).map(function(cb) { return cb.value; });
@@ -1285,7 +1280,7 @@ function avviaRicercaRelazioniAniList_(dettaglio) {
     const risultatoEl = document.getElementById('anilistRelazioniRisultato');
     const btn = document.getElementById('anilistCercaRelazioniBtn');
     btn.disabled = true;
-    risultatoEl.innerHTML = `<span style="color: var(--primary, #7c6cff); font-size:13px; display:inline-block; animation: pulse 1.5s infinite;">â³ Ricostruzione del franchise in corso (puÃ² richiedere qualche secondo su serie lunghe)...</span>`;
+    risultatoEl.innerHTML = `<span style="color: var(--primary, #7c6cff); font-size:13px; display:inline-block; animation: pulse 1.5s infinite;">⏳ Ricostruzione del franchise in corso (può richiedere qualche secondo su serie lunghe)...</span>`;
 
     const nodoIniziale = {
         id: dettaglio.id, titolo: dettaglio.titolo, episodi: dettaglio.episodi,
@@ -1296,15 +1291,15 @@ function avviaRicercaRelazioniAniList_(dettaglio) {
         .then(function(risultato) { renderRelazioniAniList_(risultato); })
         .catch(function(err) {
             console.error('Errore ricostruzione franchise AniList: ', err);
-            risultatoEl.innerHTML = `<p style="color: var(--danger, #ff5d6c); font-size:13px;">âŒ Errore durante il recupero delle relazioni. Riprova.</p>`;
+            risultatoEl.innerHTML = `<p style="color: var(--danger, #ff5d6c); font-size:13px;">❌ Errore durante il recupero delle relazioni. Riprova.</p>`;
             btn.disabled = false;
         });
 }
 
 // Mostra la checklist di conferma: stagioni TV pre-spuntate (relazione
-// affidabile), film/side story NON pre-spuntati (relazione piÃ¹ ambigua,
+// affidabile), film/side story NON pre-spuntati (relazione più ambigua,
 // vanno verificati uno per uno prima di confermare). Il titolo di partenza
-// Ã¨ sempre pre-spuntato, anche quando Ã¨ l'unica voce (opera monostagione).
+// è sempre pre-spuntato, anche quando è l'unica voce (opera monostagione).
 function renderRelazioniAniList_(risultato) {
     const risultatoEl = document.getElementById('anilistRelazioniRisultato');
     const btn = document.getElementById('anilistCercaRelazioniBtn');
@@ -1333,7 +1328,7 @@ function renderRelazioniAniList_(risultato) {
 
     let html = '';
 
-    // Nota esplicativa quando il franchise Ã¨ composto dalla sola opera scelta:
+    // Nota esplicativa quando il franchise è composto dalla sola opera scelta:
     // prima qui si usciva con "nessun risultato" e non c'era modo di importare
     // stagione ed episodi dei titoli monostagione.
     if (risultato.stagioni.length + risultato.film.length === 1) {
@@ -1341,23 +1336,23 @@ function renderRelazioniAniList_(risultato) {
     }
 
     if (risultato.stagioni.length > 0) {
-        html += `<div style="font-weight:600; font-size:12px; color: var(--text-muted, #8890ab); margin-bottom:6px;">ðŸ“º Stagioni TV trovate (${risultato.stagioni.length})</div>`;
+        html += `<div style="font-weight:600; font-size:12px; color: var(--text-muted, #8890ab); margin-bottom:6px;">📺 Stagioni TV trovate (${risultato.stagioni.length})</div>`;
         html += risultato.stagioni.map(function(s) { return rigaCheckbox(s, 'stagione', true); }).join('');
     }
     if (risultato.film.length > 0) {
-        html += `<div style="font-weight:600; font-size:12px; color: var(--text-muted, #8890ab); margin:12px 0 6px;">ðŸŽ¬ Film/side story collegati â€” verifica prima di confermare (potrebbero includere ricap)</div>`;
+        html += `<div style="font-weight:600; font-size:12px; color: var(--text-muted, #8890ab); margin:12px 0 6px;">🎬 Film/side story collegati — verifica prima di confermare (potrebbero includere ricap)</div>`;
         html += risultato.film.map(function(f) { return rigaCheckbox(f, 'film', false); }).join('');
     }
-    html += `<button type="button" class="btn btn-anime" id="anilistApplicaRelazioniBtn" style="margin-top:14px; width:100%;">âœ… Applica stagioni e film spuntati</button>`;
+    html += `<button type="button" class="btn btn-anime" id="anilistApplicaRelazioniBtn" style="margin-top:14px; width:100%;">✅ Applica stagioni e film spuntati</button>`;
 
     risultatoEl.innerHTML = html;
     document.getElementById('anilistApplicaRelazioniBtn').onclick = applicaRelazioniAniList_;
 }
 
 // Scrive direttamente nei campi "Stagioni Totali"/"Film Totali" della scheda
-// Anime (giÃ  aperta dietro l'overlay AniList) e prepara la mappa
+// Anime (già aperta dietro l'overlay AniList) e prepara la mappa
 // numero-stagione -> episodi, usata da addAnimeSB_/updateAnimeSB_ per
-// creare le righe di episodi_anime giÃ  con il totale corretto.
+// creare le righe di episodi_anime già con il totale corretto.
 function applicaRelazioniAniList_() {
     const spuntati = Array.from(document.querySelectorAll('.anilist-rel-cb:checked'));
     const stagioniSpuntate = spuntati.filter(function(cb) { return cb.getAttribute('data-gruppo') === 'stagione'; });
@@ -1372,7 +1367,7 @@ function applicaRelazioniAniList_() {
     });
 
     // Applica in un colpo solo anche titolo/sinossi/generi/immagine: non
-    // serve piÃ¹ cliccare separatamente "Usa questi dati" dopo.
+    // serve più cliccare separatamente "Usa questi dati" dopo.
     applicaDatiPrincipaliAniList_('anime');
 
     showToast('Applicati titolo, sinossi, generi, ' + stagioniSpuntate.length + ' stagioni e ' + filmSpuntati.length + ' film: ricontrolla e premi "Salva"', 'success');
@@ -1381,14 +1376,14 @@ function applicaRelazioniAniList_() {
 
 function renderErroreAniList_(err) {
     console.error('Errore AniList: ', err);
-    document.getElementById('anilistTitle').innerText = 'âš ï¸ Errore AniList';
+    document.getElementById('anilistTitle').innerText = '⚠️ Errore AniList';
 
-    // Il messaggio arriva giÃ  "diagnosticato" dal backend (es. rete assente,
+    // Il messaggio arriva già "diagnosticato" dal backend (es. rete assente,
     // rate limit HTTP 429, server AniList in manutenzione, risposta
     // malformata, errore GraphQL, ecc.) invece del generico "nessun
-    // risultato": lo mostriamo cosÃ¬ com'Ã¨, per capire da cosa dipende senza
+    // risultato": lo mostriamo così com'è, per capire da cosa dipende senza
     // dover controllare i log di Apps Script.
-    const messaggio = (err && err.message) ? err.message : 'Si Ã¨ verificato un errore imprevisto durante la comunicazione con AniList.';
+    const messaggio = (err && err.message) ? err.message : 'Si è verificato un errore imprevisto durante la comunicazione con AniList.';
     const ora = new Date().toLocaleTimeString('it-IT');
 
     document.getElementById('anilistBody').innerHTML =
@@ -1400,24 +1395,24 @@ function renderErroreAniList_(err) {
 }
 
 // ============================================================================
-// ðŸ“œ NUOVO: LOG DI SISTEMA â€” Log Storico delle AttivitÃ  (Activity Log)
+// 📜 NUOVO: LOG DI SISTEMA — Log Storico delle Attività (Activity Log)
 // ============================================================================
-// Recupera le ultime attivitÃ  registrate sul foglio "Tab_Log" tramite la
+// Recupera le ultime attività registrate sul foglio "Tab_Log" tramite la
 // funzione backend ottieniUltimiLog() e le mostra nel widget della Home.
 function caricaLogAttivita() {
     const loadingEl = document.getElementById('systemLogLoading');
     const listEl = document.getElementById('systemLogList');
     const btnRefresh = document.getElementById('btnRefreshLog');
 
-    if (!listEl) return; // Il widget non Ã¨ presente in questa vista
+    if (!listEl) return; // Il widget non è presente in questa vista
 
     if (loadingEl) {
         loadingEl.style.display = 'block';
-        loadingEl.innerText = 'â³ Sincronizzazione feed in corso...';
+        loadingEl.innerText = '⏳ Sincronizzazione feed in corso...';
     }
 
     // Feedback visivo sul pulsantino di refresh (icona rotante) mentre la
-    // richiesta Ã¨ in corso, sia che sia partita dal pulsante stesso, sia
+    // richiesta è in corso, sia che sia partita dal pulsante stesso, sia
     // dal cambio di un filtro, sia dal caricamento automatico iniziale.
     if (btnRefresh) {
         btnRefresh.classList.add('spinning');
@@ -1451,7 +1446,7 @@ function caricaLogAttivita() {
             console.error('Errore nel caricamento del Log di Sistema:', err);
             if (loadingEl) {
                 loadingEl.style.display = 'block';
-                loadingEl.innerText = 'âš ï¸ Impossibile caricare il log delle attivitÃ .';
+                loadingEl.innerText = '⚠️ Impossibile caricare il log delle attività.';
             }
             if (btnRefresh) {
                 btnRefresh.classList.remove('spinning');
@@ -1473,8 +1468,8 @@ function renderLogAttivita(logs, filtriAttivi) {
         if (emptyEl) {
             emptyEl.style.display = 'block';
             emptyEl.innerText = filtriAttivi
-                ? 'Nessuna attivitÃ  trovata con i filtri selezionati. ðŸ”'
-                : 'Nessuna attivitÃ  registrata finora. Inizia a tracciare le tue opere! ðŸŽ®';
+                ? 'Nessuna attività trovata con i filtri selezionati. 🔍'
+                : 'Nessuna attività registrata finora. Inizia a tracciare le tue opere! 🎮';
         }
         return;
     }
@@ -1500,55 +1495,55 @@ function renderLogAttivita(logs, filtriAttivi) {
         switch (String(log.tipoEvento || '').toUpperCase()) {
             case 'CREAZIONE':
                 frase = isCinema
-                    ? 'ðŸŽ¬ Nuovo film aggiunto: ' + titoloHtml + ' Ã¨ stato inserito nel tracker!'
+                    ? '🎬 Nuovo film aggiunto: ' + titoloHtml + ' è stato inserito nel tracker!'
                     : (isLibro
-                        ? 'ðŸ“— Nuovo libro aggiunto: ' + titoloHtml + ' Ã¨ stato inserito in biblioteca!'
-                        : 'ðŸ‘¾ Nuova opera aggiunta: ' + titoloHtml + ' Ã¨ stato inserito nel tracker!');
+                        ? '📗 Nuovo libro aggiunto: ' + titoloHtml + ' è stato inserito in biblioteca!'
+                        : '👾 Nuova opera aggiunta: ' + titoloHtml + ' è stato inserito nel tracker!');
                 break;
             case 'AVANZAMENTO':
                 if (isAnime) {
-                    frase = 'ðŸ“º Avanzamento su ' + titoloHtml + ': ora a ' + valoreNuovoHtml + '!';
+                    frase = '📺 Avanzamento su ' + titoloHtml + ': ora a ' + valoreNuovoHtml + '!';
                 } else {
-                    frase = isSerieTv ? 'ðŸ“¡ Avanzamento su ' + titoloHtml + ': ora a ' + valoreNuovoHtml + '!' : 'ðŸ“š Letto il volume ' + valoreNuovoHtml + ' di ' + titoloHtml + '!';
+                    frase = isSerieTv ? '📡 Avanzamento su ' + titoloHtml + ': ora a ' + valoreNuovoHtml + '!' : '📚 Letto il volume ' + valoreNuovoHtml + ' di ' + titoloHtml + '!';
                 }
                 break;
             case 'COMPLETAMENTO':
                 if (isCinema && String(log.valoreNuovo || '').includes('[streaming]')) {
-                    frase = 'ðŸ¿ <span class="log-value-highlight">VISTO!</span> Hai visto ' + titoloHtml + ' in streaming! ðŸ“º';
+                    frase = '🍿 <span class="log-value-highlight">VISTO!</span> Hai visto ' + titoloHtml + ' in streaming! 📺';
                 } else {
                     frase = isCinema
-                        ? 'ðŸ¿ <span class="log-value-highlight">VISTO!</span> Hai visto ' + titoloHtml + ' al cinema! ðŸŽ¬'
+                        ? '🍿 <span class="log-value-highlight">VISTO!</span> Hai visto ' + titoloHtml + ' al cinema! 🎬'
                         : (isLibro
-                            ? 'ðŸ“— <span class="log-value-highlight">LETTO!</span> Hai finito di leggere ' + titoloHtml + '! âœ¨'
-                            : 'ðŸ† <span class="log-value-highlight">COMPLETATO!</span> Hai finito ' + titoloHtml + '! âœ¨');
+                            ? '📗 <span class="log-value-highlight">LETTO!</span> Hai finito di leggere ' + titoloHtml + '! ✨'
+                            : '🏆 <span class="log-value-highlight">COMPLETATO!</span> Hai finito ' + titoloHtml + '! ✨');
                 }
                 break;
             case 'IN_PARI':
-                frase = 'âœ… Sei in pari con ' + titoloHtml + ': ' + valoreNuovoHtml + '!';
+                frase = '✅ Sei in pari con ' + titoloHtml + ': ' + valoreNuovoHtml + '!';
                 break;
             case 'VOTO':
-                frase = 'â­ Hai valutato ' + titoloHtml + ' con un voto di ' + valoreNuovoHtml + '/10!';
+                frase = '⭐ Hai valutato ' + titoloHtml + ' con un voto di ' + valoreNuovoHtml + '/10!';
                 break;
             case 'CAMBIO_STATO':
                 if (isCinema && String(log.valoreNuovo || '').toUpperCase() === 'ELIMINATO') {
-                    frase = 'ðŸ—‘ï¸ Film eliminato dal tracker: ' + titoloHtml;
+                    frase = '🗑️ Film eliminato dal tracker: ' + titoloHtml;
                 } else if (isCinema) {
-                    frase = 'ðŸ”„ ' + titoloHtml + ' rimesso tra i film da vedere.';
+                    frase = '🔄 ' + titoloHtml + ' rimesso tra i film da vedere.';
                 } else {
-                    frase = 'ðŸ”„ Stato aggiornato per ' + titoloHtml + ': ora ' + valoreNuovoHtml;
+                    frase = '🔄 Stato aggiornato per ' + titoloHtml + ': ora ' + valoreNuovoHtml;
                 }
                 break;
             case 'ACQUISTO':
-                frase = 'ðŸ›’ Hai acquistato ' + titoloHtml + '!';
+                frase = '🛒 Hai acquistato ' + titoloHtml + '!';
                 break;
             case 'ABBANDONO':
-                frase = 'â›” Hai abbandonato ' + titoloHtml + ': progresso congelato.';
+                frase = '⛔ Hai abbandonato ' + titoloHtml + ': progresso congelato.';
                 break;
             case 'RIPRESA':
-                frase = 'ðŸ”„ Hai ripreso ' + titoloHtml + ': di nuovo in pista!';
+                frase = '🔄 Hai ripreso ' + titoloHtml + ': di nuovo in pista!';
                 break;
             default:
-                frase = 'â„¹ï¸ Nuova attivitÃ  registrata per ' + titoloHtml;
+                frase = 'ℹ️ Nuova attività registrata per ' + titoloHtml;
         }
 
         li.innerHTML =
@@ -1570,7 +1565,7 @@ function formatLogTimestamp(isoString) {
         if (isNaN(d.getTime())) return '';
         const dataStr = d.toLocaleDateString('it-IT', { day: '2-digit', month: '2-digit' });
         const oraStr = d.toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' });
-        return dataStr + ' â€” ' + oraStr;
+        return dataStr + ' — ' + oraStr;
     } catch (e) {
         return '';
     }
@@ -1598,7 +1593,7 @@ function escapeHtmlLog(str) {
     }
 })();
 
-// ðŸ” Gestione dei filtri del Log di Sistema (Tipo Media + Tipo Evento).
+// 🔍 Gestione dei filtri del Log di Sistema (Tipo Media + Tipo Evento).
 // I due filtri sono combinabili (es. Anime + Completamento). Ogni modifica
 // ricarica il log dal backend, che si occupa di restituire sempre fino a
 // 15 righe corrispondenti ai filtri correnti.
@@ -1633,7 +1628,7 @@ function escapeHtmlLog(str) {
         });
     });
 
-    // ðŸ” Filtro per titolo: ricerca "contiene" combinabile con gli altri
+    // 🔍 Filtro per titolo: ricerca "contiene" combinabile con gli altri
     // filtri. Usa un debounce per evitare di interrogare il backend ad ogni
     // singolo tasto premuto: la ricerca parte ~350ms dopo l'ultima digitazione.
     if (inputTitolo) {
@@ -1668,7 +1663,7 @@ function escapeHtmlLog(str) {
     }
 })();
 
-// ðŸ”„ / â†º Gestione dei pulsanti "Reimposta filtri" e "Aggiorna log" del
+// 🔄 / ↺ Gestione dei pulsanti "Reimposta filtri" e "Aggiorna log" del
 // Log di Sistema. Entrambi vivono nell'header del widget, quindi va
 // bloccata la propagazione del click per non far scattare anche il
 // toggle di apertura/chiusura del widget.
@@ -1687,9 +1682,9 @@ function escapeHtmlLog(str) {
         e.stopPropagation();
     });
 
-    // ðŸ”ƒ Inverte l'ordinamento cronologico del log. Default (â–¾/â¬‡ï¸): dal piÃ¹
-    // recente al piÃ¹ vecchio. Attivo (â–´/â¬†ï¸): dal piÃ¹ vecchio al piÃ¹ recente
-    // (mostra le 15 attivitÃ  piÃ¹ vecchie che rispettano i filtri correnti).
+    // 🔃 Inverte l'ordinamento cronologico del log. Default (▾/⬇️): dal più
+    // recente al più vecchio. Attivo (▴/⬆️): dal più vecchio al più recente
+    // (mostra le 15 attività più vecchie che rispettano i filtri correnti).
     // Combinabile con tutti gli altri filtri (Tipo, Azione, Titolo).
     if (btnOrdine) {
         btnOrdine.addEventListener('click', function(e) {
@@ -1698,12 +1693,12 @@ function escapeHtmlLog(str) {
             const nuovoStato = !isAsc;
             btnOrdine.setAttribute('data-asc', String(nuovoStato));
             if (nuovoStato) {
-                btnOrdine.textContent = 'â¬†ï¸';
-                btnOrdine.title = 'Inverti ordinamento (dal piÃ¹ recente)';
+                btnOrdine.textContent = '⬆️';
+                btnOrdine.title = 'Inverti ordinamento (dal più recente)';
                 btnOrdine.classList.add('filter-active');
             } else {
-                btnOrdine.textContent = 'â¬‡ï¸';
-                btnOrdine.title = 'Inverti ordinamento (dal piÃ¹ vecchio)';
+                btnOrdine.textContent = '⬇️';
+                btnOrdine.title = 'Inverti ordinamento (dal più vecchio)';
                 btnOrdine.classList.remove('filter-active');
             }
             caricaLogAttivita();
@@ -1711,8 +1706,8 @@ function escapeHtmlLog(str) {
     }
 
     // Riporta tutti i filtri (Tipo, Azione, Titolo) e l'ordinamento sui
-    // valori di default e ricarica il log di default (ultime 15 attivitÃ 
-    // senza alcun filtro, dal piÃ¹ recente al piÃ¹ vecchio).
+    // valori di default e ricarica il log di default (ultime 15 attività
+    // senza alcun filtro, dal più recente al più vecchio).
     if (btnReset) {
         btnReset.addEventListener('click', function(e) {
             e.stopPropagation();
@@ -1730,8 +1725,8 @@ function escapeHtmlLog(str) {
             }
             if (btnOrdine) {
                 btnOrdine.setAttribute('data-asc', 'false');
-                btnOrdine.textContent = 'â¬‡ï¸';
-                btnOrdine.title = 'Inverti ordinamento (dal piÃ¹ vecchio)';
+                btnOrdine.textContent = '⬇️';
+                btnOrdine.title = 'Inverti ordinamento (dal più vecchio)';
                 btnOrdine.classList.remove('filter-active');
             }
             caricaLogAttivita();
@@ -1754,25 +1749,25 @@ function escapeHtmlLog(str) {
 setTimeout(caricaLogAttivita, 1000);
 
 // ============================================================================
-// ðŸŽ¬ NUOVO: WIDGET "IN CORSO" (Home) â€” Anime in Visione & Manga in Lettura
+// 🎬 NUOVO: WIDGET "IN CORSO" (Home) — Anime in Visione & Manga in Lettura
 // ============================================================================
 // Carica anime, manga ed episodi (necessari per riusare l'overlay episodi
 // della vista Anime) e popola le card cliccabili del widget nella Home.
 function caricaWidgetInCorso(tentativo) {
     const loadingEl = document.getElementById('homeProgressLoading');
     const listEl = document.getElementById('homeProgressList');
-    if (!listEl) return; // Il widget non Ã¨ presente in questa vista
+    if (!listEl) return; // Il widget non è presente in questa vista
 
     if (loadingEl) {
         loadingEl.style.display = 'block';
-        loadingEl.innerText = 'â³ Caricamento opere in corso...';
+        loadingEl.innerText = '⏳ Caricamento opere in corso...';
     }
     const emptyEl = document.getElementById('homeProgressEmpty');
     if (emptyEl) emptyEl.style.display = 'none';
 
     // Le cinque chiamate (anime, manga, episodi anime, serie TV, episodi serie TV) sono indipendenti
-    // e partono tutte insieme. Ognuna Ã¨ protetta singolarmente: se una fallisce (es. token in
-    // refresh dopo inattivitÃ ) le altre passano lo stesso. Al primo tentativo fallito si riprova
+    // e partono tutte insieme. Ognuna è protetta singolarmente: se una fallisce (es. token in
+    // refresh dopo inattività) le altre passano lo stesso. Al primo tentativo fallito si riprova
     // una sola volta dopo 1.5s, poi si disegna comunque con i dati arrivati.
     const tentativiWidget = parseInt(tentativo) || 0;
     let erroriWidget = 0;
@@ -1797,7 +1792,7 @@ function caricaWidgetInCorso(tentativo) {
             serieTvList = risultati[3] || [];
             episodiSerieTvList = risultati[4] || [];
             if (erroriWidget > 0 && tentativiWidget < 1) {
-                if (loadingEl) loadingEl.innerText = 'â³ Riconnessione in corso...';
+                if (loadingEl) loadingEl.innerText = '⏳ Riconnessione in corso...';
                 setTimeout(function() { caricaWidgetInCorso(tentativiWidget + 1); }, 1500);
                 return;
             }
@@ -1808,7 +1803,7 @@ function caricaWidgetInCorso(tentativo) {
             console.error('Errore caricamento dati per il widget "In Corso":', err);
             if (loadingEl) {
                 loadingEl.style.display = 'block';
-                loadingEl.innerText = 'âš ï¸ Impossibile caricare le opere in corso.';
+                loadingEl.innerText = '⚠️ Impossibile caricare le opere in corso.';
             }
         });
 }
@@ -1869,7 +1864,7 @@ function creaProgressCard(tipo, item, idx) {
         const safeImg = item.immagine.trim().replace(/'/g, "\\'").replace(/"/g, '&quot;');
         bannerHTML = `<img class="progress-card-banner" src="${safeImg}" alt="Banner" loading="lazy" onerror="this.style.display='none';">`;
     } else {
-        bannerHTML = `<div class="progress-card-banner-placeholder">${isAnime ? 'ðŸ“º' : 'ðŸ“š'}</div>`;
+        bannerHTML = `<div class="progress-card-banner-placeholder">${isAnime ? '📺' : '📚'}</div>`;
     }
 
     // --- Avanzamento attuale ---
@@ -1879,17 +1874,17 @@ function creaProgressCard(tipo, item, idx) {
         const sTot = parseInt(item.stagioniTotali) || 0;
         const fVis = parseInt(item.filmVisti) || 0;
         const fTot = parseInt(item.filmTotali) || 0;
-        progressoHTML = `ðŸŽžï¸ ${sVis}/${sTot} stagioni`;
-        if (fTot > 0) progressoHTML += `<br>ðŸŽ¬ ${fVis}/${fTot} film`;
+        progressoHTML = `🎞️ ${sVis}/${sTot} stagioni`;
+        if (fTot > 0) progressoHTML += `<br>🎬 ${fVis}/${fTot} film`;
     } else {
         const vLetti = parseInt(item.volumiLetti) || 0;
         const vTot = parseInt(item.volumi) || 0;
-        progressoHTML = `ðŸ“– ${vLetti}/${vTot} volumi`;
+        progressoHTML = `📖 ${vLetti}/${vTot} volumi`;
     }
     if (isSerieTv) {
         const sVis = parseInt(item.stagioniViste) || 0;
         const sTot = parseInt(item.stagioniTotali) || 0;
-        progressoHTML = `ðŸŽžï¸ ${sVis}/${sTot} stagioni`;
+        progressoHTML = `🎞️ ${sVis}/${sTot} stagioni`;
     }
 
     const badgeClass = isSerieTv ? 'log-badge-serietv' : (isAnime ? 'log-badge-anime' : 'log-badge-manga');
@@ -1909,7 +1904,7 @@ function creaProgressCard(tipo, item, idx) {
         if (isSerieTv) {
             apriGestioneStagioniSerieTv(item.titolo, true);
         } else if (isAnime) {
-            apriGestioneEpisodi(item.titolo, true); // Stesso overlay aperto dall'icona ðŸ“º nella vista Anime, qui con la copertina di fianco
+            apriGestioneEpisodi(item.titolo, true); // Stesso overlay aperto dall'icona 📺 nella vista Anime, qui con la copertina di fianco
         } else {
             apriAvanzamentoVolumiManga(item.titolo); // Nuovo overlay compatto per i volumi letti
         }
@@ -1920,12 +1915,12 @@ function creaProgressCard(tipo, item, idx) {
 
 // Gestione del click sull'header per collassare/espandere il widget "In Corso"
         // ================================================================
-        // ðŸ” RICERCA RAPIDA nel widget "In Corso" (solo anime/manga/serie TV,
-        // i film hanno giÃ  il loro widget). Trova un'opera qualsiasi e ne apre
+        // 🔍 RICERCA RAPIDA nel widget "In Corso" (solo anime/manga/serie TV,
+        // i film hanno già il loro widget). Trova un'opera qualsiasi e ne apre
         // subito l'overlay di avanzamento (stagioni/episodi o volumi): al primo
         // episodio/volume segnato l'opera entra in corso e compare nel widget,
-        // perchÃ© i callback degli overlay ridisegnano giÃ  la lista (stesso
-        // schema giÃ  usato per il manga).
+        // perché i callback degli overlay ridisegnano già la lista (stesso
+        // schema già usato per il manga).
         // ================================================================
         function widgetInCorsoCercaOpere_(testo) {
             const q = normalizzaTestoRicerca(testo || '');
@@ -1935,19 +1930,19 @@ function creaProgressCard(tipo, item, idx) {
                 if (!a || !a.titolo) return;
                 if (!normalizzaTestoRicerca(a.titolo).includes(q)) return;
                 risultati.push({ tipo: 'anime', titolo: a.titolo, immagine: a.immagine || '',
-                    sub: 'Stagioni ' + (parseInt(a.stagioniViste) || 0) + '/' + (parseInt(a.stagioniTotali) || 0) + ' Â· ' + (a.stato || 'In corso') });
+                    sub: 'Stagioni ' + (parseInt(a.stagioniViste) || 0) + '/' + (parseInt(a.stagioniTotali) || 0) + ' · ' + (a.stato || 'In corso') });
             });
             (serieTvList || []).forEach(function(s) {
                 if (!s || !s.titolo) return;
                 if (!normalizzaTestoRicerca(s.titolo).includes(q)) return;
                 risultati.push({ tipo: 'serietv', titolo: s.titolo, immagine: s.immagine || '',
-                    sub: 'Stagioni ' + (parseInt(s.stagioniViste) || 0) + '/' + (parseInt(s.stagioniTotali) || 0) + ' Â· ' + (s.stato || 'In corso') });
+                    sub: 'Stagioni ' + (parseInt(s.stagioniViste) || 0) + '/' + (parseInt(s.stagioniTotali) || 0) + ' · ' + (s.stato || 'In corso') });
             });
             (mangaList || []).forEach(function(m) {
                 if (!m || !m.titolo) return;
                 if (!normalizzaTestoRicerca(m.titolo).includes(q)) return;
                 risultati.push({ tipo: 'manga', titolo: m.titolo, immagine: m.immagine || '',
-                    sub: 'Volumi ' + (parseInt(m.volumiLetti) || 0) + '/' + (parseInt(m.volumi) || 0) + ' Â· ' + (m.stato || 'In corso') });
+                    sub: 'Volumi ' + (parseInt(m.volumiLetti) || 0) + '/' + (parseInt(m.volumi) || 0) + ' · ' + (m.stato || 'In corso') });
             });
             risultati.sort(function(x, y) { return (x.titolo || '').localeCompare(y.titolo || ''); });
             return risultati.slice(0, 10);
@@ -1967,7 +1962,7 @@ function creaProgressCard(tipo, item, idx) {
                 const safeTitle = String(item.titolo || '').replace(/'/g, "\\'").replace(/"/g, '\\"');
                 const badgeClass = item.tipo === 'serietv' ? 'log-badge-serietv' : (item.tipo === 'anime' ? 'log-badge-anime' : 'log-badge-manga');
                 const badgeLabel = item.tipo === 'serietv' ? 'SERIE TV' : item.tipo.toUpperCase();
-                const icona = item.tipo === 'serietv' ? 'ðŸ“¡' : (item.tipo === 'anime' ? 'ðŸ“º' : 'ðŸ“š');
+                const icona = item.tipo === 'serietv' ? '📡' : (item.tipo === 'anime' ? '📺' : '📚');
                 const thumb = item.immagine
                     ? '<img class="global-search-thumb" src="' + item.immagine + '" loading="lazy">'
                     : '<div class="global-search-thumb-placeholder tipo-' + item.tipo + '">' + icona + '</div>';
@@ -2041,12 +2036,12 @@ function creaProgressCard(tipo, item, idx) {
     }
 })();
 
-// Caricamento del widget "In Corso" all'avvio dell'app (Home Ã¨ la vista di
+// Caricamento del widget "In Corso" all'avvio dell'app (Home è la vista di
 // default), ritardato di ~1 secondo come per il Log di Sistema.
 setTimeout(caricaWidgetInCorso, 1000);
 
 // ==========================================================================
-// ðŸŽŸï¸ WIDGET "PROSSIMI AL CINEMA" (home) â€” mostra i primi 5 film "da vedere"
+// 🎟️ WIDGET "PROSSIMI AL CINEMA" (home) — mostra i primi 5 film "da vedere"
 // al cinema (esclusi i promemoria streaming), ordinati per data di uscita
 // crescente. Permette di segnarli come visti direttamente da qui, con la
 // data di visione inserita tramite un input date inline (niente prompt()).
@@ -2056,11 +2051,11 @@ let homeCinemaQueue = [];
 function caricaWidgetCinemaProssimi() {
     const loadingEl = document.getElementById('homeCinemaLoading');
     const listEl = document.getElementById('homeCinemaList');
-    if (!listEl) return; // Il widget non Ã¨ presente in questa vista
+    if (!listEl) return; // Il widget non è presente in questa vista
 
     if (loadingEl) {
         loadingEl.style.display = 'block';
-        loadingEl.innerText = 'â³ Caricamento film in uscita...';
+        loadingEl.innerText = '⏳ Caricamento film in uscita...';
     }
     const emptyEl = document.getElementById('homeCinemaEmpty');
     if (emptyEl) emptyEl.style.display = 'none';
@@ -2072,7 +2067,7 @@ function caricaWidgetCinemaProssimi() {
             // ordinati per data di uscita crescente. Film senza data valida
             // finiscono in coda invece di rompere l'ordinamento.
             homeCinemaQueue = tutti
-                .filter(item => item && item.visione !== 'SÃ¬' && !item.streaming)
+                .filter(item => item && item.visione !== 'Sì' && !item.streaming)
                 .sort((a, b) => {
                     const dA = a.dataUscita || '9999-99-99';
                     const dB = b.dataUscita || '9999-99-99';
@@ -2085,12 +2080,12 @@ function caricaWidgetCinemaProssimi() {
             console.error('Errore caricamento widget "Prossimi al Cinema": ', err);
             if (loadingEl) {
                 loadingEl.style.display = 'block';
-                loadingEl.innerText = 'âš ï¸ Impossibile caricare i film in uscita.';
+                loadingEl.innerText = '⚠️ Impossibile caricare i film in uscita.';
             }
         });
 }
 // Ridisegna il widget mostrando al massimo i primi 5 film della coda
-// (giÃ  ordinata). Va richiamata anche dopo ogni spunta, cosÃ¬ il 6Â° film,
+// (già ordinata). Va richiamata anche dopo ogni spunta, così il 6° film,
 // se esiste, prende automaticamente il posto di quello appena confermato.
 function renderWidgetCinemaProssimi() {
     const listEl = document.getElementById('homeCinemaList');
@@ -2123,9 +2118,9 @@ function creaCinemaUpcomingCard(item) {
 
     let bannerHTML = '';
     if (item.immagine) {
-        bannerHTML = `<img src="${item.immagine}" class="progress-card-banner" alt="" onerror="this.outerHTML='<div class=\\'progress-card-banner-placeholder\\'>ðŸŽ¬</div>'">`;
+        bannerHTML = `<img src="${item.immagine}" class="progress-card-banner" alt="" onerror="this.outerHTML='<div class=\\'progress-card-banner-placeholder\\'>🎬</div>'">`;
     } else {
-        bannerHTML = `<div class="progress-card-banner-placeholder">ðŸŽ¬</div>`;
+        bannerHTML = `<div class="progress-card-banner-placeholder">🎬</div>`;
     }
 
     const dataUscitaLabel = item.dataUscita ? formattaDataItalianaCinema_(item.dataUscita) : 'Data da definire';
@@ -2136,10 +2131,10 @@ function creaCinemaUpcomingCard(item) {
         <div class="progress-card-body">
             <span class="progress-card-badge log-badge-cinema">CINEMA</span>
             <div class="progress-card-title">${escapeHtmlLog(item.titolo || 'Senza Titolo')}</div>
-            <div class="progress-card-progress">ðŸ“… ${dataUscitaLabel}</div>
+            <div class="progress-card-progress">📅 ${dataUscitaLabel}</div>
             <div class="cinema-upcoming-actions">
                 <input type="date" class="cinema-upcoming-date-input" value="${oggiISO}" title="Data in cui hai visto il film">
-                <button class="cinema-upcoming-check-btn" title="Segna come visto">âœ…</button>
+                <button class="cinema-upcoming-check-btn" title="Segna come visto">✅</button>
             </div>
         </div>
     `;
@@ -2147,13 +2142,13 @@ function creaCinemaUpcomingCard(item) {
     const dateInput = card.querySelector('.cinema-upcoming-date-input');
     const checkBtn = card.querySelector('.cinema-upcoming-check-btn');
 
-    // La card non Ã¨ cliccabile: solo i suoi controlli lo sono.
+    // La card non è cliccabile: solo i suoi controlli lo sono.
     dateInput.addEventListener('click', e => e.stopPropagation());
     checkBtn.addEventListener('click', function(e) {
         e.stopPropagation();
         const dataVisioneISO = dateInput.value;
         if (!dataVisioneISO) {
-            alert('âš ï¸ Seleziona una data di visione prima di confermare.');
+            alert('⚠️ Seleziona una data di visione prima di confermare.');
             return;
         }
         checkBtn.disabled = true;
@@ -2161,15 +2156,15 @@ function creaCinemaUpcomingCard(item) {
 
         toggleVisioneCinemaSB_(item.titolo, true, dataVisioneISO)
             .then(function() {
-                // Rimuove il film dalla coda e ridisegna: il 6Â° film (se esiste)
+                // Rimuove il film dalla coda e ridisegna: il 6° film (se esiste)
                 // prende automaticamente il posto di quello appena spuntato.
                 homeCinemaQueue = homeCinemaQueue.filter(x => x.titolo !== item.titolo);
                 renderWidgetCinemaProssimi();
-                showToast('ðŸŽ¬ "' + item.titolo + '" segnato come visto', 'success');
+                showToast('🎬 "' + item.titolo + '" segnato come visto', 'success');
             })
             .catch(function(err) {
                 console.error('Errore aggiornamento visione Cinema (widget home): ', err);
-                alert('âŒ Errore durante l\'aggiornamento dello stato di visione.');
+                alert('❌ Errore durante l\'aggiornamento dello stato di visione.');
                 checkBtn.disabled = false;
                 dateInput.disabled = false;
             });
@@ -2194,22 +2189,22 @@ function creaCinemaUpcomingCard(item) {
 setTimeout(caricaWidgetCinemaProssimi, 1000);
 
 // ==========================================================================
-//   ðŸ” RICERCA GLOBALE (Home) â€” Anime + Manga + Cinema
+//   🔍 RICERCA GLOBALE (Home) — Anime + Manga + Cinema
 // ==========================================================================
 // L'indice (titoli + pochi metadati) viene richiesto una sola volta, al
-// primo focus sulla barra, e tenuto in cache in ricercaGlobaleIndice: cosÃ¬
+// primo focus sulla barra, e tenuto in cache in ricercaGlobaleIndice: così
 // l'apertura della Home resta leggera e la ricerca, una volta caricato
-// l'indice, Ã¨ istantanea perchÃ© lavora tutta lato client.
+// l'indice, è istantanea perché lavora tutta lato client.
 let ricercaGlobaleIndice = null;
 let ricercaGlobaleCaricamento = false;
 let ricercaGlobaleRisultatiFlat = [];
 let ricercaGlobaleAttivo = -1;
 let ricercaGlobaleTimer = null;
 
-const RICERCA_GLOBALE_ICONE = { anime: 'ðŸ“º', manga: 'ðŸ“š', libri: 'ðŸ“—', cinema: 'ðŸŽ¬', serietv: 'ðŸ“¡' };
+const RICERCA_GLOBALE_ICONE = { anime: '📺', manga: '📚', libri: '📗', cinema: '🎬', serietv: '📡' };
 const RICERCA_GLOBALE_LABEL = { anime: 'Anime', manga: 'Manga', libri: 'Libri', cinema: 'Cinema', serietv: 'Serie TV' };
 
-// Toglie gli accenti e uniforma il case, cosÃ¬ "citta" trova "CittÃ " e viceversa.
+// Toglie gli accenti e uniforma il case, così "citta" trova "Città" e viceversa.
 function normalizzaTestoRicerca(str) {
     return String(str || '')
         .toLowerCase()
@@ -2257,13 +2252,13 @@ async function getIndiceRicercaSB_() {
 }
 
 // Carica (una sola volta) l'indice di ricerca dal server e lo mette in cache.
-// Se Ã¨ giÃ  in cache o in corso di caricamento, richiama semplicemente il callback.
+// Se è già in cache o in corso di caricamento, richiama semplicemente il callback.
 function garantisciIndiceRicercaGlobale(callback) {
     if (ricercaGlobaleIndice !== null) { callback(); return; }
     if (ricercaGlobaleCaricamento) { return; }
 
     ricercaGlobaleCaricamento = true;
-    mostraStatoRicercaGlobale('â³ Carico i titoli...');
+    mostraStatoRicercaGlobale('⏳ Carico i titoli...');
 
     getIndiceRicercaSB_()
         .then(function (data) {
@@ -2275,7 +2270,7 @@ function garantisciIndiceRicercaGlobale(callback) {
             console.error('Errore nel caricamento dell\'indice di ricerca:', err);
             ricercaGlobaleIndice = [];
             ricercaGlobaleCaricamento = false;
-            mostraStatoRicercaGlobale('âš ï¸ Impossibile caricare i titoli. Riprova.');
+            mostraStatoRicercaGlobale('⚠️ Impossibile caricare i titoli. Riprova.');
         });
 }
 
@@ -2314,14 +2309,14 @@ function eseguiRicercaGlobale(query) {
 
 function sottotitoloRisultatoRicercaGlobale(item) {
     if (item.tipo === 'anime') {
-        const voto = (item.valutazione && item.valutazione !== '-') ? ' Â· voto ' + item.valutazione : '';
+        const voto = (item.valutazione && item.valutazione !== '-') ? ' · voto ' + item.valutazione : '';
         const statoOpera = escapeHtmlLog(item.stato || 'In corso'); // "In corso" / "Concluso": stato di produzione dell'opera
         const labelVisione = COLORE_VISIONE_LABELS[item.coloreVisione] || '';
 
         // "Da iniziare" (bianco) o Completato (verde): nessun avanzamento da mostrare,
         // nel caso "verde" le frazioni coincidono coi totali quindi sarebbero ridondanti.
         if (item.coloreVisione === 'bianco' || item.coloreVisione === 'verde') {
-            return statoOpera + ' Â· ' + escapeHtmlLog(labelVisione) + voto;
+            return statoOpera + ' · ' + escapeHtmlLog(labelVisione) + voto;
         }
 
         // In visione / in pari: aggiunge anche l'avanzamento (stagioni e/o film).
@@ -2330,7 +2325,7 @@ function sottotitoloRisultatoRicercaGlobale(item) {
         if (item.filmTotali > 0) parti.push(item.filmVisti + '/' + item.filmTotali + ' film');
         const avanzamento = parti.length > 0 ? ' (' + parti.join(', ') + ')' : '';
 
-        return statoOpera + ' Â· ' + escapeHtmlLog(labelVisione) + avanzamento + voto;
+        return statoOpera + ' · ' + escapeHtmlLog(labelVisione) + avanzamento + voto;
     }
     if (item.tipo === 'serietv') {
         const statoOpera = escapeHtmlLog(item.stato || 'In corso');
@@ -2338,23 +2333,23 @@ function sottotitoloRisultatoRicercaGlobale(item) {
 ''
 ;
         if (item.coloreVisione === 'bianco' || item.coloreVisione === 'verde') {
-            return statoOpera + ' Â· ' + escapeHtmlLog(labelVisione);
+            return statoOpera + ' · ' + escapeHtmlLog(labelVisione);
         }
         const avanzamento = (item.stagioniTotali > 0) ? ' (' + item.stagioniViste + '/' + item.stagioniTotali + ' stag.)' : '';
-        return statoOpera + ' Â· ' + escapeHtmlLog(labelVisione) + avanzamento;
+        return statoOpera + ' · ' + escapeHtmlLog(labelVisione) + avanzamento;
     }
     if (item.tipo === 'manga') {
-        const vol = item.volumi ? ' Â· vol. ' + item.volumiLetti + '/' + item.volumi : '';
-        const acquisto = item.acquistato === 'SÃ¬' ? ' Â· Acquistato' : ' Â· Non acquistato';
+        const vol = item.volumi ? ' · vol. ' + item.volumiLetti + '/' + item.volumi : '';
+        const acquisto = item.acquistato === 'Sì' ? ' · Acquistato' : ' · Non acquistato';
         return escapeHtmlLog(item.stato) + vol + acquisto;
     }
     if (item.tipo === 'libri') {
-        const autore = item.autore ? ' Â· ' + escapeHtmlLog(item.autore) : '';
-        const saga = (item.sagaNome) ? ' Â· ðŸ“š ' + escapeHtmlLog(item.sagaNome) + (item.sagaNumero ? ' #' + item.sagaNumero : '') : '';
+        const autore = item.autore ? ' · ' + escapeHtmlLog(item.autore) : '';
+        const saga = (item.sagaNome) ? ' · 📚 ' + escapeHtmlLog(item.sagaNome) + (item.sagaNumero ? ' #' + item.sagaNumero : '') : '';
         return escapeHtmlLog(item.stato || 'Da leggere') + autore + saga;
     }
     // cinema
-    if (item.visione === 'SÃ¬') return 'Visto' + (item.streaming ? ' in streaming' : '') + (item.dataVisione ? ' il ' + item.dataVisione : '');
+    if (item.visione === 'Sì') return 'Visto' + (item.streaming ? ' in streaming' : '') + (item.dataVisione ? ' il ' + item.dataVisione : '');
     if (item.streaming) return 'Da vedere in streaming';
     return item.dataUscita ? 'Al cinema dal ' + item.dataUscita : 'Da vedere al cinema';
 }
@@ -2390,7 +2385,7 @@ function renderRisultatiRicercaGlobale(gruppi) {
         if (lista.length === 0) return;
 
         html += '<div class="global-search-group">';
-        html += '<div class="global-search-group-label tipo-' + tipo + '">' + RICERCA_GLOBALE_LABEL[tipo] + ' Â· ' + gruppi[tipo].length + '</div>';
+        html += '<div class="global-search-group-label tipo-' + tipo + '">' + RICERCA_GLOBALE_LABEL[tipo] + ' · ' + gruppi[tipo].length + '</div>';
 
         lista.forEach(function (item) {
             const flatIndex = ricercaGlobaleRisultatiFlat.length;
@@ -2415,7 +2410,7 @@ function renderRisultatiRicercaGlobale(gruppi) {
     box.style.display = 'block';
 }
 
-// Apre il dettaglio del risultato scelto: overlay sinossi giÃ  esistente per
+// Apre il dettaglio del risultato scelto: overlay sinossi già esistente per
 // Anime/Manga/Libri/Serie TV, scheda rapida dedicata per Cinema (che non ha
 // una sinossi).
 function apriRisultatoRicercaGlobale(tipo, titolo) {
@@ -2428,7 +2423,7 @@ function apriRisultatoRicercaGlobale(tipo, titolo) {
 }
 
 // Scheda rapida per un risultato Cinema: niente sinossi da recuperare dal
-// server, i dati bastano quelli giÃ  in cache nell'indice di ricerca.
+// server, i dati bastano quelli già in cache nell'indice di ricerca.
 function mostraDettaglioCinemaRicercaGlobale(titolo) {
     const item = (ricercaGlobaleIndice || []).find(function (i) { return i.tipo === 'cinema' && i.titolo === titolo; });
     if (!item) return;
@@ -2442,7 +2437,7 @@ function mostraDettaglioCinemaRicercaGlobale(titolo) {
         const content = document.createElement('div');
         content.id = 'globalSearchCinemaContent';
         content.style = 'background:var(--surface-solid,#14162a); border:1px solid var(--border-color,#262a42); border-radius:12px; padding:24px; max-width:420px; width:90%; box-shadow:0 20px 40px rgba(0,0,0,0.6); position:relative; transform:scale(0.9); transition:transform 0.25s cubic-bezier(0.175,0.885,0.32,1.275);';
-        content.innerHTML = '<button id="closeGlobalSearchCinemaBtn" style="position:absolute; top:14px; right:16px; background:none; border:none; color:var(--text-muted,#8890ab); font-size:20px; cursor:pointer;">âœ•</button>'
+        content.innerHTML = '<button id="closeGlobalSearchCinemaBtn" style="position:absolute; top:14px; right:16px; background:none; border:none; color:var(--text-muted,#8890ab); font-size:20px; cursor:pointer;">✕</button>'
             + '<h3 id="globalSearchCinemaTitle" style="margin-top:0; margin-bottom:14px; color:var(--text,#f2f3fa); font-size:18px; font-weight:600; padding-right:24px; border-bottom:1px solid var(--border-color,#262a42); padding-bottom:10px;"></h3>'
             + '<div id="globalSearchCinemaBody" style="color:var(--text,#f2f3fa); font-size:14px; line-height:1.7;"></div>';
 
@@ -2481,8 +2476,8 @@ function aggiornaEvidenziazioneAttivaRicercaGlobale() {
     const wrap = document.getElementById('globalSearchWrap');
     if (!input || !wrap) return;
 
-    // Precarica l'indice al primo focus, cosÃ¬ quando l'utente inizia a
-    // digitare la ricerca Ã¨ giÃ  pronta e istantanea.
+    // Precarica l'indice al primo focus, così quando l'utente inizia a
+    // digitare la ricerca è già pronta e istantanea.
     input.addEventListener('focus', function () {
         garantisciIndiceRicercaGlobale(function () {
             if (input.value.trim()) eseguiRicercaGlobale(input.value);
@@ -2537,7 +2532,7 @@ function aggiornaEvidenziazioneAttivaRicercaGlobale() {
 //   COLORE_VISIONE_LABELS (ricerca globale) e cssVar.
 // ==========================================================================
 
-// Legge una CSS custom property del tema (es. '--primary') giÃ  risolta a runtime
+// Legge una CSS custom property del tema (es. '--primary') già risolta a runtime
 function cssVar(nome) {
     return getComputedStyle(document.documentElement).getPropertyValue(nome).trim();
 }

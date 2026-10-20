@@ -1,4 +1,4 @@
-﻿        function formattaDataCinemaISO_(valoreGrezzo) {
+function formattaDataCinemaISO_(valoreGrezzo) {
             if (!valoreGrezzo && valoreGrezzo !== 0) return '';
             const testo = String(valoreGrezzo).trim();
             if (/^\d{4}-\d{2}-\d{2}/.test(testo)) return testo.substring(0, 10);
@@ -25,7 +25,7 @@
             return (data || []).map(function(c) {
                 return {
                     titolo: c.titolo, dataUscita: c.data_uscita || '', dataVisione: c.data_visione || '',
-                    visione: c.visione ? 'SÃ¬' : 'No', immagine: c.immagine || '', streaming: !!c.streaming,
+                    visione: c.visione ? 'Sì' : 'No', immagine: c.immagine || '', streaming: !!c.streaming,
                     trama: c.trama || '', generi: c.generi || ''
                 };
             });
@@ -51,15 +51,15 @@
             if (!righe || righe.length === 0) return false;
 
             const riga = righe[0];
-            const vecchioStato = riga.visione ? 'SÃ¬' : 'No';
+            const vecchioStato = riga.visione ? 'Sì' : 'No';
 
             if (nuovoStato) {
                 const dataFinale = formattaDataCinemaISO_(dataVisioneISO || '') || null;
                 const { error: errUpd } = await supabaseClient.from('cinema')
                     .update({ data_visione: dataFinale, visione: true }).eq('titolo', titoloTrim);
                 if (errUpd) throw errUpd;
-                await registraLogSB_(titolo, 'CINEMA', 'COMPLETAMENTO', vecchioStato, 'SÃ¬ (' + (dataFinale || '') + ')' + (riga.streaming ? ' [streaming]' : ''));
-                return { visione: 'SÃ¬', dataVisione: dataFinale || '' };
+                await registraLogSB_(titolo, 'CINEMA', 'COMPLETAMENTO', vecchioStato, 'Sì (' + (dataFinale || '') + ')' + (riga.streaming ? ' [streaming]' : ''));
+                return { visione: 'Sì', dataVisione: dataFinale || '' };
             } else {
                 const { error: errUpd } = await supabaseClient.from('cinema').update({ visione: false }).eq('titolo', titoloTrim);
                 if (errUpd) throw errUpd;
@@ -75,7 +75,7 @@
             if (!righe || righe.length === 0) return getCinemaDataSB_();
 
             const riga = righe[0];
-            if (riga.visione) throw new Error('Questo film Ã¨ giÃ  stato segnato come visto, non puÃ² tornare in streaming.');
+            if (riga.visione) throw new Error('Questo film è già stato segnato come visto, non può tornare in streaming.');
             if (riga.streaming) return getCinemaDataSB_();
 
             const { error: errUpd } = await supabaseClient.from('cinema').update({ streaming: true }).eq('titolo', titoloTrim);
@@ -102,7 +102,7 @@
             if (!righe || righe.length === 0) return getCinemaDataSB_();
 
             const riga = righe[0];
-            if (riga.visione) throw new Error('Non puoi eliminare un film giÃ  segnato come visto.');
+            if (riga.visione) throw new Error('Non puoi eliminare un film già segnato come visto.');
 
             const { error: errDel } = await supabaseClient.from('cinema').delete().eq('titolo', titoloTrim);
             if (errDel) throw errDel;
@@ -123,7 +123,7 @@
                 renderListCinema();
             }).catch(function(err) {
                 console.error('Errore caricamento Cinema: ', err);
-                document.getElementById('loadingCinema').innerText = 'âš ï¸ Errore durante il caricamento dei dati.';
+                document.getElementById('loadingCinema').innerText = '⚠️ Errore durante il caricamento dei dati.';
             });
         }
 
@@ -136,7 +136,7 @@
         }
 
         // Converte una data italiana "GG/MM/AAAA" (digitata dall'utente) in formato ISO "YYYY-MM-DD"
-        // Restituisce null se il formato non Ã¨ valido.
+        // Restituisce null se il formato non è valido.
         function parseDataItalianaCinema_(dataItaliana) {
             if (!dataItaliana) return null;
             const match = String(dataItaliana).trim().match(/^(\d{1,2})[\/\-.](\d{1,2})[\/\-.](\d{4})$/);
@@ -154,7 +154,7 @@
             const sres = await supabaseClient.functions.invoke('tmdb-proxy', {
                 body: { action: 'search', query: titolo }
             });
-            if (sres.error) throw new Error('Impossibile contattare TMDB. Riprova piÃ¹ tardi.');
+            if (sres.error) throw new Error('Impossibile contattare TMDB. Riprova più tardi.');
             const cand = sres.data;
             if (cand && cand.error) throw new Error(cand.error);
             if (!Array.isArray(cand) || cand.length === 0 || !cand[0].id) {
@@ -163,7 +163,7 @@
             const rres = await supabaseClient.functions.invoke('tmdb-proxy', {
                 body: { action: 'movie_recommendations', id: cand[0].id }
             });
-            if (rres.error) throw new Error('Impossibile contattare TMDB. Riprova piÃ¹ tardi.');
+            if (rres.error) throw new Error('Impossibile contattare TMDB. Riprova più tardi.');
             const data = rres.data;
             if (data && data.error) throw new Error(data.error);
             const lista = Array.isArray(data) ? data : [];
@@ -185,7 +185,7 @@
         }
 
         async function suggCinema_(titolo) {
-            showToast('Cerco suggerimentiâ€¦');
+            showToast('Cerco suggerimenti…');
             try {
                 const posseduti = {};
                 cinemaList.forEach(function(x) { if (x && x.titolo) posseduti[normTitoloSugg_(x.titolo)] = true; });
@@ -216,7 +216,7 @@
             let filtered = cinemaList.filter(item => item && (item.titolo || '').toLowerCase().includes(termineRicerca));
 
             // Filtro generi: un film passa se ha ALMENO UNO dei generi selezionati
-            // (il campo "generi" Ã¨ una stringa tipo "Azione, Fantascienza").
+            // (il campo "generi" è una stringa tipo "Azione, Fantascienza").
             if (selectedGenresCinema.length > 0) {
                 filtered = filtered.filter(item => {
                     if (!item.generi) return false;
@@ -226,16 +226,16 @@
             }
 
             // I film in streaming sono film veri: da visti restano archiviati
-            const daVedereTutti = filtered.filter(item => item.visione !== 'SÃ¬');
-            const vistiTutti = filtered.filter(item => item.visione === 'SÃ¬');
+            const daVedereTutti = filtered.filter(item => item.visione !== 'Sì');
+            const vistiTutti = filtered.filter(item => item.visione === 'Sì');
 
             const daVedereCinema = daVedereTutti.filter(item => !item.streaming);
             const daVedereStreaming = daVedereTutti.filter(item => item.streaming);
             const vistiSala = vistiTutti.filter(item => !item.streaming);
             const vistiStreaming = vistiTutti.filter(item => item.streaming);
 
-            // Film al cinema: ordinati per data di uscita crescente (dalla piÃ¹ vicina
-            // alla piÃ¹ lontana). Quelli senza data di uscita nota vanno in coda.
+            // Film al cinema: ordinati per data di uscita crescente (dalla più vicina
+            // alla più lontana). Quelli senza data di uscita nota vanno in coda.
             daVedereCinema.sort((a, b) => {
                 if (!a.dataUscita && !b.dataUscita) return (a.titolo || '').localeCompare(b.titolo || '');
                 if (!a.dataUscita) return 1;
@@ -243,7 +243,7 @@
                 return a.dataUscita.localeCompare(b.dataUscita);
             });
 
-            // Film in streaming: data di uscita piÃ¹ recente in alto, a scendere.
+            // Film in streaming: data di uscita più recente in alto, a scendere.
             // Quelli senza data di uscita nota vanno in coda.
             daVedereStreaming.sort((a, b) => {
                 if (!a.dataUscita && !b.dataUscita) return (a.titolo || '').localeCompare(b.titolo || '');
@@ -252,7 +252,7 @@
                 return b.dataUscita.localeCompare(a.dataUscita);
             });
 			
-            // "Visti" ordinati per data di visione decrescente (i piÃ¹ recenti in cima).
+            // "Visti" ordinati per data di visione decrescente (i più recenti in cima).
             // Stesso ordinamento per sala e streaming (pannelli separati).
             vistiSala.sort((a, b) => {
                 if (!a.dataVisione && !b.dataVisione) return (a.titolo || '').localeCompare(b.titolo || '');
@@ -307,7 +307,7 @@
             aggiornaTestataWidgetVisti_();
 
             // Altezza massima delle aree scorrevoli (5 righe, 15 storico) e altezze
-            // degli slider: ricalcolate a ogni render perchÃ© dipendono dalle righe.
+            // degli slider: ricalcolate a ogni render perché dipendono dalle righe.
             applicaScrollCinema_(document.getElementById('cinemaScrollDaVedere'));
             applicaScrollCinema_(document.getElementById('cinemaScrollStreaming'));
             applicaScrollCinema_(document.getElementById('cinemaScrollVistiSala'), CINEMA_MAX_RIGHE_VISTI);
@@ -352,7 +352,7 @@
 
             const rettSwitch = sw.getBoundingClientRect();
             const rettAttivo = attivo.getBoundingClientRect();
-            // Se la view Cinema non Ã¨ a schermo le misure valgono 0: lascio l'ultima buona
+            // Se la view Cinema non è a schermo le misure valgono 0: lascio l'ultima buona
             if (!rettAttivo.width) return;
 
             // `left: 0` su un elemento assoluto parte dal bordo interno (padding edge)
@@ -371,8 +371,8 @@
             sw.style.setProperty('--pill-w', rettAttivo.width + 'px');
         }
 
-        // Il track dello slider Ã¨ alto quanto il pannello piÃ¹ alto: fisso a mano
-        // l'altezza della viewport su quella del pannello attivo, cosÃ¬ la
+        // Il track dello slider è alto quanto il pannello più alto: fisso a mano
+        // l'altezza della viewport su quella del pannello attivo, così la
         // transizione di scorrimento accompagna anche il cambio di altezza.
         function aggiornaAltezzaSliderCinema_() {
             const viewport = document.getElementById('cinemaSliderViewport');
@@ -382,7 +382,7 @@
             );
             if (!paneAttivo) return;
             const altezza = paneAttivo.offsetHeight;
-            // Se la view Cinema non Ã¨ a schermo la misura vale 0: meglio lasciare
+            // Se la view Cinema non è a schermo la misura vale 0: meglio lasciare
             // l'altezza automatica che congelare la viewport a zero.
             viewport.style.height = altezza > 0 ? altezza + 'px' : '';
         }
@@ -392,13 +392,13 @@
             const isStreaming = currentFilterModalitaCinema === 'streaming';
 
             const titoloEl = document.getElementById('cinemaWidgetDaVedereTitolo');
-            if (titoloEl) titoloEl.innerText = isStreaming ? 'ðŸ“º Da Vedere in Streaming' : 'ðŸŽ¯ Da Vedere al Cinema';
+            if (titoloEl) titoloEl.innerText = isStreaming ? '📺 Da Vedere in Streaming' : '🎯 Da Vedere al Cinema';
 
             const subEl = document.getElementById('cinemaWidgetDaVedereSub');
             if (subEl) {
                 subEl.innerText = isStreaming
-                    ? 'I film da recuperare in streaming, dal piÃ¹ recente.'
-                    : "I film che ti aspettano in sala, dal piÃ¹ vicino all'uscita.";
+                    ? 'I film da recuperare in streaming, dal più recente.'
+                    : "I film che ti aspettano in sala, dal più vicino all'uscita.";
             }
 
             const switchEl = document.getElementById('cinemaModeSwitch');
@@ -437,9 +437,9 @@
                 ? `<span class="cinema-badge-streaming" title="Film in streaming">S</span>`
                 : '';
 
-            // Generi sotto al titolo, come nelle altre viste (l'overlay â„¹ï¸ resta per la trama)
+            // Generi sotto al titolo, come nelle altre viste (l'overlay ℹ️ resta per la trama)
             const generiCinemaHTML = (item.generi && item.generi.trim() !== '')
-                ? `<div class="genre-tags-list" style="color: var(--primary);">ðŸŽ­ ${item.generi}</div>`
+                ? `<div class="genre-tags-list" style="color: var(--primary);">🎭 ${item.generi}</div>`
                 : '';
 
             const titoloCol = `
@@ -459,18 +459,18 @@
 
             let visioneBtn;
             visioneBtn = isVisto
-                ? `<button class="cinema-visione-btn visto" onclick="toggleVisioneCinemaLista('${safeTitle}', false)" title="Segna come da vedere">âœ… Visto</button>`
-                : `<button class="cinema-visione-btn da-vedere" onclick="toggleVisioneCinemaLista('${safeTitle}', true)" title="Segna come visto">â˜ Da vedere</button>`;
+                ? `<button class="cinema-visione-btn visto" onclick="toggleVisioneCinemaLista('${safeTitle}', false)" title="Segna come da vedere">✅ Visto</button>`
+                : `<button class="cinema-visione-btn da-vedere" onclick="toggleVisioneCinemaLista('${safeTitle}', true)" title="Segna come visto">☐ Da vedere</button>`;
 
                         const streamingBtn = (!isStreaming && !isVisto)
-                ? `<button class="action-icon-btn" onclick="trasformaCinemaInStreamingLista('${safeTitle}')" title="Sposta tra i film da vedere in streaming">ðŸ“º</button>`
+                ? `<button class="action-icon-btn" onclick="trasformaCinemaInStreamingLista('${safeTitle}')" title="Sposta tra i film da vedere in streaming">📺</button>`
                 : '';
 
             const infoBtn = (item.trama || item.generi)
-                ? `<button class="action-icon-btn" onclick="mostraDettaglioCinemaLista_('${safeTitle}')" title="Trama e generi">â„¹ï¸</button>`
+                ? `<button class="action-icon-btn" onclick="mostraDettaglioCinemaLista_('${safeTitle}')" title="Trama e generi">ℹ️</button>`
                 : '';
 
-            const trashDisabled = isVisto ? 'disabled title="Non puoi eliminare un film giÃ  visto"' : `onclick="eliminaCinemaLista('${safeTitle}')" title="Elimina film"`;
+            const trashDisabled = isVisto ? 'disabled title="Non puoi eliminare un film già visto"' : `onclick="eliminaCinemaLista('${safeTitle}')" title="Elimina film"`;
 
             tr.innerHTML = `
                 ${titoloCol}
@@ -479,15 +479,15 @@
                 <td style="text-align:center;">
                     ${infoBtn}
                     ${streamingBtn}
-                    <button class="action-icon-btn" onclick="suggCinema_('${safeTitle}')" title="Potrebbero piacerti anche">ðŸ’¡</button>
-                    <button class="action-icon-btn" ${trashDisabled}>ðŸ—‘ï¸</button>
+                    <button class="action-icon-btn" onclick="suggCinema_('${safeTitle}')" title="Potrebbero piacerti anche">💡</button>
+                    <button class="action-icon-btn" ${trashDisabled}>🗑️</button>
                 </td>
             `;
             return tr;
         }
 
-        // Mostra trama e generi di un film giÃ  salvato (dati letti da TMDB al
-        // momento dell'aggiunta, nessuna chiamata di rete: sono giÃ  in cinemaList).
+        // Mostra trama e generi di un film già salvato (dati letti da TMDB al
+        // momento dell'aggiunta, nessuna chiamata di rete: sono già in cinemaList).
         function mostraDettaglioCinemaLista_(titolo) {
             const item = cinemaList.find(x => x.titolo === titolo);
             if (!item) return;
@@ -512,7 +512,7 @@
                     transition: transform 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275);
                 `;
                 content.innerHTML = `
-                    <button id="closeCinemaInfoBtn" style="position: absolute; top: 14px; right: 16px; background: none; border: none; color: var(--text-muted, #8890ab); font-size: 20px; cursor: pointer;">âœ•</button>
+                    <button id="closeCinemaInfoBtn" style="position: absolute; top: 14px; right: 16px; background: none; border: none; color: var(--text-muted, #8890ab); font-size: 20px; cursor: pointer;">✕</button>
                     <h3 id="cinemaInfoTitle" style="margin-top: 0; margin-bottom: 10px; color: var(--text, #f2f3fa); font-size: 18px; font-weight: 600; padding-right: 24px; border-bottom: 1px solid var(--border-color, #262a42); padding-bottom: 10px;"></h3>
                     <div id="cinemaInfoGeneri" style="color: var(--primary, #7c6cff); font-size: 13px; margin-bottom: 10px;"></div>
                     <div id="cinemaInfoBody" style="color: var(--text, #f2f3fa); font-size: 14px; line-height: 1.6; max-height: 250px; overflow-y: auto; white-space: pre-line; padding-right: 5px;"></div>
@@ -524,7 +524,7 @@
             }
 
             document.getElementById('cinemaInfoTitle').innerText = item.titolo || '';
-            document.getElementById('cinemaInfoGeneri').innerText = item.generi ? ('ðŸ·ï¸ ' + item.generi) : '';
+            document.getElementById('cinemaInfoGeneri').innerText = item.generi ? ('🏷️ ' + item.generi) : '';
             document.getElementById('cinemaInfoBody').innerText = item.trama || 'Nessuna trama disponibile per questo film.';
 
             overlay.style.pointerEvents = 'auto';
@@ -558,7 +558,7 @@
                 if (inputData === null) return; // Annullato dall'utente
                 const parsed = parseDataItalianaCinema_(inputData);
                 if (!parsed) {
-                    alert('âš ï¸ Formato data non valido. Usa il formato GG/MM/AAAA (es. 15/03/2024).');
+                    alert('⚠️ Formato data non valido. Usa il formato GG/MM/AAAA (es. 15/03/2024).');
                     return;
                 }
                 dataVisioneISO = parsed;
@@ -566,34 +566,34 @@
 
             toggleVisioneCinemaSB_(titolo, nuovoStato, dataVisioneISO)
                 .then(function(res) {
-                    item.visione = nuovoStato ? 'SÃ¬' : 'No';
+                    item.visione = nuovoStato ? 'Sì' : 'No';
                     if (nuovoStato) item.dataVisione = dataVisioneISO;
                     renderListCinema();
-                    showToast(nuovoStato ? (item.streaming ? 'ðŸ“º Film visto in streaming' : 'ðŸŽ¬ Film segnato come visto') : 'Film rimesso tra i "Da vedere"', 'success');
+                    showToast(nuovoStato ? (item.streaming ? '📺 Film visto in streaming' : '🎬 Film segnato come visto') : 'Film rimesso tra i "Da vedere"', 'success');
                 })
                 .catch(function(err) {
                     console.error('Errore aggiornamento visione Cinema: ', err);
-                    alert('âŒ ' + (err && err.message ? err.message : 'Errore durante l\'aggiornamento dello stato di visione.'));
+                    alert('❌ ' + (err && err.message ? err.message : 'Errore durante l\'aggiornamento dello stato di visione.'));
                 });
         }
 
                 // Sposta un film "da vedere al cinema" tra i film in streaming
         function trasformaCinemaInStreamingLista(titolo) {
-            if (!confirm('Spostare "' + titolo + '" tra i film da vedere in streaming?\n\nUscirÃ  dalla lista "Al cinema" e finirÃ  nella lista streaming.')) return;
+            if (!confirm('Spostare "' + titolo + '" tra i film da vedere in streaming?\n\nUscirà dalla lista "Al cinema" e finirà nella lista streaming.')) return;
 
             trasformaCinemaInStreamingSB_(titolo)
                 .then(function(data) {
                     cinemaList = data || [];
                     renderListCinema();
-                    showToast('ðŸ“º Film spostato tra lo streaming', 'success');
+                    showToast('📺 Film spostato tra lo streaming', 'success');
                 })
                 .catch(function(err) {
                     console.error('Errore trasformazione in streaming Cinema: ', err);
-                    alert('âŒ ' + (err && err.message ? err.message : 'Errore durante lo spostamento in streaming.'));
+                    alert('❌ ' + (err && err.message ? err.message : 'Errore durante lo spostamento in streaming.'));
                 });
         }
 
-        // Imposta la modalitÃ  del widget "Da Vedere" (cinema / streaming).
+        // Imposta la modalità del widget "Da Vedere" (cinema / streaming).
         // Il cambio di data-modalita su track e switch fa partire da solo lo
         // scorrimento orizzontale: qui basta rigenerare le liste e le altezze.
         function impostaModalitaCinema_(valore, riRenderizza) {
@@ -614,7 +614,7 @@
             if (widget && widget.classList.contains('collapsed')) toggleStatsWidget('cinemaWidgetDaVedere');
         }
 
-        // Imposta la modalitÃ  del widget "Visti" (cinema / streaming).
+        // Imposta la modalità del widget "Visti" (cinema / streaming).
         // Stesso meccanismo dello slider "Da Vedere", con stato indipendente.
         function impostaModalitaCinemaVisti_(valore, riRenderizza) {
             const modalita = valore === 'streaming' ? 'streaming' : 'cinema';
@@ -639,8 +639,8 @@
             const subEl = document.getElementById('cinemaWidgetVistiSub');
             if (subEl) {
                 subEl.innerText = isStreaming
-                    ? 'Lo storico dei film giÃ  visti in streaming, dal piÃ¹ recente.'
-                    : 'Lo storico dei film giÃ  visti in sala, dal piÃ¹ recente.';
+                    ? 'Lo storico dei film già visti in streaming, dal più recente.'
+                    : 'Lo storico dei film già visti in sala, dal più recente.';
             }
 
             const switchEl = document.getElementById('cinemaModeSwitchVisti');
@@ -688,7 +688,7 @@
             sw.style.setProperty('--pill-w', rettAttivo.width + 'px');
         }
 
-        // Il track dello slider Visti Ã¨ alto quanto il pannello piÃ¹ alto
+        // Il track dello slider Visti è alto quanto il pannello più alto
         function aggiornaAltezzaSliderCinemaVisti_() {
             const viewport = document.getElementById('cinemaSliderViewportVisti');
             if (!viewport) return;
@@ -713,16 +713,16 @@
             showToast('Filtri Cinema azzerati', 'success');
         }
 
-        // Corregge la data di visione di un film giÃ  segnato come visto
+        // Corregge la data di visione di un film già segnato come visto
         function modificaDataVisioneCinemaLista(titolo) {
             const item = cinemaList.find(x => x.titolo === titolo);
-            if (!item || item.visione !== 'SÃ¬') return;
+            if (!item || item.visione !== 'Sì') return;
 
             const inputData = prompt('Correggi la data di visione di "' + titolo + '" (GG/MM/AAAA):', formattaDataItalianaCinema_(item.dataVisione) !== '-' ? formattaDataItalianaCinema_(item.dataVisione) : '');
             if (inputData === null) return;
             const parsed = parseDataItalianaCinema_(inputData);
             if (!parsed) {
-                alert('âš ï¸ Formato data non valido. Usa il formato GG/MM/AAAA (es. 15/03/2024).');
+                alert('⚠️ Formato data non valido. Usa il formato GG/MM/AAAA (es. 15/03/2024).');
                 return;
             }
 
@@ -734,11 +734,11 @@
                 })
                 .catch(function(err) {
                     console.error('Errore modifica data visione Cinema: ', err);
-                    alert('âŒ Errore durante la modifica della data di visione.');
+                    alert('❌ Errore durante la modifica della data di visione.');
                 });
         }
 
-        // Elimina un film "da vedere" (il pulsante cestino Ã¨ disabilitato per i film giÃ  visti)
+        // Elimina un film "da vedere" (il pulsante cestino è disabilitato per i film già visti)
         function eliminaCinemaLista(titolo) {
             if (!confirm("Eliminare definitivamente '" + titolo + "' dalla lista?")) return;
 
@@ -750,13 +750,13 @@
                 })
                 .catch(function(err) {
                     console.error('Errore eliminazione Cinema: ', err);
-                    alert('âŒ ' + (err && err.message ? err.message : 'Errore durante l\'eliminazione del film.'));
+                    alert('❌ ' + (err && err.message ? err.message : 'Errore durante l\'eliminazione del film.'));
                 });
         }
 
         // Gestore ricerca testuale e filtri nella view Cinema
         document.addEventListener('DOMContentLoaded', function() {
-            // ðŸ“ Bottoncino "Apri Foglio Google" nella Home: recupera l'URL
+            // 📁 Bottoncino "Apri Foglio Google" nella Home: recupera l'URL
             // reale del foglio collegato allo script e lo imposta come href.
             const driveBtnEl = document.getElementById('driveShortcutBtn');
             if (driveBtnEl) {
@@ -818,7 +818,7 @@
         });
 
         // ==========================================================
-        // ðŸ”Ž Modale "Nuovo Film" â€” ricerca su TMDB per titolo, locandina
+        // 🔎 Modale "Nuovo Film" — ricerca su TMDB per titolo, locandina
         // e data di uscita nelle sale italiane
         // ==========================================================
         let ultimoDettaglioCinemaTMDB = null;
@@ -829,7 +829,7 @@
                     <label>Titolo del film *</label>
                     <div style="display:flex; gap:6px;">
                         <input type="search" id="inpTitoloCinema" required style="flex:1;" placeholder="Es. Dune: Parte Due">
-                        <button type="button" class="btn btn-cinema" style="padding:0 12px; white-space:nowrap;" onclick="cercaCandidatiCinema()">ðŸ”Ž Cerca su TMDB</button>
+                        <button type="button" class="btn btn-cinema" style="padding:0 12px; white-space:nowrap;" onclick="cercaCandidatiCinema()">🔎 Cerca su TMDB</button>
                     </div>
                     <small style="color: var(--text-muted); display:block; margin-top:4px;">
                         Cerca il film per recuperare automaticamente locandina e data di uscita nelle sale italiane, oppure inserisci il titolo e salva manualmente.
@@ -838,7 +838,7 @@
                 <div class="form-group">
                     <label style="display:flex; align-items:center; gap:8px; cursor:pointer; font-weight:600;">
                         <input type="checkbox" id="chkStreamingCinema" style="width:auto; margin:0;">
-                        <span>ðŸ“º Da vedere in streaming (non al cinema)</span>
+                        <span>📺 Da vedere in streaming (non al cinema)</span>
                     </label>
                     <small style="color: var(--text-muted); display:block; margin-top:4px;">
                         I film in streaming sono film veri: restano archiviati tra i "Visti" con data e log, separati dalla sala con lo switch.
@@ -854,7 +854,7 @@
         }
 
         // ==========================================
-        //   FASE 11/12 â€” GRUPPO TMDB (via Edge Function tmdb-proxy)
+        //   FASE 11/12 — GRUPPO TMDB (via Edge Function tmdb-proxy)
         //   La chiave segreta TMDB non tocca mai il browser: la funzione
         //   gira sui server Supabase e richiede un utente autenticato.
         // ==========================================
@@ -863,7 +863,7 @@
             const { data, error } = await supabaseClient.functions.invoke('tmdb-proxy', {
                 body: { action: 'search', query: query }
             });
-            if (error) throw new Error('Impossibile contattare TMDB. Riprova piÃ¹ tardi.');
+            if (error) throw new Error('Impossibile contattare TMDB. Riprova più tardi.');
             if (data && data.error) throw new Error(data.error);
             return data || [];
         }
@@ -872,7 +872,7 @@
             const { data, error } = await supabaseClient.functions.invoke('tmdb-proxy', {
                 body: { action: 'detail', id: id }
             });
-            if (error) throw new Error('Impossibile recuperare i dettagli da TMDB. Riprova piÃ¹ tardi.');
+            if (error) throw new Error('Impossibile recuperare i dettagli da TMDB. Riprova più tardi.');
             if (data && data.error) throw new Error(data.error);
             return data;
         }
@@ -885,7 +885,7 @@
             }
 
             const wrapper = document.getElementById('cinemaCandidatiWrapper');
-            wrapper.innerHTML = `<p style="color: var(--warning); font-weight:600;">â³ Ricerca su TMDB in corso...</p>`;
+            wrapper.innerHTML = `<p style="color: var(--warning); font-weight:600;">⏳ Ricerca su TMDB in corso...</p>`;
 
             cercaCandidatiCinemaTMDBSB_(titolo)
                 .then(function(candidati) { renderCandidatiCinema_(candidati); })
@@ -922,12 +922,12 @@
 
         function agganciaFooterCinemaManuale_() {
             // Nessun listener extra necessario al momento: il salvataggio manuale
-            // avviene tramite il pulsante nel piÃ¨ di pagina del modale principale.
+            // avviene tramite il pulsante nel piè di pagina del modale principale.
         }
 
         function selezionaCandidatoCinema_(id, titoloCandidato) {
             const preview = document.getElementById('cinemaDettaglioPreview');
-            preview.innerHTML = `<p style="color: var(--warning); font-weight:600;">â³ Recupero data di uscita nelle sale italiane...</p>`;
+            preview.innerHTML = `<p style="color: var(--warning); font-weight:600;">⏳ Recupero data di uscita nelle sale italiane...</p>`;
 
             getDettaglioCinemaTMDBSB_(id)
                 .then(function(dettaglio) { renderDettaglioCinema_(dettaglio); })
@@ -941,7 +941,7 @@
             const preview = document.getElementById('cinemaDettaglioPreview');
             const safeImg = (dettaglio.immagine || '').replace(/'/g, "\\'");
             const trama = dettaglio.trama || '';
-            const tramaAnteprima = trama.length > 160 ? trama.substring(0, 160) + 'â€¦' : trama;
+            const tramaAnteprima = trama.length > 160 ? trama.substring(0, 160) + '…' : trama;
             preview.innerHTML = `
                 <div style="display:flex; gap:14px; align-items:flex-start; border-top:1px solid var(--border-color); padding-top:14px;">
                     <img src="${safeImg}" style="width:90px; border-radius:8px; flex-shrink:0; background:#222;">
@@ -950,9 +950,9 @@
                         <div style="font-size:13px; color: var(--text-muted); margin-bottom:6px;">
                             Uscita nelle sale italiane: <strong style="font-family:'Courier New', monospace;">${formattaDataItalianaCinema_(dettaglio.dataUscita)}</strong>
                         </div>
-                        ${dettaglio.generi ? `<div style="font-size:12px; color: var(--text-muted); margin-bottom:6px;">ðŸ·ï¸ ${dettaglio.generi}</div>` : ''}
+                        ${dettaglio.generi ? `<div style="font-size:12px; color: var(--text-muted); margin-bottom:6px;">🏷️ ${dettaglio.generi}</div>` : ''}
                         ${tramaAnteprima ? `<div style="font-size:12px; color: var(--text-muted); margin-bottom:12px; font-style:italic;">${tramaAnteprima}</div>` : ''}
-                        <button type="button" class="btn btn-cinema" onclick="confermaSalvataggioCinema_()">âœ… Salva questo film</button>
+                        <button type="button" class="btn btn-cinema" onclick="confermaSalvataggioCinema_()">✅ Salva questo film</button>
                     </div>
                 </div>
             `;
@@ -961,10 +961,10 @@
         function renderErroreCinema_(err) {
             console.error('Errore TMDB: ', err);
             const wrapper = document.getElementById('cinemaCandidatiWrapper');
-            wrapper.innerHTML = `<p style="color: #ff6b6b;">${(err && err.message) ? err.message : 'Si Ã¨ verificato un errore durante la comunicazione con TMDB.'}</p>`;
+            wrapper.innerHTML = `<p style="color: #ff6b6b;">${(err && err.message) ? err.message : 'Si è verificato un errore durante la comunicazione con TMDB.'}</p>`;
         }
 
-        // Restituisce true se nella modale Ã¨ spuntata l'opzione "streaming"
+        // Restituisce true se nella modale è spuntata l'opzione "streaming"
         function isStreamingCinemaSelezionato_() {
             const cb = document.getElementById('chkStreamingCinema');
             return !!(cb && cb.checked);
@@ -974,7 +974,7 @@
         function confermaSalvataggioCinema_() {
             const titolo = document.getElementById('inpTitoloCinema').value.trim();
             if (!titolo) {
-                alert('Il titolo non puÃ² essere vuoto.');
+                alert('Il titolo non può essere vuoto.');
                 return;
             }
             const dati = {
@@ -1013,10 +1013,15 @@
                     } else {
                         renderListCinema();
                     }
-                    showToast(eraStreaming ? 'ðŸ“º Film in streaming aggiunto' : 'ðŸŽ¬ Film aggiunto alla lista', 'success');
+                    showToast(eraStreaming ? '📺 Film in streaming aggiunto' : '🎬 Film aggiunto alla lista', 'success');
                 })
                 .catch(function(err) {
                     console.error('Errore salvataggio Cinema: ', err);
-                    alert('âŒ Errore durante il salvataggio del film.');
+                    alert('❌ Errore durante il salvataggio del film.');
                 });
         }
+
+
+        // ==========================================
+        //   🔔 TOAST DI CONFERMA (feedback azioni CRUD)
+        // ==========================================

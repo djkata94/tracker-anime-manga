@@ -1,9 +1,4 @@
-﻿        let serieTvList = [];
-        let episodiSerieTvList = []; // righe di episodi_serie_tv per TUTTI i titoli
-
-        // true se il titolo ha almeno un episodio segnato come visto, anche se
-        // nessuna stagione risulta ancora completata (colore "In Visione").
-        function haProgressoStagioniParzialeSerieTv(titolo) {
+function haProgressoStagioniParzialeSerieTv(titolo) {
             const titoloTrim = (titolo || '').trim();
             return episodiSerieTvList.some(e => (e.titolo || '').trim() === titoloTrim && (parseInt(e.episodiVisti) || 0) > 0);
         }
@@ -175,7 +170,7 @@
         }
 
         // Segna come visti tutti gli episodi con totale noto (usato dal flag
-        // "Serie giÃ  vista per intero"). Le stagioni a totale 0 restano a 0:
+        // "Serie già vista per intero"). Le stagioni a totale 0 restano a 0:
         // vanno corrette a mano con la matita, come da accordi.
         async function segnaStagioniComeVisteSerieTvSB_(titolo) {
             const titoloTrim = String(titolo).trim();
@@ -247,7 +242,7 @@
                     await aggiungiRigheStagioniSerieTvSB_(nuovoTitoloEffettivo, vecchieStagioniTotaliLog + 1, nuoveStagioniTotaliEp, dati.episodiPerStagione, dati.anniPerStagione);
                 } else if (nuoveStagioniTotaliEp < vecchieStagioniTotaliLog) {
                     const avevaProgresso = await rimuoviRigheStagioniEccedentiSerieTvSB_(nuovoTitoloEffettivo, nuoveStagioniTotaliEp + 1);
-                    if (avevaProgresso) console.warn("Rimosse righe stagioni con episodi giÃ  visti per '" + nuovoTitoloEffettivo + "'.");
+                    if (avevaProgresso) console.warn("Rimosse righe stagioni con episodi già visti per '" + nuovoTitoloEffettivo + "'.");
                 }
 
                 if (dati.segnaComeVista) {
@@ -301,7 +296,7 @@
             const { data, error } = await supabaseClient.functions.invoke('tmdb-proxy', {
                 body: { action: 'tv_search', query: query }
             });
-            if (error) throw new Error('Impossibile contattare TMDB. Riprova piÃ¹ tardi.');
+            if (error) throw new Error('Impossibile contattare TMDB. Riprova più tardi.');
             if (data && data.error) throw new Error(data.error);
             return data || [];
         }
@@ -310,7 +305,7 @@
             const { data, error } = await supabaseClient.functions.invoke('tmdb-proxy', {
                 body: { action: 'tv_detail', id: id }
             });
-            if (error) throw new Error('Impossibile recuperare i dettagli da TMDB. Riprova piÃ¹ tardi.');
+            if (error) throw new Error('Impossibile recuperare i dettagli da TMDB. Riprova più tardi.');
             if (data && data.error) throw new Error(data.error);
             return data;
         }
@@ -333,13 +328,13 @@
                 .catch(function(err) {
                     console.error('Errore caricamento dati Serie TV da Supabase:', err);
                     document.getElementById('loadingSerieTv').style.display = 'none';
-                    alert('âŒ Errore nel caricamento delle serie TV. Controlla la console per i dettagli.');
+                    alert('❌ Errore nel caricamento delle serie TV. Controlla la console per i dettagli.');
                 });
         }
 
         // --- SUGGERIMENTI "POTREBBERO PIACERTI ANCHE" (Richiesta 34) ---
-        // Bottone ðŸ’¡ in fondo alla riga serie TV (solo con tmdb_id): top 5
-        // recommendations TMDB via proxy, esclusi i titoli giÃ  in lista.
+        // Bottone 💡 in fondo alla riga serie TV (solo con tmdb_id): top 5
+        // recommendations TMDB via proxy, esclusi i titoli già in lista.
         function normTitoloSugg_(s) {
             return String(s || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
         }
@@ -348,7 +343,7 @@
             const res = await supabaseClient.functions.invoke('tmdb-proxy', {
                 body: { action: 'tv_recommendations', id: tmdbId }
             });
-            if (res.error) throw new Error('Impossibile contattare TMDB. Riprova piÃ¹ tardi.');
+            if (res.error) throw new Error('Impossibile contattare TMDB. Riprova più tardi.');
             const data = res.data;
             if (data && data.error) throw new Error(data.error);
             const lista = Array.isArray(data) ? data : [];
@@ -387,15 +382,15 @@
                     const img = c.immagine
                         ? '<img src="' + c.immagine + '" alt="" style="width:45px;height:65px;border-radius:6px;object-fit:cover;flex-shrink:0;border:1px solid var(--border-color);cursor:zoom-in;" loading="lazy" onclick="apriLightbox(\'' + imgFull + '\')">'
                         : '<div style="width:45px;height:65px;border-radius:6px;flex-shrink:0;border:1px solid var(--border-color);"></div>';
-                    const meta = (c.anno ? c.anno : '') + ((c.voto !== null && c.voto !== undefined) ? ' Â· â­ ' + c.voto : '');
+                    const meta = (c.anno ? c.anno : '') + ((c.voto !== null && c.voto !== undefined) ? ' · ⭐ ' + c.voto : '');
                     const safeSugg = String(c.titolo || '').replace(/'/g, "\\'");
                     const addBtn = (kind === 'serie')
-                        ? '<button class="action-icon-btn" style="flex-shrink:0;color:var(--primary);font-size:16px;font-weight:700;" onclick="suggAggiungiSerieTv_(' + c.id + ')" title="Carica nella scheda nuova serie">ï¼‹</button>'
+                        ? '<button class="action-icon-btn" style="flex-shrink:0;color:var(--primary);font-size:16px;font-weight:700;" onclick="suggAggiungiSerieTv_(' + c.id + ')" title="Carica nella scheda nuova serie">＋</button>'
                         : (kind === 'cinema')
-                        ? '<button class="action-icon-btn" style="flex-shrink:0;color:var(--primary);font-size:16px;font-weight:700;" onclick="suggAggiungiCinema_(' + c.id + ', \'' + safeSugg + '\')" title="Carica nella scheda nuovo film">ï¼‹</button>'
+                        ? '<button class="action-icon-btn" style="flex-shrink:0;color:var(--primary);font-size:16px;font-weight:700;" onclick="suggAggiungiCinema_(' + c.id + ', \'' + safeSugg + '\')" title="Carica nella scheda nuovo film">＋</button>'
                         : (kind === 'manga')
-                        ? '<button class="action-icon-btn" style="flex-shrink:0;color:var(--primary);font-size:16px;font-weight:700;" onclick="suggAggiungiManga_(\'' + safeSugg + '\')" title="Nuovo manga con questo titolo">ï¼‹</button>'
-                        : '<button class="action-icon-btn" style="flex-shrink:0;color:var(--primary);font-size:16px;font-weight:700;" onclick="suggAggiungiAnime_(\'' + safeSugg + '\')" title="Nuovo anime con questo titolo">ï¼‹</button>';
+                        ? '<button class="action-icon-btn" style="flex-shrink:0;color:var(--primary);font-size:16px;font-weight:700;" onclick="suggAggiungiManga_(\'' + safeSugg + '\')" title="Nuovo manga con questo titolo">＋</button>'
+                        : '<button class="action-icon-btn" style="flex-shrink:0;color:var(--primary);font-size:16px;font-weight:700;" onclick="suggAggiungiAnime_(\'' + safeSugg + '\')" title="Nuovo anime con questo titolo">＋</button>';
                     return '<div style="display:flex;gap:12px;align-items:flex-start;">' + img +
                         '<div style="min-width:0;flex:1;"><div style="font-weight:600;">' + escapeHtmlSugg_(c.titolo) + '</div>' +
                         '<div id="suggMeta' + i + '" style="font-size:12px;opacity:0.7;">' + escapeHtmlSugg_(meta) + '</div>' +
@@ -418,8 +413,8 @@
                     if (metaEl) {
                         const pezzi = [c.anno || '', d.stato || ''].filter(Boolean);
                         if (d.stagioni && d.stagioni.length > 0) pezzi.push(d.stagioni.length + (d.stagioni.length === 1 ? ' stagione' : ' stagioni'));
-                        if (c.voto !== null && c.voto !== undefined) pezzi.push('â­ ' + c.voto);
-                        metaEl.textContent = pezzi.join(' Â· ');
+                        if (c.voto !== null && c.voto !== undefined) pezzi.push('⭐ ' + c.voto);
+                        metaEl.textContent = pezzi.join(' · ');
                     }
                     const tramaEl = document.getElementById('suggTrama' + i);
                     if (tramaEl && d.trama) tramaEl.textContent = d.trama;
@@ -443,7 +438,7 @@
                 showToast('Suggerimenti non disponibili senza ID TMDB.', 'error');
                 return;
             }
-            showToast('Cerco suggerimentiâ€¦');
+            showToast('Cerco suggerimenti…');
             try {
                 const posseduti = {};
                 serieTvList.forEach(function(x) { if (x && x.titolo) posseduti[normTitoloSugg_(x.titolo)] = true; });
@@ -460,7 +455,7 @@
         window.suggSerieTv_ = suggSerieTv_;
         window.chiudiSuggOverlay = chiudiSuggOverlay;
 
-        // ï¼‹ da un suggerimento: apre la modale nuova serie e lancia lo stesso
+        // ＋ da un suggerimento: apre la modale nuova serie e lancia lo stesso
         // precaricamento TMDB (stagioni incluse) del flusso manuale.
         function suggAggiungiSerieTv_(tmdbId) {
             chiudiSuggOverlay();
@@ -471,7 +466,7 @@
 
         window.suggAggiungiSerieTv_ = suggAggiungiSerieTv_;
 
-        // ï¼‹ da un suggerimento film: modale nuovo film + stesso precaricamento.
+        // ＋ da un suggerimento film: modale nuovo film + stesso precaricamento.
         // Il contenitore preview esiste solo dopo una search: lo si crea qui.
         function suggAggiungiCinema_(tmdbId, titolo) {
             chiudiSuggOverlay();
@@ -616,11 +611,11 @@
 
                 let genresHTML = '';
                 if (item.generi && item.generi.trim() !== '') {
-                    genresHTML = `<div class="genre-tags-list" style="color: var(--primary);">ðŸŽ­ ${item.generi}</div>`;
+                    genresHTML = `<div class="genre-tags-list" style="color: var(--primary);">🎭 ${item.generi}</div>`;
                 }
 
                 const starClass = item.preferito ? 'action-icon-btn is-favorite' : 'action-icon-btn';
-                const starIcon = item.preferito ? 'â˜…' : 'â˜†';
+                const starIcon = item.preferito ? '★' : '☆';
 
                 let avatarHTML = '';
                 if (item.immagine && item.immagine.trim() !== '') {
@@ -638,11 +633,11 @@
                             <div style="display: flex; flex-direction: column; gap: 3px;">
                                 <div style="font-weight: 600; display: flex; align-items: center; gap: 6px;">
                                     <span>${item.titolo || 'Senza Titolo'}</span>
-                                    <button class="action-icon-btn" style="font-size: 13px; padding: 0; background: none; border: none; cursor: pointer;" onclick="mostraSinossi('${safeTitle}', 'serietv')" title="Visualizza Trama">â„¹ï¸</button>
-                                    <button class="action-icon-btn" style="font-size: 13px; padding: 0; background: none; border: none; cursor: pointer;" onclick="apriGestioneStagioniSerieTv('${safeTitle}')" title="Gestisci Stagioni">ðŸ“º</button>
+                                    <button class="action-icon-btn" style="font-size: 13px; padding: 0; background: none; border: none; cursor: pointer;" onclick="mostraSinossi('${safeTitle}', 'serietv')" title="Visualizza Trama">ℹ️</button>
+                                    <button class="action-icon-btn" style="font-size: 13px; padding: 0; background: none; border: none; cursor: pointer;" onclick="apriGestioneStagioniSerieTv('${safeTitle}')" title="Gestisci Stagioni">📺</button>
                                 </div>
                                 <div style="font-size: 12px; color: var(--text-muted); font-weight: normal;">
-                                    Stagioni: <b>${stagioniViste}/${stagioniTotali}</b>${item.abbandonata ? ' <span style="color:#f87171; font-weight:700;">â›” Abbandonata</span>' : ''}
+                                    Stagioni: <b>${stagioniViste}/${stagioniTotali}</b>${item.abbandonata ? ' <span style="color:#f87171; font-weight:700;">⛔ Abbandonata</span>' : ''}
                                 </div>
                                 ${genresHTML}
                             </div>
@@ -655,12 +650,12 @@
                     </td>
                     <td style="text-align: center; white-space: nowrap;">
 
-                        ${item.tmdbId ? `<button class="action-icon-btn" onclick="apriSeriesGraphSerieTv(${item.tmdbId})" title="Voti episodi su Series Graph">ðŸ“Š</button>` : ''}
-                        ${item.tmdbId ? `<button class="action-icon-btn" onclick="suggSerieTv_('${safeTitle}')" title="Potrebbero piacerti anche">ðŸ’¡</button>` : ''}
-                        <button class="action-icon-btn" onclick="aggiornaStagioniSerieTvDaTMDB('${safeTitle}')" title="Rileggi da TMDB: aggiunge eventuali nuove stagioni uscite">ðŸ”„</button>
-                        <button class="action-icon-btn" onclick="apriModificaSerieTv('${safeTitle}')">âœï¸</button>
-                        <button class="action-icon-btn" onclick="rimuoviSerieTv('${safeTitle}')">ðŸ—‘ï¸</button>
-                        <button class="action-icon-btn" style="${item.abbandonata ? '' : 'opacity:0.45;'}" onclick="toggleAbbandonataSerieTv('${safeTitle}')" title="${item.abbandonata ? 'Riprendi la serie' : 'Abbandona la serie'}">â›”</button>
+                        ${item.tmdbId ? `<button class="action-icon-btn" onclick="apriSeriesGraphSerieTv(${item.tmdbId})" title="Voti episodi su Series Graph">📊</button>` : ''}
+                        ${item.tmdbId ? `<button class="action-icon-btn" onclick="suggSerieTv_('${safeTitle}')" title="Potrebbero piacerti anche">💡</button>` : ''}
+                        <button class="action-icon-btn" onclick="aggiornaStagioniSerieTvDaTMDB('${safeTitle}')" title="Rileggi da TMDB: aggiunge eventuali nuove stagioni uscite">🔄</button>
+                        <button class="action-icon-btn" onclick="apriModificaSerieTv('${safeTitle}')">✏️</button>
+                        <button class="action-icon-btn" onclick="rimuoviSerieTv('${safeTitle}')">🗑️</button>
+                        <button class="action-icon-btn" style="${item.abbandonata ? '' : 'opacity:0.45;'}" onclick="toggleAbbandonataSerieTv('${safeTitle}')" title="${item.abbandonata ? 'Riprendi la serie' : 'Abbandona la serie'}">⛔</button>
                     </td>
                 `;
                 tbody.appendChild(tr);
@@ -706,7 +701,7 @@
             document.getElementById('inpGeneriSerieTv').value = item.generi || '';
             document.getElementById('inpNoteSerieTv').value = item.note || '';
             document.getElementById('inpImmagineSerieTv').value = item.immagine || '';
-            // In modifica il flag nasce spuntato se la serie Ã¨ giÃ  tutta vista
+            // In modifica il flag nasce spuntato se la serie è già tutta vista
             const giaTuttaVista = (parseInt(item.stagioniTotali) || 0) > 0 && (parseInt(item.stagioniViste) || 0) >= (parseInt(item.stagioniTotali) || 0);
             document.getElementById('inpGiaVistaSerieTv').checked = giaTuttaVista;
             // Serie verde (finita davvero): abbandonarla non ha senso.
@@ -719,7 +714,7 @@
             document.getElementById('modalOverlaySerieTv').classList.add('active');
         };
 
-        // "GiÃ  vista" e "Abbandonata" si escludono a vicenda.
+        // "Già vista" e "Abbandonata" si escludono a vicenda.
         document.getElementById('inpGiaVistaSerieTv').onchange = function() {
             if (this.checked) document.getElementById('inpAbbandonataSerieTv').checked = false;
         };
@@ -732,7 +727,7 @@
 
             const titoloForm = document.getElementById('inpTitoloSerieTv').value.trim();
             if (!titoloForm) {
-                showToast('âŒ Inserisci un titolo.', 'error');
+                showToast('❌ Inserisci un titolo.', 'error');
                 return;
             }
 
@@ -741,11 +736,11 @@
             const isEdit = !!targetEditTitleSerieTv;
 
             // Il flag viene valutato PRIMA di mettere il pulsante in
-            // "Salvataggio...", perchÃ© puÃ² interrompere il salvataggio.
+            // "Salvataggio...", perché può interrompere il salvataggio.
             let segnaComeVista = false;
             if (flagGiaVista) {
                 if (sTot <= 0) {
-                    showToast('âŒ Con "Serie giÃ  vista" devi indicare almeno 1 stagione totale.', 'error');
+                    showToast('❌ Con "Serie già vista" devi indicare almeno 1 stagione totale.', 'error');
                     return;
                 }
                 const itemCorrente = isEdit ? serieTvList.find(s => s.titolo === targetEditTitleSerieTv) : null;
@@ -755,23 +750,23 @@
                     const statoForm = document.getElementById('inpStatoSerieTv').value || 'In corso';
                     const coloreRisultante = calcolaColoreVisioneSerieTv_(sTot, sTot, statoForm, true);
                     const etichettaColore = (coloreRisultante === 'verde') ? 'verde (completata)' :
-                        (coloreRisultante === 'giallo') ? 'giallo (in pari: la serie non Ã¨ conclusa)' : coloreRisultante;
-                    const ok = confirm('Segno "' + titoloForm + '" come vista per intero: ' + sTot + ' stagioni, tutti gli episodi con totale noto.\nLo stato di visione risultante sarÃ  ' + etichettaColore + '.\n\nProcedo con il salvataggio?');
+                        (coloreRisultante === 'giallo') ? 'giallo (in pari: la serie non è conclusa)' : coloreRisultante;
+                    const ok = confirm('Segno "' + titoloForm + '" come vista per intero: ' + sTot + ' stagioni, tutti gli episodi con totale noto.\nLo stato di visione risultante sarà ' + etichettaColore + '.\n\nProcedo con il salvataggio?');
                     if (!ok) return;
                 }
                 segnaComeVista = true;
             }
 
-            // Flag "â›” Serie abbandonata": congela la serie (flag rosso, fuori
+            // Flag "⛔ Serie abbandonata": congela la serie (flag rosso, fuori
             // dal widget In Corso). Conferma solo sulla transizione, non a ogni
-            // salvataggio. Prevale su "giÃ  vista".
+            // salvataggio. Prevale su "già vista".
             const flagAbbandonata = document.getElementById('inpAbbandonataSerieTv').checked;
             const itemCorrenteAbb = isEdit ? serieTvList.find(s => s.titolo === targetEditTitleSerieTv) : null;
             const eraAbbandonata = !!(itemCorrenteAbb && itemCorrenteAbb.abbandonata);
             let abbandonataNuova = false;
             if (flagAbbandonata) {
                 if (!eraAbbandonata) {
-                    const okAbbandono = confirm('Segno "' + titoloForm + '" come abbandonata: uscirÃ  dal widget "In Corso", il flag visione diventerÃ  rosso e il progresso resterÃ  congelato. Potrai riprenderla quando vuoi.\n\nProcedo con il salvataggio?');
+                    const okAbbandono = confirm('Segno "' + titoloForm + '" come abbandonata: uscirà dal widget "In Corso", il flag visione diventerà rosso e il progresso resterà congelato. Potrai riprenderla quando vuoi.\n\nProcedo con il salvataggio?');
                     if (!okAbbandono) return;
                 }
                 abbandonataNuova = true;
@@ -800,12 +795,12 @@
                 generiSelezionatiSerieTv = '';
                 tmdbIdSelezionatoSerieTv = null;
                 // Trama TMDB scelta in sessione: la scriviamo ora, la riga in
-                // sinossi_serie_tv esiste di sicuro (creata da add, o giÃ  presente).
+                // sinossi_serie_tv esiste di sicuro (creata da add, o già presente).
                 if (sinossiPendenteSerieTv) {
                     impostaSinossiSB_(dati.titolo, 'serietv', sinossiPendenteSerieTv)
                         .catch(function(err) {
                             console.error('Errore salvataggio trama TMDB: ' + err);
-                            showToast('Serie salvata, ma la trama TMDB non Ã¨ stata scritta. Riprova dal pulsante TMDB.', 'error');
+                            showToast('Serie salvata, ma la trama TMDB non è stata scritta. Riprova dal pulsante TMDB.', 'error');
                         });
                     sinossiPendenteSerieTv = null;
                 }
@@ -819,7 +814,7 @@
                 showToast(isEdit ? 'Serie TV aggiornata con successo' : 'Serie TV aggiunta con successo', 'success');
             };
             const errorCb = function(err) {
-                alert("âŒ Errore durante il salvataggio Serie TV: " + (err && err.message ? err.message : err));
+                alert("❌ Errore durante il salvataggio Serie TV: " + (err && err.message ? err.message : err));
                 document.getElementById('btnSalvaSerieTv').innerText = "Salva";
             };
 
@@ -830,7 +825,7 @@
             }
         };
 
-        // ðŸ“Š Apre la pagina Series Graph della serie (voti IMDb per episodio).
+        // 📊 Apre la pagina Series Graph della serie (voti IMDb per episodio).
         // Series Graph indirizza per TMDB ID: niente ambiguita di omonimi ne
         // problemi di lingua. Il bottone in riga esiste solo sulle serie collegate.
         window.apriSeriesGraphSerieTv = function(tmdbId) {
@@ -854,7 +849,7 @@
                     showToast('Serie TV eliminata', 'success');
                 }).catch(function(err) {
                     console.error('Errore eliminazione serie TV:', err);
-                    alert("âŒ Errore durante l'eliminazione.");
+                    alert("❌ Errore durante l'eliminazione.");
                 });
             }
         };
@@ -869,23 +864,23 @@
                 showToast(nuovoStato ? 'Aggiunta ai preferiti' : 'Rimossa dai preferiti', 'success');
             }).catch(function(err) {
                 console.error('Errore toggle preferito serie TV:', err);
-                showToast('âŒ Errore aggiornamento preferito: ' + err.message, 'error');
+                showToast('❌ Errore aggiornamento preferito: ' + err.message, 'error');
             });
         };
 
-        // â›” Toggle abbandono dal pulsante riga: congela (rosso, fuori dal
+        // ⛔ Toggle abbandono dal pulsante riga: congela (rosso, fuori dal
         // widget) o riprende. Solo la colonna + log dedicato, mai il progresso.
         window.toggleAbbandonataSerieTv = function(titolo) {
             const item = serieTvList.find(s => s.titolo === titolo);
             if (!item) return;
             if (item.coloreVisione === 'verde') {
-                showToast('âŒ Serie completata: non ha senso abbandonarla.', 'error');
+                showToast('❌ Serie completata: non ha senso abbandonarla.', 'error');
                 return;
             }
             const nuovoStato = !item.abbandonata;
             const msg = nuovoStato
-                ? 'Segno "' + titolo + '" come abbandonata: uscirÃ  dal widget "In Corso", il flag visione diventerÃ  rosso e il progresso resterÃ  congelato. Potrai riprenderla quando vuoi.\n\nProcedo?'
-                : 'Riprendo "' + titolo + '"? TornerÃ  nel widget "In Corso" se in visione.';
+                ? 'Segno "' + titolo + '" come abbandonata: uscirà dal widget "In Corso", il flag visione diventerà rosso e il progresso resterà congelato. Potrai riprenderla quando vuoi.\n\nProcedo?'
+                : 'Riprendo "' + titolo + '"? Tornerà nel widget "In Corso" se in visione.';
             if (!confirm(msg)) return;
             toggleAbbandonataSerieTvSB_(titolo, nuovoStato)
                 .then(function() {
@@ -896,10 +891,10 @@
                 .then(function(data) {
                     serieTvList = data || [];
                     renderListSerieTv();
-                    showToast(nuovoStato ? 'â›” Serie abbandonata' : 'Serie ripresa', 'success');
+                    showToast(nuovoStato ? '⛔ Serie abbandonata' : 'Serie ripresa', 'success');
                 }).catch(function(err) {
                     console.error('Errore toggle abbandonata serie TV:', err);
-                    showToast('âŒ Errore aggiornamento: ' + err.message, 'error');
+                    showToast('❌ Errore aggiornamento: ' + err.message, 'error');
                 });
         };
 
@@ -912,7 +907,7 @@
         // card del widget "In Corso", mostra la copertina di fianco all'elenco.
         window.apriGestioneStagioniSerieTv = function(titolo, mostraCopertina) {
             stagioniSerieTvOverlayTitoloCorrente = titolo;
-            document.getElementById('stagioniSerieTvModalTitle').innerText = 'ðŸ“º Stagioni â€” ' + titolo;
+            document.getElementById('stagioniSerieTvModalTitle').innerText = '📺 Stagioni — ' + titolo;
 
             let conCopertina = false;
             if (mostraCopertina) {
@@ -945,17 +940,17 @@
                 .sort((a, b) => a.numero - b.numero);
 
             if (righe.length === 0) {
-                container.innerHTML = `<p style="color:var(--text-muted); padding: 20px 0; text-align:center;">Nessuna stagione registrata per questo titolo. Imposta le "Stagioni Totali" dal pulsante âœï¸ per generare le righe.</p>`;
+                container.innerHTML = `<p style="color:var(--text-muted); padding: 20px 0; text-align:center;">Nessuna stagione registrata per questo titolo. Imposta le "Stagioni Totali" dal pulsante ✏️ per generare le righe.</p>`;
                 return;
             }
 
             let html = `<div class="section-title-label" style="margin:14px 0 10px 0; font-size:12px;">Stagioni</div>`;
             // Serie abbandonata: i visti sono congelati (banner + controlli
-            // disabilitati/nascosti), i totali restano modificabili con âœï¸.
+            // disabilitati/nascosti), i totali restano modificabili con ✏️.
             const serieCorrenteOverlay = (serieTvList || []).find(function(x) { return (x.titolo || '').trim() === stagioniSerieTvOverlayTitoloCorrente.trim(); });
             const overlayCongelato = !!(serieCorrenteOverlay && serieCorrenteOverlay.abbandonata);
             if (overlayCongelato) {
-                html += `<p style="color:#f87171; font-size:12.5px; font-weight:600; margin:0 0 6px 0;">â›” Serie abbandonata: i progressi sono congelati. Riprendila (â›” nella lista) per modificarli â€” i totali restano modificabili con âœï¸.</p>`;
+                html += `<p style="color:#f87171; font-size:12.5px; font-weight:600; margin:0 0 6px 0;">⛔ Serie abbandonata: i progressi sono congelati. Riprendila (⛔ nella lista) per modificarli — i totali restano modificabili con ✏️.</p>`;
             }
             righe.forEach((ep, idx) => {
                 const totali = parseInt(ep.episodiTotali) || 0;
@@ -968,20 +963,20 @@
                 const disabledMeno = (visti <= 0 || overlayCongelato) ? 'disabled' : '';
                 const disabledPiu = (bloccata || overlayCongelato || (totali > 0 && visti >= totali)) ? 'disabled' : '';
 
-                // âœ… = segna la stagione come tutta vista (solo se sbloccata e non
-                // giÃ  completa); ðŸ”¢ = imposta a mano gli episodi visti.
+                // ✅ = segna la stagione come tutta vista (solo se sbloccata e non
+                // già completa); 🔢 = imposta a mano gli episodi visti.
                 const btnTuttaVistaSerieTv = (!completa && !bloccata && !overlayCongelato)
-                    ? `<button class="episodi-btn-edit" onclick="segnaStagioneComeVistaSerieTv('${safeTitle}', ${ep.numero})" title="Segna Stagione ${ep.numero} come tutta vista">âœ…</button>`
+                    ? `<button class="episodi-btn-edit" onclick="segnaStagioneComeVistaSerieTv('${safeTitle}', ${ep.numero})" title="Segna Stagione ${ep.numero} come tutta vista">✅</button>`
                     : '';
                 const btnVistiManualSerieTv = overlayCongelato
                     ? ''
-                    : `<button class="episodi-btn-edit" onclick="modificaVistiStagioneSerieTv('${safeTitle}', ${ep.numero}, ${visti}, ${totali})" title="Imposta manualmente gli episodi visti">ðŸ”¢</button>`;
+                    : `<button class="episodi-btn-edit" onclick="modificaVistiStagioneSerieTv('${safeTitle}', ${ep.numero}, ${visti}, ${totali})" title="Imposta manualmente gli episodi visti">🔢</button>`;
 
                 html += `
                     <div class="episodi-row ${bloccata ? 'locked' : ''}">
                         <div class="episodi-row-info">
-                            <div class="episodi-row-title">ðŸŽžï¸ Stagione ${ep.numero}${ep.anno ? ' (' + ep.anno + ')' : ''} ${completa ? 'âœ…' : (bloccata ? 'ðŸ”’' : '')}
-                                <button class="episodi-btn-edit" onclick="modificaTotaleStagioneSerieTv('${safeTitle}', ${ep.numero}, ${totali})" title="Modifica episodi totali">âœï¸</button>
+                            <div class="episodi-row-title">🎞️ Stagione ${ep.numero}${ep.anno ? ' (' + ep.anno + ')' : ''} ${completa ? '✅' : (bloccata ? '🔒' : '')}
+                                <button class="episodi-btn-edit" onclick="modificaTotaleStagioneSerieTv('${safeTitle}', ${ep.numero}, ${totali})" title="Modifica episodi totali">✏️</button>
                                 ${btnVistiManualSerieTv}
                                 ${btnTuttaVistaSerieTv}
                             </div>
@@ -989,7 +984,7 @@
                             <div class="episodi-progress-outer"><div class="episodi-progress-inner" style="width:${percentuale}%;"></div></div>
                         </div>
                         <div class="episodi-row-actions">
-                            <button class="episodi-btn" ${disabledMeno} onclick="incrementaStagioneSerieTv('${safeTitle}', ${ep.numero}, -1)">âˆ’</button>
+                            <button class="episodi-btn" ${disabledMeno} onclick="incrementaStagioneSerieTv('${safeTitle}', ${ep.numero}, -1)">−</button>
                             <button class="episodi-btn" ${disabledPiu} onclick="incrementaStagioneSerieTv('${safeTitle}', ${ep.numero}, 1)">+</button>
                         </div>
                     </div>`;
@@ -998,7 +993,7 @@
             container.innerHTML = html;
         }
 
-        // senzaLogEpisodio = true per âœ…/ðŸ”¢ da overlay (popolamento archivio):
+        // senzaLogEpisodio = true per ✅/🔢 da overlay (popolamento archivio):
         // aggiorna i visti e ricalcola, ma non scrive righe nel log episodi.
         async function updateStagioneVistiSerieTvSB_(titolo, numero, delta, senzaLogEpisodio) {
             const titoloTrim = String(titolo).trim();
@@ -1093,7 +1088,7 @@
                     }
                 })
                 .catch(function(err) {
-                    showToast('âŒ Errore aggiornamento episodio: ' + err.message, 'error');
+                    showToast('❌ Errore aggiornamento episodio: ' + err.message, 'error');
                 });
         };
 
@@ -1102,7 +1097,7 @@
             if (nuovoTotaleStr === null) return; // annullato
             const nuovoTotale = parseInt(nuovoTotaleStr);
             if (isNaN(nuovoTotale) || nuovoTotale < 0) {
-                showToast('âŒ Inserisci un numero valido', 'error');
+                showToast('❌ Inserisci un numero valido', 'error');
                 return;
             }
 
@@ -1119,29 +1114,29 @@
                     showToast('Totale episodi aggiornato', 'success');
                 })
                 .catch(function(err) {
-                    showToast('âŒ Errore aggiornamento totale episodi: ' + err.message, 'error');
+                    showToast('❌ Errore aggiornamento totale episodi: ' + err.message, 'error');
                 });
         };
 
-        // âœ… Segna la stagione come tutta vista in un colpo solo. Delega a
-        // updateStagioneVistiSerieTvSB_ col delta mancante, cosÃ¬ restano validi
+        // ✅ Segna la stagione come tutta vista in un colpo solo. Delega a
+        // updateStagioneVistiSerieTvSB_ col delta mancante, così restano validi
         // vincolo sequenziale, log SERIE_TV e ricalcolo (stesso schema anime).
         window.segnaStagioneComeVistaSerieTv = function(titolo, numero) {
             const riga = (episodiSerieTvList || []).find(function(e) {
                 return (e.titolo || '').trim() === String(titolo).trim() && parseInt(e.numero) === parseInt(numero);
             });
             if (!riga) {
-                showToast('âŒ Riga non trovata', 'error');
+                showToast('❌ Riga non trovata', 'error');
                 return;
             }
             const totali = parseInt(riga.episodiTotali) || 0;
             const visti = parseInt(riga.episodiVisti) || 0;
             if (totali <= 0) {
-                showToast('âŒ Imposta prima gli episodi totali con la matita âœï¸, poi segna come vista.', 'error');
+                showToast('❌ Imposta prima gli episodi totali con la matita ✏️, poi segna come vista.', 'error');
                 return;
             }
             if (visti >= totali) {
-                showToast('Stagione giÃ  completa.', 'success');
+                showToast('Stagione già completa.', 'success');
                 return;
             }
             updateStagioneVistiSerieTvSB_(titolo, numero, totali - visti, true)
@@ -1158,28 +1153,28 @@
                     renderStagioniSerieTvOverlay();
                     renderListSerieTv();
                     aggiornaLogStagioniSerieTvSeVisibile();
-                    showToast('âœ… Stagione ' + numero + ' segnata come tutta vista', 'success');
+                    showToast('✅ Stagione ' + numero + ' segnata come tutta vista', 'success');
                 })
                 .catch(function(err) {
-                    showToast('âŒ Errore aggiornamento episodio: ' + err.message, 'error');
+                    showToast('❌ Errore aggiornamento episodio: ' + err.message, 'error');
                 });
         };
 
-        // ðŸ”¢ Imposta a mano gli episodi visti (stesso schema di
+        // 🔢 Imposta a mano gli episodi visti (stesso schema di
         // modificaVistiEpisodi negli anime: aumenti sequenziali, diminuzioni
         // libere, rifiuto oltre il totale).
         window.modificaVistiStagioneSerieTv = function(titolo, numero, vistiAttuali, totaleAttuale) {
             const totali = parseInt(totaleAttuale) || 0;
-            const intervallo = totali > 0 ? ' (0â€“' + totali + ')' : '';
+            const intervallo = totali > 0 ? ' (0–' + totali + ')' : '';
             const nuovoVistiStr = prompt(`Episodi visti per Stagione ${numero}${intervallo}:`, vistiAttuali);
             if (nuovoVistiStr === null) return; // annullato
             const nuovoVisti = parseInt(nuovoVistiStr);
             if (isNaN(nuovoVisti) || nuovoVisti < 0) {
-                showToast('âŒ Inserisci un numero valido', 'error');
+                showToast('❌ Inserisci un numero valido', 'error');
                 return;
             }
             if (totali > 0 && nuovoVisti > totali) {
-                showToast('âŒ Il massimo per Stagione ' + numero + ' Ã¨ ' + totali + ' episodi.', 'error');
+                showToast('❌ Il massimo per Stagione ' + numero + ' è ' + totali + ' episodi.', 'error');
                 return;
             }
             const visti = parseInt(vistiAttuali) || 0;
@@ -1204,12 +1199,12 @@
                     showToast('Episodi visti aggiornati', 'success');
                 })
                 .catch(function(err) {
-                    showToast('âŒ Errore aggiornamento episodi visti: ' + err.message, 'error');
+                    showToast('❌ Errore aggiornamento episodi visti: ' + err.message, 'error');
                 });
         };
 
         // ==========================================================
-        // ðŸ•˜ LOG EPISODI SERIE TV (linguetta dentro la vista)
+        // 🕘 LOG EPISODI SERIE TV (linguetta dentro la vista)
         // ==========================================================
         function switchSerieTvSubview(subview) {
             const paneLista = document.getElementById('serietvPaneLista');
@@ -1240,7 +1235,7 @@
 
             if (loadingEl) {
                 loadingEl.style.display = 'block';
-                loadingEl.innerText = 'â³ Caricamento log episodi...';
+                loadingEl.innerText = '⏳ Caricamento log episodi...';
             }
             tableEl.style.display = 'none';
             if (btnRefresh) {
@@ -1263,7 +1258,7 @@
             const filtriAttivi = (filtroTitolo !== '' || filtroAzione !== 'all' || dataDal !== '' || dataAl !== '');
 
             // Le serie TV scrivono solo righe di tipo 'Stagione': il filtro
-            // per tipo Ã¨ fisso e non serve il selettore nella testata.
+            // per tipo è fisso e non serve il selettore nella testata.
             ottieniLogEpisodiSB_(filtroTitolo, 'Stagione', filtroAzione, dataDal, dataAl, ordineAsc, 'SERIE_TV')
                 .then(function(logs) {
                     if (loadingEl) loadingEl.style.display = 'none';
@@ -1278,7 +1273,7 @@
                     console.error('Errore nel caricamento del Log Episodi Serie TV:', err);
                     if (loadingEl) {
                         loadingEl.style.display = 'block';
-                        loadingEl.innerText = 'âš ï¸ Impossibile caricare il log episodi.';
+                        loadingEl.innerText = '⚠️ Impossibile caricare il log episodi.';
                     }
                     if (btnRefresh) {
                         btnRefresh.classList.remove('spinning');
@@ -1302,8 +1297,8 @@
                 if (emptyEl) {
                     emptyEl.style.display = 'block';
                     emptyEl.innerText = filtriAttivi
-                        ? 'Nessun episodio trovato con i filtri selezionati. ðŸ”'
-                        : 'Nessun episodio registrato finora. ðŸ“¡';
+                        ? 'Nessun episodio trovato con i filtri selezionati. 🔍'
+                        : 'Nessun episodio registrato finora. 📡';
                 }
                 return;
             }
@@ -1322,19 +1317,19 @@
 
                 let azioneBadge;
                 if (haCompletatoStagione && String(log.esito).toUpperCase() === 'COMPLETAMENTO') {
-                    azioneBadge = '<span class="ep-log-azione ep-log-azione-completato-serietv">âœ… Visto â€” ðŸ† Serie completata</span>';
+                    azioneBadge = '<span class="ep-log-azione ep-log-azione-completato-serietv">✅ Visto — 🏆 Serie completata</span>';
                 } else if (haCompletatoStagione) {
-                    azioneBadge = '<span class="ep-log-azione ep-log-azione-completato-unita">âœ… Visto â€” ðŸŽžï¸ Stagione completata</span>';
+                    azioneBadge = '<span class="ep-log-azione ep-log-azione-completato-unita">✅ Visto — 🎞️ Stagione completata</span>';
                 } else if (isVisto) {
-                    azioneBadge = '<span class="log-badge" style="background:rgba(52,211,153,.15); color:#6ee7b7; border:1px solid rgba(52,211,153,.4);">âœ… Visto</span>';
+                    azioneBadge = '<span class="log-badge" style="background:rgba(52,211,153,.15); color:#6ee7b7; border:1px solid rgba(52,211,153,.4);">✅ Visto</span>';
                 } else {
-                    azioneBadge = '<span class="log-badge" style="background:rgba(248,113,113,.15); color:#fca5a5; border:1px solid rgba(248,113,113,.4);">â†©ï¸ Rimosso</span>';
+                    azioneBadge = '<span class="log-badge" style="background:rgba(248,113,113,.15); color:#fca5a5; border:1px solid rgba(248,113,113,.4);">↩️ Rimosso</span>';
                 }
 
                 tr.innerHTML =
                     '<td style="white-space:nowrap;">' + formatLogTimestamp(log.timestamp) + '</td>' +
                     '<td>' + escapeHtmlLog(log.titolo || '') + '</td>' +
-                    '<td><span class="ep-log-badge-stagione">ðŸŽžï¸ Stagione ' + (parseInt(log.numero) || 0) + '</span></td>' +
+                    '<td><span class="ep-log-badge-stagione">🎞️ Stagione ' + (parseInt(log.numero) || 0) + '</span></td>' +
                     '<td style="text-align:center;">Ep. ' + (parseInt(log.episodioInteressato) || 0) + '/' + (parseInt(log.episodiTotali) || 0) + '</td>' +
                     '<td style="text-align:center;">' + azioneBadge + '</td>';
 
@@ -1356,7 +1351,7 @@
             if (btnOrdine) btnOrdine.addEventListener('click', function() {
                 const asc = btnOrdine.getAttribute('data-asc') === 'true';
                 btnOrdine.setAttribute('data-asc', asc ? 'false' : 'true');
-                btnOrdine.innerHTML = asc ? 'â¬‡ï¸ Recenti' : 'â¬†ï¸ Vecchi';
+                btnOrdine.innerHTML = asc ? '⬇️ Recenti' : '⬆️ Vecchi';
                 caricaLogStagioniSerieTv();
             });
         })();
@@ -1371,7 +1366,7 @@
                 const btnOrdine = document.getElementById('btnToggleStagioniLogOrdine');
                 if (btnOrdine) {
                     btnOrdine.setAttribute('data-asc', 'false');
-                    btnOrdine.innerHTML = 'â¬‡ï¸ Recenti';
+                    btnOrdine.innerHTML = '⬇️ Recenti';
                 }
                 caricaLogStagioniSerieTv();
             });
@@ -1401,7 +1396,7 @@
 
             const wrapper = document.getElementById('serieTvCandidatiWrapper');
             document.getElementById('serieTvStagioniWrapper').innerHTML = '';
-            wrapper.innerHTML = `<p style="color: var(--warning); font-weight:600;">â³ Ricerca su TMDB in corso...</p>`;
+            wrapper.innerHTML = `<p style="color: var(--warning); font-weight:600;">⏳ Ricerca su TMDB in corso...</p>`;
 
             cercaCandidatiSerieTvTMDBSB_(titolo)
                 .then(function(candidati) { renderCandidatiSerieTvTMDB_(candidati); })
@@ -1432,7 +1427,7 @@
 
         function selezionaCandidatoSerieTvTMDB_(id) {
             const wrapper = document.getElementById('serieTvCandidatiWrapper');
-            wrapper.innerHTML = `<p style="color: var(--warning); font-weight:600;">â³ Recupero dettagli da TMDB...</p>`;
+            wrapper.innerHTML = `<p style="color: var(--warning); font-weight:600;">⏳ Recupero dettagli da TMDB...</p>`;
 
             getDettaglioSerieTvTMDBSB_(id)
                 .then(function(dettaglio) { renderDettaglioSerieTvTMDB_(dettaglio); })
@@ -1446,8 +1441,8 @@
 
             const safeImg = (dettaglio.immagine || '').replace(/'/g, "\\'");
             const tramaAnteprima = dettaglio.trama && dettaglio.trama.length > 160
-                ? dettaglio.trama.substring(0, 160) + 'â€¦'
-                : (dettaglio.trama || 'â€”');
+                ? dettaglio.trama.substring(0, 160) + '…'
+                : (dettaglio.trama || '—');
 
             wrapper.innerHTML = `
                 <div style="display:flex; gap:12px; margin-top:10px; padding:10px; border:1px solid var(--border-color); border-radius:8px; background: rgba(255,255,255,0.03);">
@@ -1455,9 +1450,9 @@
                     <div style="flex:1; font-size:13px; line-height:1.5;">
                         <div style="font-weight:700; font-size:14px;">${dettaglio.titolo || ''}</div>
                         <div style="color:var(--text-muted);">Stato: ${dettaglio.stato || 'In corso'}</div>
-                        ${dettaglio.generi ? `<div>ðŸ·ï¸ ${dettaglio.generi}</div>` : ''}
+                        ${dettaglio.generi ? `<div>🏷️ ${dettaglio.generi}</div>` : ''}
                         <div style="font-style:italic; color:var(--text-muted); margin-top:4px;">${tramaAnteprima}</div>
-                        <button type="button" class="btn btn-serietv" style="margin-top:8px;" onclick="confermaDatiSerieTvTMDB_()">âœ… Usa questi dati</button>
+                        <button type="button" class="btn btn-serietv" style="margin-top:8px;" onclick="confermaDatiSerieTvTMDB_()">✅ Usa questi dati</button>
                     </div>
                 </div>
             `;
@@ -1469,20 +1464,20 @@
             }
 
             let checkHtml = '<div style="margin-top:10px; padding:10px; border:1px dashed var(--border-color); border-radius:8px;">'
-                + '<div style="font-weight:700; font-size:13px; margin-bottom:6px;">ðŸ“¡ Stagioni trovate su TMDB (spunta quelle da caricare)</div>';
+                + '<div style="font-weight:700; font-size:13px; margin-bottom:6px;">📡 Stagioni trovate su TMDB (spunta quelle da caricare)</div>';
             stagioni.forEach(function(s) {
                 checkHtml += `<label style="display:flex; align-items:center; gap:8px; font-size:13px; padding:3px 0;">`
                     + `<input type="checkbox" class="serietv-tmdb-stagione-cb" data-numero="${s.numero}" data-episodi="${s.episodi || 0}" data-anno="${s.anno || ''}" checked>`
-                    + `<span>Stagione ${s.numero} â€” ${s.episodi || 0} episodi${s.anno ? ' (' + s.anno + ')' : ''}</span>`
+                    + `<span>Stagione ${s.numero} — ${s.episodi || 0} episodi${s.anno ? ' (' + s.anno + ')' : ''}</span>`
                     + `</label>`;
             });
-            checkHtml += '<button type="button" class="btn btn-serietv" style="margin-top:8px;" onclick="applicaStagioniSerieTvTMDB_()">âœ… Applica stagioni spuntate</button></div>';
+            checkHtml += '<button type="button" class="btn btn-serietv" style="margin-top:8px;" onclick="applicaStagioniSerieTvTMDB_()">✅ Applica stagioni spuntate</button></div>';
             stagioniWrap.innerHTML = checkHtml;
         }
 
         function renderErroreSerieTvTMDB_(err) {
             const wrapper = document.getElementById('serieTvCandidatiWrapper');
-            wrapper.innerHTML = `<p style="color:#f87171;">âŒ ${((err && err.message) ? err.message : err)}</p>`;
+            wrapper.innerHTML = `<p style="color:#f87171;">❌ ${((err && err.message) ? err.message : err)}</p>`;
         }
 
         // Scrive titolo/stato/immagine/generi/trama nel modale (le stagioni
@@ -1504,7 +1499,7 @@
         function applicaStagioniSerieTvTMDB_() {
             const checked = Array.from(document.querySelectorAll('.serietv-tmdb-stagione-cb:checked'));
             if (checked.length === 0) {
-                showToast('âŒ Spunta almeno una stagione.', 'error');
+                showToast('❌ Spunta almeno una stagione.', 'error');
                 return;
             }
             const mappa = {};
@@ -1521,18 +1516,18 @@
             showToast(checked.length + ' stagioni pronte al salvataggio', 'success');
         }
 
-        // ðŸ”„ Rilegge la serie da TMDB e aggiunge solo le stagioni nuove
-        // (numero maggiore del massimo giÃ  salvato). Non cancella e non
+        // 🔄 Rilegge la serie da TMDB e aggiunge solo le stagioni nuove
+        // (numero maggiore del massimo già salvato). Non cancella e non
         // sovrascrive mai nulla: le correzioni restano manuali.
         window.aggiornaStagioniSerieTvDaTMDB = function(titolo) {
             const item = serieTvList.find(s => s.titolo === titolo);
             if (!item) return;
             if (!item.tmdbId) {
-                showToast('âŒ Nessun collegamento TMDB per questa serie (aggiunta a mano).', 'error');
+                showToast('❌ Nessun collegamento TMDB per questa serie (aggiunta a mano).', 'error');
                 return;
             }
 
-            showToast('â³ Rileggo la serie da TMDB...', 'success');
+            showToast('⏳ Rileggo la serie da TMDB...', 'success');
             getDettaglioSerieTvTMDBSB_(item.tmdbId)
                 .then(function(dettaglio) {
                     const stagioniTMDB = dettaglio.stagioni || [];
@@ -1543,7 +1538,7 @@
                     const maxSalvata = parseInt(item.stagioniTotali) || 0;
                     const nuove = stagioniTMDB.filter(s => (parseInt(s.numero) || 0) > maxSalvata);
                     if (nuove.length === 0) {
-                        showToast('âœ… Serie giÃ  aggiornata: nessuna nuova stagione su TMDB.', 'success');
+                        showToast('✅ Serie già aggiornata: nessuna nuova stagione su TMDB.', 'success');
                         return;
                     }
                     const mappa = {};
@@ -1570,12 +1565,12 @@
                         renderListSerieTv();
                         return registraLogSB_(item.titolo, 'SERIE_TV', 'AVANZAMENTO', 'N/D', 'Nuove stagioni da TMDB: ' + nuove.map(s => s.numero).join(', '));
                     }).then(function() {
-                        showToast('ðŸ“¡ Aggiunte ' + nuove.length + ' nuove stagioni da TMDB', 'success');
+                        showToast('📡 Aggiunte ' + nuove.length + ' nuove stagioni da TMDB', 'success');
                     });
                 })
                 .catch(function(err) {
                     console.error('Errore aggiornamento TMDB serie TV:', err);
-                    showToast('âŒ Errore aggiornamento da TMDB: ' + (err && err.message ? err.message : err), 'error');
+                    showToast('❌ Errore aggiornamento da TMDB: ' + (err && err.message ? err.message : err), 'error');
                 });
         };
 
@@ -1655,9 +1650,9 @@
         // ==========================================
         //   BULK: nuove stagioni da TMDB per tutte le serie non concluse
         //   (abbandonate incluse: vengono scansionate e aggiornate come le
-        //   altre, ma il riepilogo dichiara esplicitamente quali novitÃ 
+        //   altre, ma il riepilogo dichiara esplicitamente quali novità
         //   riguardano serie abbandonate).
-        //   Equivale a premere il ðŸ”„ di riga su ogni serie, ma con un unico
+        //   Equivale a premere il 🔄 di riga su ogni serie, ma con un unico
         //   overlay di conferma: mostra titolo/stagione/episodi trovati, fa
         //   spuntare cosa aggiungere e salva solo le stagioni selezionate.
         // ==========================================
@@ -1685,7 +1680,7 @@
 
             const container = document.getElementById('bulkSerieTvListContainer');
             const btnSalva = document.getElementById('btnSalvaBulkSerieTv');
-            container.innerHTML = `<p style="color: var(--warning); font-weight:600;">â³ Avvio scansione TMDB...</p>`;
+            container.innerHTML = `<p style="color: var(--warning); font-weight:600;">⏳ Avvio scansione TMDB...</p>`;
             btnSalva.disabled = true;
             document.getElementById('modalOverlayBulkSerieTv').classList.add('active');
 
@@ -1695,7 +1690,7 @@
 
             for (let i = 0; i < candidate.length; i++) {
                 const item = candidate[i];
-                container.innerHTML = `<p style="color: var(--warning); font-weight:600;">â³ Leggo "${item.titolo}" da TMDB... (${i + 1}/${candidate.length})</p>`;
+                container.innerHTML = `<p style="color: var(--warning); font-weight:600;">⏳ Leggo "${item.titolo}" da TMDB... (${i + 1}/${candidate.length})</p>`;
                 try {
                     const dettaglio = await getDettaglioSerieTvTMDBSB_(item.tmdbId);
                     const maxSalvata = parseInt(item.stagioniTotali) || 0;
@@ -1722,28 +1717,28 @@
             if (!container) return;
 
             let html = `<p style="color:var(--text-muted); font-size:13px;">Scansione completata: `
-                + `${bulkSerieTvRisultati.length} serie con novitÃ , ${giaAggiornate} giÃ  aggiornate`
+                + `${bulkSerieTvRisultati.length} serie con novità, ${giaAggiornate} già aggiornate`
                 + `${senzaLink > 0 ? `, ${senzaLink} senza collegamento TMDB (ignorate)` : ''}`
                 + `${errori > 0 ? `, ${errori} errori di lettura` : ''}.</p>`;
             const nuoveSuAbbandonate = bulkSerieTvRisultati.filter(function(r) { return r.abbandonata; });
             if (nuoveSuAbbandonate.length > 0) {
                 const stagioniAbb = nuoveSuAbbandonate.reduce(function(acc, r) { return acc + r.nuove.length; }, 0);
-                html += `<p style="color:#f87171; font-size:13px; font-weight:600;">â›” Di cui ${stagioniAbb} nuove stagioni su ${nuoveSuAbbandonate.length} serie abbandonate: ${nuoveSuAbbandonate.map(function(r) { return r.titolo; }).join(', ')}.</p>`;
+                html += `<p style="color:#f87171; font-size:13px; font-weight:600;">⛔ Di cui ${stagioniAbb} nuove stagioni su ${nuoveSuAbbandonate.length} serie abbandonate: ${nuoveSuAbbandonate.map(function(r) { return r.titolo; }).join(', ')}.</p>`;
             }
 
             if (bulkSerieTvRisultati.length === 0) {
-                html += `<p style="color:var(--text-muted); padding:12px 0;">Nessuna nuova stagione trovata su TMDB. ðŸŽ‰</p>`;
+                html += `<p style="color:var(--text-muted); padding:12px 0;">Nessuna nuova stagione trovata su TMDB. 🎉</p>`;
                 container.innerHTML = html;
                 return;
             }
 
             bulkSerieTvRisultati.forEach(function(r) {
                 const safeTitle = String(r.titolo || '').replace(/'/g, "\\'").replace(/"/g, '\\"');
-                html += `<div style="margin:12px 0 4px 0; font-weight:700; font-size:14px;">ðŸ“¡ ${r.titolo}${r.abbandonata ? ' <span style="color:#f87171; font-size:12px;">â›” abbandonata</span>' : ''}</div>`;
+                html += `<div style="margin:12px 0 4px 0; font-weight:700; font-size:14px;">📡 ${r.titolo}${r.abbandonata ? ' <span style="color:#f87171; font-size:12px;">⛔ abbandonata</span>' : ''}</div>`;
                 r.nuove.forEach(function(s) {
                     html += `<label style="display:flex; align-items:center; gap:8px; font-size:13px; padding:3px 0 3px 12px;">`
                         + `<input type="checkbox" class="bulk-serietv-stagione-cb" data-titolo="${safeTitle}" data-numero="${s.numero}" data-episodi="${s.episodi}" data-anno="${s.anno || ''}" checked>`
-                        + `<span>Stagione ${s.numero} â€” ${s.episodi} episodi${s.anno ? ' (' + s.anno + ')' : ''}</span>`
+                        + `<span>Stagione ${s.numero} — ${s.episodi} episodi${s.anno ? ' (' + s.anno + ')' : ''}</span>`
                         + `</label>`;
                 });
             });
@@ -1754,7 +1749,7 @@
         window.salvaBulkSerieTvTMDB_ = async function() {
             const checked = Array.from(document.querySelectorAll('.bulk-serietv-stagione-cb:checked'));
             if (checked.length === 0) {
-                showToast('âŒ Spunta almeno una stagione da aggiungere.', 'error');
+                showToast('❌ Spunta almeno una stagione da aggiungere.', 'error');
                 return;
             }
 
@@ -1810,13 +1805,13 @@
                 episodiSerieTvList = await getTuttiEpisodiSerieTvSB_();
                 renderListSerieTv();
                 chiudiModaleBulkSerieTv();
-                showToast(`ðŸ“¡ Aggiunte ${stagioniAggiunte} stagioni su ${serieAggiornate} serie`, 'success');
+                showToast(`📡 Aggiunte ${stagioniAggiunte} stagioni su ${serieAggiornate} serie`, 'success');
             } catch (err) {
                 console.error('Errore salvataggio bulk serie TV:', err);
-                showToast('âŒ Errore durante il salvataggio: ' + (err && err.message ? err.message : err), 'error');
+                showToast('❌ Errore durante il salvataggio: ' + (err && err.message ? err.message : err), 'error');
             } finally {
                 btnSalva.disabled = false;
-                btnSalva.innerText = 'âœ… Aggiungi selezionate';
+                btnSalva.innerText = '✅ Aggiungi selezionate';
             }
         };
 
@@ -1824,4 +1819,3 @@
 
 
         // ---- FINE SERIE TV ----
-

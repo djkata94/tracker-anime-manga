@@ -1,10 +1,10 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="it">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Nerd Tracker Dashboard</title>
-    <!-- Favicon joystick retrÃ² inline (SVG data-URI, nessun file extra):
+    <!-- Favicon joystick retrò inline (SVG data-URI, nessun file extra):
          vale per schede e preferiti su tutti i browser moderni. L'icona per
          "Aggiungi a schermata Home" su iOS richiede invece un file PNG reale
          (vedi apple-touch-icon sotto). -->
@@ -20,18 +20,19 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="css/style.css">
+
 </head>
 <body>
 
     <!-- ===================================================================
-         ðŸ” SCHERMATA DI LOGIN (Supabase Auth)
+         🔐 SCHERMATA DI LOGIN (Supabase Auth)
          Resta nel DOM sempre; viene mostrata/nascosta via JS a seconda che
          ci sia o meno una sessione valida. Non tocca il resto della grafica.
     ==================================================================== -->
     <div id="loginOverlay" style="display:none; position:fixed; inset:0; z-index:100000; background:var(--bg-dark); align-items:center; justify-content:center; padding:20px;">
         <div style="width:100%; max-width:360px; background:var(--surface-solid); border:1px solid var(--border-color); border-radius:var(--radius); padding:32px 28px; box-shadow:0 20px 60px rgba(0,0,0,0.5);">
             <div style="text-align:center; margin-bottom:24px;">
-                <div style="font-family:monospace; font-weight:800; letter-spacing:1px; color:var(--primary); font-size:20px;">ðŸŽ® NERD.TRACKER</div>
+                <div style="font-family:monospace; font-weight:800; letter-spacing:1px; color:var(--primary); font-size:20px;">🎮 NERD.TRACKER</div>
                 <div style="color:var(--text-muted); font-size:13px; margin-top:4px;">Accedi per continuare</div>
             </div>
             <form id="loginForm">
@@ -51,23 +52,23 @@
     </div>
 
     <!-- ===================================================================
-         Da qui in giÃ¹: il sito vero e proprio, invariato â€” solo avvolto in
-         un contenitore che resta nascosto finchÃ© l'autenticazione non Ã¨
+         Da qui in giù: il sito vero e proprio, invariato — solo avvolto in
+         un contenitore che resta nascosto finché l'autenticazione non è
          confermata (vedi script di autenticazione in fondo alla pagina).
     ==================================================================== -->
     <div id="appRoot" style="display:none;">
 
     <div class="navbar">
-        <span style="font-weight: 800; color: var(--primary); margin-right: 20px; font-family: monospace; letter-spacing: 1px;">ðŸŽ® NERD.TRACKER</span>
-        <button id="nav-home" class="btn btn-nav active-view" onclick="switchView('home')">ðŸ  Home</button>
-        <button id="nav-anime" class="btn btn-nav" onclick="switchView('anime')">ðŸ“º Anime</button>
-        <button id="nav-serietv" class="btn btn-nav" onclick="switchView('serietv')">ðŸ“¡ Serie TV</button>
-        <button id="nav-manga" class="btn btn-nav" onclick="switchView('manga')">ðŸ“š Manga</button>
-        <button id="nav-libri" class="btn btn-nav" onclick="switchView('libri')">ðŸ“— Libri</button>
-        <button id="nav-cinema" class="btn btn-nav" onclick="switchView('cinema')">ðŸŽ¬ Cinema</button>
-        <button id="btnPatchNotes" class="btn btn-nav" style="margin-left:auto;" onclick="apriPatchNotes()" title="Note di versione">ðŸ“ Patch notes<span id="patchNotesBadge" class="patch-badge" style="display:none;">0</span></button>
+        <span style="font-weight: 800; color: var(--primary); margin-right: 20px; font-family: monospace; letter-spacing: 1px;">🎮 NERD.TRACKER</span>
+        <button id="nav-home" class="btn btn-nav active-view" onclick="switchView('home')">🏠 Home</button>
+        <button id="nav-anime" class="btn btn-nav" onclick="switchView('anime')">📺 Anime</button>
+        <button id="nav-serietv" class="btn btn-nav" onclick="switchView('serietv')">📡 Serie TV</button>
+        <button id="nav-manga" class="btn btn-nav" onclick="switchView('manga')">📚 Manga</button>
+        <button id="nav-libri" class="btn btn-nav" onclick="switchView('libri')">📗 Libri</button>
+        <button id="nav-cinema" class="btn btn-nav" onclick="switchView('cinema')">🎬 Cinema</button>
+        <button id="btnPatchNotes" class="btn btn-nav" style="margin-left:auto;" onclick="apriPatchNotes()" title="Note di versione">📝 Patch notes<span id="patchNotesBadge" class="patch-badge" style="display:none;">0</span></button>
         <span id="loggedUserEmail" style="color: var(--text-muted); font-size:13px; display:flex; align-items:center; gap:6px;"></span>
-        <button id="btnLogout" class="btn btn-nav" onclick="handleLogout()" title="Esci">ðŸšª Esci</button>
+        <button id="btnLogout" class="btn btn-nav" onclick="handleLogout()" title="Esci">🚪 Esci</button>
     </div>
 
     <div id="homeView" class="view-container home-dashboard">
@@ -78,7 +79,7 @@
             </div>
 
             <!-- ============================================================
-                 ðŸ“ Apri il Google Sheet collegato: su desktop apre una nuova
+                 📁 Apri il Google Sheet collegato: su desktop apre una nuova
                  scheda del browser, su mobile l'OS intercetta il link e apre
                  direttamente l'app Google Fogli (se installata). L'href viene
                  valorizzato via JS all'avvio con getSpreadsheetUrl().
@@ -94,16 +95,16 @@
         </div>
 
         <!-- ================================================================
-             ðŸ” RICERCA GLOBALE (Home)
+             🔍 RICERCA GLOBALE (Home)
              Cerca un titolo su Anime, Manga e Cinema contemporaneamente.
              L'indice viene caricato (e messo in cache) solo al primo utilizzo
              della barra, per non appesantire l'apertura della Home. Click su
-             un risultato Anime/Manga apre l'overlay di sinossi giÃ  esistente;
+             un risultato Anime/Manga apre l'overlay di sinossi già esistente;
              per Cinema apre una scheda rapida con poster e date.
              ================================================================ -->
         <div class="global-search-wrap" id="globalSearchWrap">
             <div class="global-search-box" id="globalSearchBox">
-                <span class="global-search-icon">ðŸ”</span>
+                <span class="global-search-icon">🔍</span>
                 <input type="search" id="globalSearchInput" class="global-search-input" placeholder="Cerca un titolo tra anime, serie TV, manga, libri e cinema..." autocomplete="off">
                 <span class="global-search-hint" id="globalSearchHint">esc</span>
             </div>
@@ -111,15 +112,15 @@
         </div>
 
         <div class="menu-grid">
-            <button class="btn btn-anime" style="height:64px; font-size:14px; border-radius: 12px;" onclick="switchView('anime')">ðŸ“º Catalogo Anime</button>
-            <button class="btn btn-serietv" style="height:64px; font-size:14px; border-radius: 12px;" onclick="switchView('serietv')">ðŸ“¡ Catalogo Serie TV</button>
-            <button class="btn btn-manga" style="height:64px; font-size:14px; border-radius: 12px;" onclick="switchView('manga')">ðŸ“š Archivio Manga / LN</button>
-            <button class="btn btn-libri" style="height:64px; font-size:14px; border-radius: 12px;" onclick="switchView('libri')">ðŸ“— Biblioteca Libri</button>
-            <button class="btn btn-cinema" style="height:64px; font-size:14px; border-radius: 12px;" onclick="switchView('cinema')">ðŸŽ¬ Film al Cinema</button>
+            <button class="btn btn-anime" style="height:64px; font-size:14px; border-radius: 12px;" onclick="switchView('anime')">📺 Catalogo Anime</button>
+            <button class="btn btn-serietv" style="height:64px; font-size:14px; border-radius: 12px;" onclick="switchView('serietv')">📡 Catalogo Serie TV</button>
+            <button class="btn btn-manga" style="height:64px; font-size:14px; border-radius: 12px;" onclick="switchView('manga')">📚 Archivio Manga / LN</button>
+            <button class="btn btn-libri" style="height:64px; font-size:14px; border-radius: 12px;" onclick="switchView('libri')">📗 Biblioteca Libri</button>
+            <button class="btn btn-cinema" style="height:64px; font-size:14px; border-radius: 12px;" onclick="switchView('cinema')">🎬 Film al Cinema</button>
         </div>
 
         <!-- ================================================================
-             ðŸŽ¬ NUOVO WIDGET: IN CORSO (Anime in Visione & Manga in Lettura)
+             🎬 NUOVO WIDGET: IN CORSO (Anime in Visione & Manga in Lettura)
              Mostra in card cliccabili le opere con flag blu (anime in
              visione) e flag giallo (manga in lettura). Il click apre
              l'overlay di avanzamento corrispondente. Larghezza allineata
@@ -128,23 +129,23 @@
              ================================================================ -->
         <div class="home-progress-widget" id="homeProgressWidget">
             <div class="home-progress-header" id="homeProgressHeader">
-                <span class="home-progress-title">ðŸŽ¬ IN CORSO â€” Anime e Serie TV in Visione &amp; Manga in Lettura</span>
+                <span class="home-progress-title">🎬 IN CORSO — Anime e Serie TV in Visione &amp; Manga in Lettura</span>
                 <div class="home-progress-header-right">
-                    <input type="search" id="widgetInCorsoSearch" class="log-filter-select" placeholder="ðŸ” Ricerca opere..." autocomplete="off" title="Cerca anime, manga o serie TV e apri subito l'overlay di avanzamento" style="max-width:220px;">
+                    <input type="search" id="widgetInCorsoSearch" class="log-filter-select" placeholder="🔍 Ricerca opere..." autocomplete="off" title="Cerca anime, manga o serie TV e apri subito l'overlay di avanzamento" style="max-width:220px;">
                     <span class="home-progress-count" id="homeProgressCount"></span>
-                    <span class="system-log-toggle-icon home-progress-toggle-icon" id="homeProgressToggleIcon">â–¾</span>
+                    <span class="system-log-toggle-icon home-progress-toggle-icon" id="homeProgressToggleIcon">▾</span>
                 </div>
             </div>
             <div class="home-progress-body" id="homeProgressBody">
                 <div id="widgetInCorsoSearchResults" class="widget-search-results" style="display:none;"></div>
-                <div id="homeProgressLoading" class="system-log-loading">â³ Caricamento opere in corso...</div>
+                <div id="homeProgressLoading" class="system-log-loading">⏳ Caricamento opere in corso...</div>
                 <div id="homeProgressList" class="home-progress-list"></div>
-                <div id="homeProgressEmpty" class="system-log-empty" style="display:none;">Nessuna opera attualmente in visione o in lettura. ðŸŽ‰</div>
+                <div id="homeProgressEmpty" class="system-log-empty" style="display:none;">Nessuna opera attualmente in visione o in lettura. 🎉</div>
             </div>
         </div>
 
         <!-- ================================================================
-             ðŸŽŸï¸ NUOVO WIDGET: PROSSIMI AL CINEMA
+             🎟️ NUOVO WIDGET: PROSSIMI AL CINEMA
              Mostra i primi 5 film "da vedere" al cinema (esclusi i promemoria
              streaming), ordinati per data di uscita crescente. Permette di
              segnarli come visti direttamente da qui, con la data di visione
@@ -152,61 +153,61 @@
              ================================================================ -->
         <div class="home-progress-widget collapsed" id="homeCinemaWidget">
             <div class="home-progress-header" id="homeCinemaHeader">
-                <span class="home-progress-title">ðŸŽŸï¸ PROSSIMI AL CINEMA</span>
+                <span class="home-progress-title">🎟️ PROSSIMI AL CINEMA</span>
                 <div class="home-progress-header-right">
                     <span class="home-progress-count" id="homeCinemaCount"></span>
-                    <span class="system-log-toggle-icon home-progress-toggle-icon" id="homeCinemaToggleIcon">â–¾</span>
+                    <span class="system-log-toggle-icon home-progress-toggle-icon" id="homeCinemaToggleIcon">▾</span>
                 </div>
             </div>
             <div class="home-progress-body" id="homeCinemaBody">
-                <div id="homeCinemaLoading" class="system-log-loading">â³ Caricamento film in uscita...</div>
+                <div id="homeCinemaLoading" class="system-log-loading">⏳ Caricamento film in uscita...</div>
                 <div id="homeCinemaList" class="home-progress-list"></div>
-                <div id="homeCinemaEmpty" class="system-log-empty" style="display:none;">Nessun film in arrivo al cinema. ðŸ¿</div>
+                <div id="homeCinemaEmpty" class="system-log-empty" style="display:none;">Nessun film in arrivo al cinema. 🍿</div>
             </div>
         </div>
 
         <!-- ================================================================
-             ðŸ“œ NUOVO WIDGET: LOG DI SISTEMA (Log Storico delle AttivitÃ )
+             📜 NUOVO WIDGET: LOG DI SISTEMA (Log Storico delle Attività)
              Mostra le ultime azioni compiute sulla dashboard, caricate in modo
              asincrono e non bloccante tramite ottieniUltimiLog().
              ================================================================ -->
         <div class="system-log-widget collapsed" id="systemLogWidget">
             <div class="system-log-header" id="systemLogHeader">
-                <span class="system-log-title">âš™ï¸ LOG DI SISTEMA â€” Ultime Azioni</span>
+                <span class="system-log-title">⚙️ LOG DI SISTEMA — Ultime Azioni</span>
                 <div class="system-log-header-right">
                     <div class="system-log-filters" id="systemLogFilters">
-                        <input type="text" id="filterLogTitolo" class="log-filter-select log-filter-input" title="Cerca per titolo" placeholder="ðŸ” Cerca titolo..." autocomplete="off">
+                        <input type="text" id="filterLogTitolo" class="log-filter-select log-filter-input" title="Cerca per titolo" placeholder="🔍 Cerca titolo..." autocomplete="off">
                         <select id="filterLogTipo" class="log-filter-select" title="Filtra per tipo">
                             <option value="all">Tutti i tipi</option>
-                            <option value="ANIME">ðŸ“º Anime</option>
-                            <option value="MANGA">ðŸ“š Manga</option>
-                            <option value="LIBRO">ðŸ“— Libro</option>
-                            <option value="CINEMA">ðŸŽ¬ Cinema</option>
-                            <option value="SERIE_TV">ðŸ“¡ Serie TV</option>
+                            <option value="ANIME">📺 Anime</option>
+                            <option value="MANGA">📚 Manga</option>
+                            <option value="LIBRO">📗 Libro</option>
+                            <option value="CINEMA">🎬 Cinema</option>
+                            <option value="SERIE_TV">📡 Serie TV</option>
                         </select>
                         <select id="filterLogEvento" class="log-filter-select" title="Filtra per azione">
                             <option value="all">Tutte le azioni</option>
-                            <option value="CREAZIONE">ðŸ‘¾ Creazione</option>
-                            <option value="AVANZAMENTO">ðŸ”„ Avanzamento</option>
-                            <option value="COMPLETAMENTO">ðŸ† Completamento</option>
-                            <option value="IN_PARI">âœ… In pari</option>
-                            <option value="VOTO">â­ Voto</option>
-                            <option value="CAMBIO_STATO">ðŸ”€ Cambio stato</option>
-                            <option value="ACQUISTO">ðŸ›’ Acquisto</option>
+                            <option value="CREAZIONE">👾 Creazione</option>
+                            <option value="AVANZAMENTO">🔄 Avanzamento</option>
+                            <option value="COMPLETAMENTO">🏆 Completamento</option>
+                            <option value="IN_PARI">✅ In pari</option>
+                            <option value="VOTO">⭐ Voto</option>
+                            <option value="CAMBIO_STATO">🔀 Cambio stato</option>
+                            <option value="ACQUISTO">🛒 Acquisto</option>
                         </select>
                     </div>
                     <div class="system-log-actions" id="systemLogActions">
-                        <button type="button" id="btnToggleLogOrdine" class="log-icon-btn" title="Inverti ordinamento (dal piÃ¹ vecchio)" data-asc="false">â¬‡ï¸</button>
-                        <button type="button" id="btnResetLogFiltri" class="log-icon-btn" title="Reimposta filtri">â†º</button>
-                        <button type="button" id="btnRefreshLog" class="log-icon-btn" title="Aggiorna log">ðŸ”„</button>
+                        <button type="button" id="btnToggleLogOrdine" class="log-icon-btn" title="Inverti ordinamento (dal più vecchio)" data-asc="false">⬇️</button>
+                        <button type="button" id="btnResetLogFiltri" class="log-icon-btn" title="Reimposta filtri">↺</button>
+                        <button type="button" id="btnRefreshLog" class="log-icon-btn" title="Aggiorna log">🔄</button>
                     </div>
-                    <span class="system-log-toggle-icon" id="systemLogToggleIcon">â–¾</span>
+                    <span class="system-log-toggle-icon" id="systemLogToggleIcon">▾</span>
                 </div>
             </div>
             <div class="system-log-body" id="systemLogBody">
-                <div id="systemLogLoading" class="system-log-loading">â³ Sincronizzazione feed in corso...</div>
+                <div id="systemLogLoading" class="system-log-loading">⏳ Sincronizzazione feed in corso...</div>
                 <ul id="systemLogList" class="system-log-list"></ul>
-                <div id="systemLogEmpty" class="system-log-empty" style="display:none;">Nessuna attivitÃ  registrata finora. Inizia a tracciare le tue opere! ðŸŽ®</div>
+                <div id="systemLogEmpty" class="system-log-empty" style="display:none;">Nessuna attività registrata finora. Inizia a tracciare le tue opere! 🎮</div>
             </div>
         </div>
     </div>
@@ -226,18 +227,18 @@
             <div style="width:1px; background:var(--border-color);"></div>
             <div class="stat-block"><span class="stat-label">Film Guardati</span><span class="stat-value" id="statFilmVisti">-</span></div>
             <div style="width:1px; background:var(--border-color);"></div>
-            <div class="stat-block"><span class="stat-label">ðŸ“º Episodi Visti</span><span class="stat-value" id="statEpisodiVisti">-</span></div>
+            <div class="stat-block"><span class="stat-label">📺 Episodi Visti</span><span class="stat-value" id="statEpisodiVisti">-</span></div>
         </div>
 
         <!-- ================================================================
-             ðŸ“º LINGUETTE: LISTA ANIME <-> LOG EPISODI
+             📺 LINGUETTE: LISTA ANIME <-> LOG EPISODI
              Switch tra la vista classica a tabella e il log storico dei
              singoli episodi segnati/tolti (ultimi 100), senza toccare in
              alcun modo il widget "Log di Sistema" della Home.
              ================================================================ -->
         <div class="subview-tabs">
-            <button type="button" class="subview-tab active" id="tabAnimeLista" data-subview="lista" onclick="switchAnimeSubview('lista')">ðŸ“‹ Lista Anime</button>
-            <button type="button" class="subview-tab" id="tabAnimeLog" data-subview="log" onclick="switchAnimeSubview('log')">ðŸ•˜ Log Episodi</button>
+            <button type="button" class="subview-tab active" id="tabAnimeLista" data-subview="lista" onclick="switchAnimeSubview('lista')">📋 Lista Anime</button>
+            <button type="button" class="subview-tab" id="tabAnimeLog" data-subview="log" onclick="switchAnimeSubview('log')">🕘 Log Episodi</button>
         </div>
 
         <div id="animePaneLista">
@@ -246,19 +247,19 @@
 			
 			<div class="filter-group" id="filterGroupPreferitiAnime">
 			<button class="filter-btn active" data-fav="all">Tutti</button>
-			<button class="filter-btn" data-fav="yes">â­ Preferiti</button>
+			<button class="filter-btn" data-fav="yes">⭐ Preferiti</button>
 			</div>
             
             <!-- FINESTRA FLUTTUANTE FILTRO GENERI ANIME -->
             <div class="dropdown-container">
-                <button id="btnToggleGenresAnime" class="btn btn-nav" style="border: 1px solid var(--border-color);">ðŸŽ­ Filtra Generi (<span id="badgeGenresAnimeCount">0</span>)</button>
+                <button id="btnToggleGenresAnime" class="btn btn-nav" style="border: 1px solid var(--border-color);">🎭 Filtra Generi (<span id="badgeGenresAnimeCount">0</span>)</button>
                 <div id="dropdownGenresAnime" class="dropdown-genres"></div>
             </div>
 
             <select id="sortSelAnime">
                 <option value="title-asc">Titolo A-Z</option>
                 <option value="title-desc">Titolo Z-A</option>
-                <option value="rating-desc">Voto piÃ¹ alto</option>
+                <option value="rating-desc">Voto più alto</option>
             </select>
             <input type="number" id="numFilterAnimeVotoMin" placeholder="Voto Min" style="width:90px;">
             <input type="number" id="numFilterAnimeStagioniEsatte" placeholder="Stagioni Esatte" style="width:120px;">
@@ -276,10 +277,10 @@
 				<button class="filter-btn" data-vision="celeste">In Visione</button>
 				<button class="filter-btn" data-vision="giallo">In Pari</button>
 				<button class="filter-btn" data-vision="verde">Completato</button>
-				<button class="filter-btn" data-vision="rosso">â›” Abbandonati</button>
+				<button class="filter-btn" data-vision="rosso">⛔ Abbandonati</button>
 			</div>
 
-            <button type="button" id="btnResetFiltriAnime" class="btn-reset-filters">â†º Reset Filtri</button>
+            <button type="button" id="btnResetFiltriAnime" class="btn-reset-filters">↺ Reset Filtri</button>
             <span id="countAnime" class="filter-count"></span>
         </div>
 
@@ -304,7 +305,7 @@
         <!-- fine #animePaneLista -->
 
         <!-- ================================================================
-             ðŸ•˜ NUOVO: LOG EPISODI (Tab_LogEpisodi)
+             🕘 NUOVO: LOG EPISODI (Tab_LogEpisodi)
              Log storico dei singoli episodi segnati/tolti tramite l'overlay
              episodi. Filtri di testata + inversione ordinamento + reset +
              refresh, sullo stesso "linguaggio visivo" del Log di Sistema
@@ -312,27 +313,27 @@
              ================================================================ -->
         <div id="animePaneLog" style="display:none;">
             <div class="filter-bar" id="episodiLogFilters">
-                <input type="text" id="filterEpLogTitolo" placeholder="ðŸ” Cerca titolo..." autocomplete="off">
+                <input type="text" id="filterEpLogTitolo" placeholder="🔍 Cerca titolo..." autocomplete="off">
                 <select id="filterEpLogTipo" title="Filtra per tipo">
                     <option value="all">Stagioni e Film</option>
-                    <option value="Stagione">ðŸŽžï¸ Stagioni</option>
-                    <option value="Film">ðŸŽ¬ Film</option>
+                    <option value="Stagione">🎞️ Stagioni</option>
+                    <option value="Film">🎬 Film</option>
                 </select>
                 <select id="filterEpLogAzione" title="Filtra per azione">
                     <option value="all">Tutte le azioni</option>
-                    <option value="VISTO">âœ… Visto</option>
-                    <option value="RIMOSSO">â†©ï¸ Rimosso</option>
+                    <option value="VISTO">✅ Visto</option>
+                    <option value="RIMOSSO">↩️ Rimosso</option>
                 </select>
                 <input type="date" id="filterEpLogDal" title="Dal">
                 <input type="date" id="filterEpLogAl" title="Al">
 
-                <button type="button" id="btnToggleEpLogOrdine" class="log-icon-btn" title="Inverti ordinamento (dal piÃ¹ vecchio)" data-asc="false" style="width:auto; padding:8px 12px;">â¬‡ï¸ Recenti</button>
-                <button type="button" id="btnResetEpLogFiltri" class="btn-reset-filters">â†º Reset Filtri</button>
-                <button type="button" id="btnRefreshEpLog" class="log-icon-btn" title="Aggiorna log" style="width:34px; height:34px;">ðŸ”„</button>
+                <button type="button" id="btnToggleEpLogOrdine" class="log-icon-btn" title="Inverti ordinamento (dal più vecchio)" data-asc="false" style="width:auto; padding:8px 12px;">⬇️ Recenti</button>
+                <button type="button" id="btnResetEpLogFiltri" class="btn-reset-filters">↺ Reset Filtri</button>
+                <button type="button" id="btnRefreshEpLog" class="log-icon-btn" title="Aggiorna log" style="width:34px; height:34px;">🔄</button>
                 <span id="countEpLog" class="filter-count"></span>
             </div>
 
-            <div id="loadingEpisodiLog" style="color:var(--warning); padding:20px; font-weight:600;">â³ Caricamento log episodi...</div>
+            <div id="loadingEpisodiLog" style="color:var(--warning); padding:20px; font-weight:600;">⏳ Caricamento log episodi...</div>
 
             <div class="table-container">
                 <table id="episodiLogTable" style="display:none;">
@@ -348,10 +349,10 @@
                     <tbody id="episodiLogTableBody"></tbody>
                 </table>
             </div>
-            <div id="episodiLogEmpty" class="system-log-empty" style="display:none; text-align:left; padding:16px 4px;">Nessun episodio registrato finora. ðŸ“º</div>
+            <div id="episodiLogEmpty" class="system-log-empty" style="display:none; text-align:left; padding:16px 4px;">Nessun episodio registrato finora. 📺</div>
 
             <div class="episodi-log-footer">
-                <span>â— Mostrate al massimo le ultime 100 voci</span>
+                <span>◁ Mostrate al massimo le ultime 100 voci</span>
             </div>
         </div>
     </div>
@@ -360,7 +361,7 @@
     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 10px;">
         <h2 style="margin:0; font-size:24px; font-weight:700;">Catalogo Serie TV</h2>
         <div style="display: flex; gap: 10px;">
-            <button id="btnAggiornaTutteSerieTv" class="btn btn-serietv" onclick="aggiornaTutteSerieTvDaTMDB()" title="Cerca nuove stagioni su TMDB per tutte le serie non concluse">ðŸ”„ Aggiorna tutte</button>
+            <button id="btnAggiornaTutteSerieTv" class="btn btn-serietv" onclick="aggiornaTutteSerieTvDaTMDB()" title="Cerca nuove stagioni su TMDB per tutte le serie non concluse">🔄 Aggiorna tutte</button>
             <button id="btnNuovaSerieTv" class="btn btn-serietv">+ Nuova Serie TV</button>
         </div>
     </div>
@@ -370,20 +371,20 @@
             <div style="width:1px; background:var(--border-color);"></div>
             <div class="stat-block"><span class="stat-label">Stagioni Viste</span><span class="stat-value" id="statSerieTvStagioniViste">-</span></div>
             <div style="width:1px; background:var(--border-color);"></div>
-            <div class="stat-block"><span class="stat-label">ðŸ“¡ Episodi Visti</span><span class="stat-value" id="statSerieTvEpisodiVisti">-</span></div>
+            <div class="stat-block"><span class="stat-label">📡 Episodi Visti</span><span class="stat-value" id="statSerieTvEpisodiVisti">-</span></div>
             <div style="width:1px; background:var(--border-color);"></div>
             <div class="stat-block"><span class="stat-label">Serie Completate</span><span class="stat-value" id="statSerieTvCompletate">-</span></div>
         </div>
 
         <!-- ================================================================
-             ðŸ“¡ LINGUETTE: LISTA SERIE TV <-> LOG EPISODI
+             📡 LINGUETTE: LISTA SERIE TV <-> LOG EPISODI
              Stesso meccanismo della vista Anime: switch tra la tabella e il
              log storico dei singoli episodi segnati/tolti (ultimi 100), senza
              toccare il widget "Log di Sistema" della Home.
              ================================================================ -->
         <div class="subview-tabs">
-            <button type="button" class="subview-tab active" id="tabSerieTvLista" data-subview="lista" onclick="switchSerieTvSubview('lista')">ðŸ“‹ Lista Serie TV</button>
-            <button type="button" class="subview-tab" id="tabSerieTvLog" data-subview="log" onclick="switchSerieTvSubview('log')">ðŸ•˜ Log Episodi</button>
+            <button type="button" class="subview-tab active" id="tabSerieTvLista" data-subview="lista" onclick="switchSerieTvSubview('lista')">📋 Lista Serie TV</button>
+            <button type="button" class="subview-tab" id="tabSerieTvLog" data-subview="log" onclick="switchSerieTvSubview('log')">🕘 Log Episodi</button>
         </div>
 
         <div id="serietvPaneLista">
@@ -392,12 +393,12 @@
 
 			<div class="filter-group" id="filterGroupPreferitiSerieTv">
 			<button class="filter-btn active" data-fav="all">Tutti</button>
-			<button class="filter-btn" data-fav="yes">â­ Preferiti</button>
+			<button class="filter-btn" data-fav="yes">⭐ Preferiti</button>
 			</div>
 
             <!-- FINESTRA FLUTTUANTE FILTRO GENERI SERIE TV (lista fissa TMDB, come Cinema) -->
             <div class="dropdown-container">
-                <button id="btnToggleGenresSerieTv" class="btn btn-nav" style="border: 1px solid var(--border-color);">ðŸŽ­ Filtra Generi (<span id="badgeGenresSerieTvCount">0</span>)</button>
+                <button id="btnToggleGenresSerieTv" class="btn btn-nav" style="border: 1px solid var(--border-color);">🎭 Filtra Generi (<span id="badgeGenresSerieTvCount">0</span>)</button>
                 <div id="dropdownGenresSerieTv" class="dropdown-genres"></div>
             </div>
 
@@ -419,10 +420,10 @@
 				<button class="filter-btn" data-vision="celeste">In Visione</button>
 				<button class="filter-btn" data-vision="giallo">In Pari</button>
 				<button class="filter-btn" data-vision="verde">Completato</button>
-				<button class="filter-btn" data-vision="rosso">â›” Abbandonate</button>
+				<button class="filter-btn" data-vision="rosso">⛔ Abbandonate</button>
 			</div>
 
-            <button type="button" id="btnResetFiltriSerieTv" class="btn-reset-filters">â†º Reset Filtri</button>
+            <button type="button" id="btnResetFiltriSerieTv" class="btn-reset-filters">↺ Reset Filtri</button>
             <span id="countSerieTv" class="filter-count"></span>
         </div>
 
@@ -446,27 +447,27 @@
         <!-- fine #serietvPaneLista -->
 
         <!-- ================================================================
-             ðŸ•˜ LOG EPISODI SERIE TV (stessa tabella log_episodi degli anime:
+             🕘 LOG EPISODI SERIE TV (stessa tabella log_episodi degli anime:
              solo righe di tipo 'Stagione', quindi niente filtro per tipo).
              ================================================================ -->
         <div id="serietvPaneLog" style="display:none;">
             <div class="filter-bar" id="stagioniLogFilters">
-                <input type="text" id="filterStagioniLogTitolo" placeholder="ðŸ” Cerca titolo..." autocomplete="off">
+                <input type="text" id="filterStagioniLogTitolo" placeholder="🔍 Cerca titolo..." autocomplete="off">
                 <select id="filterStagioniLogAzione" title="Filtra per azione">
                     <option value="all">Tutte le azioni</option>
-                    <option value="VISTO">âœ… Visto</option>
-                    <option value="RIMOSSO">â†©ï¸ Rimosso</option>
+                    <option value="VISTO">✅ Visto</option>
+                    <option value="RIMOSSO">↩️ Rimosso</option>
                 </select>
                 <input type="date" id="filterStagioniLogDal" title="Dal">
                 <input type="date" id="filterStagioniLogAl" title="Al">
 
-                <button type="button" id="btnToggleStagioniLogOrdine" class="log-icon-btn" title="Inverti ordinamento (dal piÃ¹ vecchio)" data-asc="false" style="width:auto; padding:8px 12px;">â¬‡ï¸ Recenti</button>
-                <button type="button" id="btnResetStagioniLogFiltri" class="btn-reset-filters">â†º Reset Filtri</button>
-                <button type="button" id="btnRefreshStagioniLog" class="log-icon-btn" title="Aggiorna log" style="width:34px; height:34px;">ðŸ”„</button>
+                <button type="button" id="btnToggleStagioniLogOrdine" class="log-icon-btn" title="Inverti ordinamento (dal più vecchio)" data-asc="false" style="width:auto; padding:8px 12px;">⬇️ Recenti</button>
+                <button type="button" id="btnResetStagioniLogFiltri" class="btn-reset-filters">↺ Reset Filtri</button>
+                <button type="button" id="btnRefreshStagioniLog" class="log-icon-btn" title="Aggiorna log" style="width:34px; height:34px;">🔄</button>
                 <span id="countStagioniLog" class="filter-count"></span>
             </div>
 
-            <div id="loadingStagioniLog" style="color:var(--warning); padding:20px; font-weight:600;">â³ Caricamento log episodi...</div>
+            <div id="loadingStagioniLog" style="color:var(--warning); padding:20px; font-weight:600;">⏳ Caricamento log episodi...</div>
 
             <div class="table-container">
                 <table id="stagioniLogTable" style="display:none;">
@@ -482,10 +483,10 @@
                     <tbody id="stagioniLogTableBody"></tbody>
                 </table>
             </div>
-            <div id="stagioniLogEmpty" class="system-log-empty" style="display:none; text-align:left; padding:16px 4px;">Nessun episodio registrato finora. ðŸ“¡</div>
+            <div id="stagioniLogEmpty" class="system-log-empty" style="display:none; text-align:left; padding:16px 4px;">Nessun episodio registrato finora. 📡</div>
 
             <div class="episodi-log-footer">
-                <span>â— Mostrate al massimo le ultime 100 voci</span>
+                <span>◁ Mostrate al massimo le ultime 100 voci</span>
             </div>
         </div>
     </div>
@@ -507,19 +508,19 @@
 
             			<div class="filter-group" id="filterGroupPreferitiManga">
                     <button class="filter-btn active" data-fav="all">Tutti</button>
-                    <button class="filter-btn" data-fav="yes">â­ Preferiti</button>
+                    <button class="filter-btn" data-fav="yes">⭐ Preferiti</button>
                     </div>
 
             <!-- FINESTRA FLUTTUANTE FILTRO GENERI MANGA -->
             <div class="dropdown-container">
-                <button id="btnToggleGenresManga" class="btn btn-nav" style="border: 1px solid var(--border-color);">ðŸŽ­ Filtra Generi (<span id="badgeGenresMangaCount">0</span>)</button>
+                <button id="btnToggleGenresManga" class="btn btn-nav" style="border: 1px solid var(--border-color);">🎭 Filtra Generi (<span id="badgeGenresMangaCount">0</span>)</button>
                 <div id="dropdownGenresManga" class="dropdown-genres"></div>
             </div>
 
             <select id="sortSelManga">
                 <option value="title-asc">Titolo A-Z</option>
                 <option value="title-desc">Titolo Z-A</option>
-                <option value="volumes-desc">PiÃ¹ Volumi</option>
+                <option value="volumes-desc">Più Volumi</option>
                 <option value="volumes-asc">Meno Volumi</option>
             </select>
             <input type="number" id="numFilterMangaVolumiMin" placeholder="Volumi Min" style="width:100px;">
@@ -538,7 +539,7 @@
             </div>
             <div class="filter-group" id="filterGroupAcquistatoManga">
                 <button class="filter-btn active" data-buy="all">Acquisti</button>
-                <button class="filter-btn" data-buy="SÃ¬">SÃ¬</button>
+                <button class="filter-btn" data-buy="Sì">Sì</button>
                 <button class="filter-btn" data-buy="No">No</button>
             </div>
             <div class="filter-group" id="filterGroupLetturaManga">
@@ -548,7 +549,7 @@
                 <button class="filter-btn" data-read="verde">Letto</button>
             </div>
 
-            <button type="button" id="btnResetFiltriManga" class="btn-reset-filters">â†º Reset Filtri</button>
+            <button type="button" id="btnResetFiltriManga" class="btn-reset-filters">↺ Reset Filtri</button>
             <span id="countManga" class="filter-count"></span>
         </div>
 
@@ -575,7 +576,7 @@
     </div>
 
     <!-- ================================================================
-         ðŸ“— VIEW LIBRI (Richiesta 35)
+         📗 VIEW LIBRI (Richiesta 35)
          Stessa struttura della view Manga, semplificata come deciso:
          niente pagine/voto/acquistato, solo stati Da leggere / Letto /
          Abbandonato + saga Livello 1 (saga_nome + saga_numero a mano,
@@ -583,7 +584,7 @@
          ================================================================ -->
     <div id="libriView" class="view-container" style="display: none;">
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 10px;">
-            <h2 style="margin:0; font-size:24px; font-weight:700;">ðŸ“— Biblioteca Libri</h2>
+            <h2 style="margin:0; font-size:24px; font-weight:700;">📗 Biblioteca Libri</h2>
             <button id="btnNuovoLibro" class="btn btn-libri">+ Nuovo Libro</button>
         </div>
 
@@ -600,12 +601,12 @@
 
             <div class="filter-group" id="filterGroupPreferitiLibri">
                 <button class="filter-btn active" data-fav="all">Tutti</button>
-                <button class="filter-btn" data-fav="yes">â­ Preferiti</button>
+                <button class="filter-btn" data-fav="yes">⭐ Preferiti</button>
             </div>
 
             <!-- FINESTRA FLUTTUANTE FILTRO GENERI LIBRI -->
             <div class="dropdown-container">
-                <button id="btnToggleGenresLibri" class="btn btn-nav" style="border: 1px solid var(--border-color);">ðŸŽ­ Filtra Generi (<span id="badgeGenresLibriCount">0</span>)</button>
+                <button id="btnToggleGenresLibri" class="btn btn-nav" style="border: 1px solid var(--border-color);">🎭 Filtra Generi (<span id="badgeGenresLibriCount">0</span>)</button>
                 <div id="dropdownGenresLibri" class="dropdown-genres"></div>
             </div>
 
@@ -613,8 +614,8 @@
                 <option value="title-asc">Titolo A-Z</option>
                 <option value="title-desc">Titolo Z-A</option>
                 <option value="autore-asc">Autore A-Z</option>
-                <option value="anno-desc">Anno piÃ¹ recente</option>
-                <option value="anno-asc">Anno piÃ¹ vecchio</option>
+                <option value="anno-desc">Anno più recente</option>
+                <option value="anno-asc">Anno più vecchio</option>
                 <option value="saga-asc">Saga (nome + n.)</option>
             </select>
 
@@ -625,9 +626,9 @@
                 <button class="filter-btn" data-stato="Abbandonato">Abbandonato</button>
             </div>
 
-            <input type="search" id="searchSagaLibri" placeholder="ðŸ” Filtra saga..." style="max-width:170px;" autocomplete="off">
+            <input type="search" id="searchSagaLibri" placeholder="🔍 Filtra saga..." style="max-width:170px;" autocomplete="off">
 
-            <button type="button" id="btnResetFiltriLibri" class="btn-reset-filters">â†º Reset Filtri</button>
+            <button type="button" id="btnResetFiltriLibri" class="btn-reset-filters">↺ Reset Filtri</button>
             <span id="countLibri" class="filter-count"></span>
         </div>
 
@@ -651,7 +652,7 @@
 
     <div id="cinemaView" class="view-container" style="display: none;">
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 10px;">
-            <h2 style="margin:0; font-size:24px; font-weight:700;">ðŸŽ¬ Film al Cinema</h2>
+            <h2 style="margin:0; font-size:24px; font-weight:700;">🎬 Film al Cinema</h2>
             <button id="btnNuovoCinema" class="btn btn-cinema">+ Nuovo Film</button>
         </div>
 
@@ -665,16 +666,16 @@
 
         <div class="filter-bar">
             <input type="search" id="searchInpCinema" placeholder="Cerca titolo...">
-            <!-- Lo switch Al Cinema / Streaming non sta piÃ¹ qui: Ã¨ diventato il
+            <!-- Lo switch Al Cinema / Streaming non sta più qui: è diventato il
                  pulsantino nella testata del widget "Da Vedere" (vedi sotto). -->
 
             <!-- FINESTRA FLUTTUANTE FILTRO GENERI CINEMA -->
             <div class="dropdown-container">
-                <button id="btnToggleGenresCinema" class="btn btn-nav" style="border: 1px solid var(--border-color);">ðŸŽ­ Filtra Generi (<span id="badgeGenresCinemaCount">0</span>)</button>
+                <button id="btnToggleGenresCinema" class="btn btn-nav" style="border: 1px solid var(--border-color);">🎭 Filtra Generi (<span id="badgeGenresCinemaCount">0</span>)</button>
                 <div id="dropdownGenresCinema" class="dropdown-genres"></div>
             </div>
 
-            <button type="button" id="btnResetFiltriCinema" class="btn-reset-filters">â†º Reset Filtri</button>
+            <button type="button" id="btnResetFiltriCinema" class="btn-reset-filters">↺ Reset Filtri</button>
             <span id="countCinema" class="filter-count"></span>
         </div>
 
@@ -683,7 +684,7 @@
         <div id="cinemaContent" style="display:none;">
 
             <!--
-                 ðŸŽ¯ WIDGET "DA VEDERE" â€” aperto di default.
+                 🎯 WIDGET "DA VEDERE" — aperto di default.
                  Contiene due pannelli affiancati (sala / streaming) che scorrono
                  orizzontalmente al click sul pulsantino di switch nella testata.
                  Ogni pannello mostra al massimo 5 righe, poi scorre in verticale.
@@ -691,18 +692,18 @@
             <div class="stats-widget cinema-widget" id="cinemaWidgetDaVedere">
                 <div class="stats-widget-header" onclick="toggleStatsWidget('cinemaWidgetDaVedere')">
                     <div class="stats-widget-title-wrap">
-                        <span class="stats-widget-title" id="cinemaWidgetDaVedereTitolo">ðŸŽ¯ Da Vedere al Cinema</span>
-                        <span class="stats-widget-subtitle" id="cinemaWidgetDaVedereSub">I film che ti aspettano in sala, dal piÃ¹ vicino all'uscita.</span>
+                        <span class="stats-widget-title" id="cinemaWidgetDaVedereTitolo">🎯 Da Vedere al Cinema</span>
+                        <span class="stats-widget-subtitle" id="cinemaWidgetDaVedereSub">I film che ti aspettano in sala, dal più vicino all'uscita.</span>
                     </div>
                     <div class="cinema-widget-header-right">
                         <span class="home-progress-count" id="cinemaWidgetDaVedereCount"></span>
                         <!-- Lo switch vive dentro una testata cliccabile: gli handler
                              fermano la propagazione per non aprire/chiudere il widget. -->
                         <div class="cinema-mode-switch" id="cinemaModeSwitch" data-modalita="cinema" onclick="event.stopPropagation();">
-                            <button type="button" class="cinema-mode-opt active" data-modalita="cinema" title="Mostra i film da vedere al cinema">ðŸŽ¬ Sala</button>
-                            <button type="button" class="cinema-mode-opt" data-modalita="streaming" title="Mostra i film da vedere in streaming">ðŸ“º Streaming</button>
+                            <button type="button" class="cinema-mode-opt active" data-modalita="cinema" title="Mostra i film da vedere al cinema">🎬 Sala</button>
+                            <button type="button" class="cinema-mode-opt" data-modalita="streaming" title="Mostra i film da vedere in streaming">📺 Streaming</button>
                         </div>
-                        <span class="stats-widget-toggle-icon">â–¾</span>
+                        <span class="stats-widget-toggle-icon">▾</span>
                     </div>
                 </div>
                 <div class="stats-widget-body">
@@ -764,20 +765,20 @@
                 </div>
             </div>
 
-            <!-- âœ… WIDGET "VISTI" â€” chiuso di default, con slider sala/streaming -->
+            <!-- ✅ WIDGET "VISTI" — chiuso di default, con slider sala/streaming -->
             <div class="stats-widget cinema-widget collapsed" id="cinemaWidgetVisti">
                 <div class="stats-widget-header" onclick="toggleStatsWidget('cinemaWidgetVisti')">
                     <div class="stats-widget-title-wrap">
-                        <span class="stats-widget-title">âœ… Visti</span>
-                        <span class="stats-widget-subtitle" id="cinemaWidgetVistiSub">Lo storico dei film giÃ  visti in sala, dal piÃ¹ recente.</span>
+                        <span class="stats-widget-title">✅ Visti</span>
+                        <span class="stats-widget-subtitle" id="cinemaWidgetVistiSub">Lo storico dei film già visti in sala, dal più recente.</span>
                     </div>
                     <div class="cinema-widget-header-right">
                         <span class="home-progress-count" id="cinemaWidgetVistiCount"></span>
                         <div class="cinema-mode-switch" id="cinemaModeSwitchVisti" data-modalita="cinema" onclick="event.stopPropagation();">
-                            <button type="button" class="cinema-mode-opt active" data-modalita="cinema" title="Mostra i film visti al cinema">ðŸŽ¬ Sala</button>
-                            <button type="button" class="cinema-mode-opt" data-modalita="streaming" title="Mostra i film visti in streaming">ðŸ“º Streaming</button>
+                            <button type="button" class="cinema-mode-opt active" data-modalita="cinema" title="Mostra i film visti al cinema">🎬 Sala</button>
+                            <button type="button" class="cinema-mode-opt" data-modalita="streaming" title="Mostra i film visti in streaming">📺 Streaming</button>
                         </div>
-                        <span class="stats-widget-toggle-icon">â–¾</span>
+                        <span class="stats-widget-toggle-icon">▾</span>
                     </div>
                 </div>
                 <div class="stats-widget-body">
@@ -853,7 +854,7 @@
                     <label>Titolo *</label>
                     <div style="display:flex; gap:6px;">
                         <input type="search" id="inpTitoloSerieTv" required style="flex:1;">
-                        <button type="button" class="btn" style="padding:0 12px; white-space:nowrap;" onclick="cercaSerieTvTMDB()" title="Cerca titolo, copertina e stagioni su TMDB">ðŸ”Ž TMDB</button>
+                        <button type="button" class="btn" style="padding:0 12px; white-space:nowrap;" onclick="cercaSerieTvTMDB()" title="Cerca titolo, copertina e stagioni su TMDB">🔎 TMDB</button>
                     </div>
                 </div>
                 <div id="serieTvCandidatiWrapper"></div>
@@ -867,7 +868,7 @@
                     </select>
                 </div>
                 <div class="form-group"><label>Stagioni Totali</label><input type="number" id="inpStagioniTotaliSerieTv" min="0"></div>
-                <div class="form-group"><label>Stagioni Viste <span style="font-weight:normal; color:var(--text-muted); font-size:11px;">(calcolate automaticamente dagli episodi ðŸ“¡)</span></label><input type="number" id="inpStagioniVisteSerieTv" min="0" readonly disabled style="opacity:0.6; cursor:not-allowed;"></div>
+                <div class="form-group"><label>Stagioni Viste <span style="font-weight:normal; color:var(--text-muted); font-size:11px;">(calcolate automaticamente dagli episodi 📡)</span></label><input type="number" id="inpStagioniVisteSerieTv" min="0" readonly disabled style="opacity:0.6; cursor:not-allowed;"></div>
                 <div class="form-group">
                     <label>Generi (da TMDB)</label>
                     <input type="text" id="inpGeneriSerieTv" readonly disabled style="opacity:0.7; cursor:not-allowed;" placeholder="Compilati in automatico scegliendo un titolo da TMDB">
@@ -875,16 +876,16 @@
                 <div class="form-group">
                     <label style="display:flex; align-items:center; gap:8px; cursor:pointer;">
                         <input type="checkbox" id="inpGiaVistaSerieTv" style="width:16px; height:16px;">
-                        <span>ðŸ“¡ Serie giÃ  vista per intero</span>
+                        <span>📡 Serie già vista per intero</span>
                     </label>
-                    <small style="color:var(--text-muted);">Se spuntato, al salvataggio chiede conferma e segna come visti tutti gli episodi delle stagioni inserite. Togliere la spunta non azzera gli episodi giÃ  visti.</small>
+                    <small style="color:var(--text-muted);">Se spuntato, al salvataggio chiede conferma e segna come visti tutti gli episodi delle stagioni inserite. Togliere la spunta non azzera gli episodi già visti.</small>
                 </div>
                 <div class="form-group">
                     <label style="display:flex; align-items:center; gap:8px; cursor:pointer;">
                         <input type="checkbox" id="inpAbbandonataSerieTv" style="width:16px; height:16px;">
-                        <span>â›” Serie abbandonata</span>
+                        <span>⛔ Serie abbandonata</span>
                     </label>
-                    <small style="color:var(--text-muted);">Se spuntato, la serie esce dal widget "In Corso" e il flag visione diventa rosso, ma il progresso resta salvato. Esclude "giÃ  vista". Non disponibile sulle serie completate (verdi).</small>
+                    <small style="color:var(--text-muted);">Se spuntato, la serie esce dal widget "In Corso" e il flag visione diventa rosso, ma il progresso resta salvato. Esclude "già vista". Non disponibile sulle serie completate (verdi).</small>
                 </div>
                 <div class="form-group"><label>Note</label><textarea id="inpNoteSerieTv" rows="2"></textarea></div>
                 <div class="form-group"><label>URL Immagine / Avatar</label><input type="url" id="inpImmagineSerieTv" placeholder="Inserisci il link dell'immagine (es. https://...)"></div>
@@ -900,7 +901,7 @@
     <div class="modal-overlay" id="modalOverlayBulkSerieTv">
         <div class="modal" style="max-width: 620px;">
             <div class="modal-header">
-                <h2 id="bulkSerieTvModalTitle" style="font-size:18px;">ðŸ”„ Nuove stagioni da TMDB</h2>
+                <h2 id="bulkSerieTvModalTitle" style="font-size:18px;">🔄 Nuove stagioni da TMDB</h2>
                 <button class="close-modal" onclick="chiudiModaleBulkSerieTv()">&times;</button>
             </div>
             <div id="bulkSerieTvListContainer" class="overlay-lista" style="max-height: 60vh; overflow-y: auto; padding-right: 4px;"></div>
@@ -910,7 +911,7 @@
                     <button type="button" class="btn btn-nav" onclick="bulkSerieTvSelezionaTutto(false)">Nessuna</button>
                 </div>
                 <button type="button" class="btn btn-danger" onclick="chiudiModaleBulkSerieTv()">Annulla</button>
-                <button type="button" class="btn btn-serietv" id="btnSalvaBulkSerieTv" onclick="salvaBulkSerieTvTMDB_()">âœ… Aggiungi selezionate</button>
+                <button type="button" class="btn btn-serietv" id="btnSalvaBulkSerieTv" onclick="salvaBulkSerieTvTMDB_()">✅ Aggiungi selezionate</button>
             </div>
         </div>
     </div>
@@ -920,11 +921,11 @@
     <div class="modal-overlay" id="modalOverlayStagioniSerieTv">
         <div class="modal" style="max-width: 560px;">
             <div class="modal-header">
-                <h2 id="stagioniSerieTvModalTitle" style="font-size:18px;">ðŸ“º Stagioni</h2>
+                <h2 id="stagioniSerieTvModalTitle" style="font-size:18px;">📺 Stagioni</h2>
                 <button class="close-modal" onclick="chiudiModaleStagioniSerieTv()">&times;</button>
             </div>
             <!-- Copertina (a sinistra) + elenco stagioni (a destra). La
-                 copertina Ã¨ popolata solo quando l'overlay Ã¨ aperto dal widget
+                 copertina è popolata solo quando l'overlay è aperto dal widget
                  "In Corso" della Home, altrimenti resta nascosta. -->
             <div class="overlay-con-copertina">
                 <div id="stagioniSerieTvCopertina" class="overlay-copertina" style="display:none;"></div>
@@ -937,12 +938,12 @@
     <div class="modal-overlay" id="modalOverlayVotoAnime">
         <div class="modal" style="max-width: 420px;">
             <div class="modal-header">
-                <h2 id="votoAnimeModalTitle" style="font-size:18px;">â­ Assegna voto</h2>
+                <h2 id="votoAnimeModalTitle" style="font-size:18px;">⭐ Assegna voto</h2>
                 <button class="close-modal" onclick="chiudiModaleVotoAnime()">&times;</button>
             </div>
             <div id="votoAnimeGrid"></div>
             <div style="display:flex; align-items:baseline; gap:10px; margin:12px 0;">
-                <span style="font-size:34px; font-weight:800; color:var(--primary); font-family:'Courier New',monospace;" id="votoAnimeValore">â€“</span>
+                <span style="font-size:34px; font-weight:800; color:var(--primary); font-family:'Courier New',monospace;" id="votoAnimeValore">–</span>
                 <span style="color:var(--text-muted); font-size:12px;">tocca un valore da 0.5 a 10, poi conferma</span>
             </div>
             <div class="modal-footer">
@@ -964,7 +965,7 @@
                     <label>Titolo *</label>
                     <div style="display:flex; gap:6px;">
                         <input type="search" id="inpTitoloAnime" required style="flex:1;">
-                        <button type="button" class="btn" style="padding:0 12px; white-space:nowrap;" onclick="apriRicercaAniList('anime')" title="Cerca sinossi e copertina su AniList">ðŸ”Ž AniList</button>
+                        <button type="button" class="btn" style="padding:0 12px; white-space:nowrap;" onclick="apriRicercaAniList('anime')" title="Cerca sinossi e copertina su AniList">🔎 AniList</button>
                     </div>
                 </div>
                 <div class="form-group">
@@ -977,9 +978,9 @@
                     </select>
                 </div>
                 <div class="form-group"><label>Stagioni Totali</label><input type="number" id="inpStagioniTotaliAnime" min="0"></div>
-                <div class="form-group"><label>Stagioni Viste <span style="font-weight:normal; color:var(--text-muted); font-size:11px;">(calcolate automaticamente dagli episodi ðŸ“º)</span></label><input type="number" id="inpStagioniVisteAnime" min="0" readonly disabled style="opacity:0.6; cursor:not-allowed;"></div>
+                <div class="form-group"><label>Stagioni Viste <span style="font-weight:normal; color:var(--text-muted); font-size:11px;">(calcolate automaticamente dagli episodi 📺)</span></label><input type="number" id="inpStagioniVisteAnime" min="0" readonly disabled style="opacity:0.6; cursor:not-allowed;"></div>
                 <div class="form-group"><label>Film Totali</label><input type="number" id="inpFilmTotaliAnime" min="0"></div>
-                <div class="form-group"><label>Film Visti <span style="font-weight:normal; color:var(--text-muted); font-size:11px;">(calcolati automaticamente dagli episodi ðŸ“º)</span></label><input type="number" id="inpFilmVistiAnime" min="0" readonly disabled style="opacity:0.6; cursor:not-allowed;"></div>
+                <div class="form-group"><label>Film Visti <span style="font-weight:normal; color:var(--text-muted); font-size:11px;">(calcolati automaticamente dagli episodi 📺)</span></label><input type="number" id="inpFilmVistiAnime" min="0" readonly disabled style="opacity:0.6; cursor:not-allowed;"></div>
                 <div class="form-group"><label>Valutazione (Voto)</label><input type="number" id="inpValutazioneAnime" min="0" max="10" step="0.5"></div>
                 
                 <div class="form-group">
@@ -990,16 +991,16 @@
                 <div class="form-group">
                     <label style="display:flex; align-items:center; gap:8px; cursor:pointer;">
                         <input type="checkbox" id="inpGiaVistoAnime" style="width:16px; height:16px;">
-                        <span>ðŸ“º Anime giÃ  visto per intero</span>
+                        <span>📺 Anime già visto per intero</span>
                     </label>
-                    <small style="color:var(--text-muted);">Se spuntato, al salvataggio chiede conferma e segna come visti tutti gli episodi di stagioni e film inseriti. Togliere la spunta non azzera gli episodi giÃ  visti.</small>
+                    <small style="color:var(--text-muted);">Se spuntato, al salvataggio chiede conferma e segna come visti tutti gli episodi di stagioni e film inseriti. Togliere la spunta non azzera gli episodi già visti.</small>
                 </div>
                 <div class="form-group">
                     <label style="display:flex; align-items:center; gap:8px; cursor:pointer;">
                         <input type="checkbox" id="inpAbbandonataAnime" style="width:16px; height:16px;">
-                        <span>â›” Anime abbandonato</span>
+                        <span>⛔ Anime abbandonato</span>
                     </label>
-                    <small style="color:var(--text-muted);">Se spuntato, l'anime esce dal widget "In Corso" e il flag visione diventa rosso, ma il progresso resta salvato. Esclude "giÃ  visto". Non disponibile sugli anime completati (verdi).</small>
+                    <small style="color:var(--text-muted);">Se spuntato, l'anime esce dal widget "In Corso" e il flag visione diventa rosso, ma il progresso resta salvato. Esclude "già visto". Non disponibile sugli anime completati (verdi).</small>
                 </div>
                 <div class="form-group"><label>Note</label><textarea id="inpNoteAnime" rows="2"></textarea></div>
                 <div class="form-group"><label>URL Immagine / Avatar</label><input type="url" id="inpImmagineAnime" placeholder="Inserisci il link dell'immagine (es. https://...)"></div>
@@ -1015,11 +1016,11 @@
     <div class="modal-overlay" id="modalOverlayEpisodi">
         <div class="modal" style="max-width: 560px;">
             <div class="modal-header">
-                <h2 id="episodiModalTitle" style="font-size:18px;">ðŸ“º Episodi</h2>
+                <h2 id="episodiModalTitle" style="font-size:18px;">📺 Episodi</h2>
                 <button class="close-modal" onclick="chiudiModaleEpisodi()">&times;</button>
             </div>
             <!-- Copertina (a sinistra) + elenco stagioni/film (a destra). La
-                 copertina Ã¨ popolata solo quando l'overlay Ã¨ aperto dal widget
+                 copertina è popolata solo quando l'overlay è aperto dal widget
                  "In Corso" della Home, altrimenti resta nascosta. -->
             <div class="overlay-con-copertina">
                 <div id="episodiCopertina" class="overlay-copertina" style="display:none;"></div>
@@ -1029,14 +1030,14 @@
     </div>
 
     <!-- ================================================================
-         ðŸ“– NUOVO OVERLAY: Avanzamento Volumi Letti (Manga/LN)
+         📖 NUOVO OVERLAY: Avanzamento Volumi Letti (Manga/LN)
          Piccolo overlay aperto dal widget "In Corso" della Home per
          avanzare/arretrare i volumi letti senza uscire dalla schermata.
          ================================================================ -->
     <div class="modal-overlay" id="modalOverlayVolumiManga">
         <div class="modal" style="max-width: 520px;">
             <div class="modal-header">
-                <h2 id="volumiMangaModalTitle" style="font-size:18px;">ðŸ“– Volumi Letti</h2>
+                <h2 id="volumiMangaModalTitle" style="font-size:18px;">📖 Volumi Letti</h2>
                 <button class="close-modal" onclick="chiudiModaleVolumiManga()">&times;</button>
             </div>
             <!-- Copertina (a sinistra) + avanzamento volumi (a destra) -->
@@ -1058,7 +1059,7 @@
                     <label>Titolo *</label>
                     <div style="display:flex; gap:6px;">
                         <input type="search" id="inpTitoloManga" required style="flex:1;">
-                        <button type="button" class="btn" style="padding:0 12px; white-space:nowrap;" onclick="apriRicercaAniList('manga')" title="Cerca sinossi e copertina su AniList">ðŸ”Ž AniList</button>
+                        <button type="button" class="btn" style="padding:0 12px; white-space:nowrap;" onclick="apriRicercaAniList('manga')" title="Cerca sinossi e copertina su AniList">🔎 AniList</button>
                     </div>
                 </div>
                 <div class="form-group">
@@ -1081,7 +1082,7 @@
                     <label>Acquistato</label>
                     <select id="inpAcquistatoManga">
                         <option value="No">No</option>
-                        <option value="SÃ¬">SÃ¬</option>
+                        <option value="Sì">Sì</option>
                     </select>
                 </div>
                 <div class="form-group">
@@ -1104,12 +1105,12 @@
                 <div class="form-group">
                     <label style="display:flex; align-items:center; gap:8px; cursor:pointer; font-weight:600;">
                         <input type="checkbox" id="inpGiaLettoManga" style="width:auto; margin:0;">
-                        <span>ðŸ“— Opera giÃ  letta per intero</span>
+                        <span>📗 Opera già letta per intero</span>
                     </label>
                     <small style="color: var(--text-muted); display:block; margin-top:4px;">
                         Utile per le opere recuperate anni fa: al salvataggio i volumi letti vengono
                         portati in automatico al numero di volumi totali, senza doverli contare uno a
-                        uno con il âž• dalla lista. Togliere la spunta non azzera i volumi giÃ  letti.
+                        uno con il ➕ dalla lista. Togliere la spunta non azzera i volumi già letti.
                     </small>
                 </div>
 
@@ -1125,7 +1126,7 @@
     </div>
 
     <!-- ================================================================
-         ðŸ“— MODALE LIBRO (Richiesta 35)
+         📗 MODALE LIBRO (Richiesta 35)
          Titolo + ricerca Hardcover (copertina/trama/generi/autore/anno/saga
          + suggerimento saga quando noto), stato lettura a 3 valori, saga
          Livello 1 sempre modificabile a mano, generi dalla stessa lista
@@ -1142,7 +1143,7 @@
                     <label>Titolo *</label>
                     <div style="display:flex; gap:6px;">
                         <input type="search" id="inpTitoloLibri" required style="flex:1;">
-                        <button type="button" class="btn" style="padding:0 12px; white-space:nowrap;" onclick="apriRicercaHardcover()" title="Cerca copertina, trama, generi, autore, anno e saga su Hardcover">ðŸ”Ž Hardcover</button>
+                        <button type="button" class="btn" style="padding:0 12px; white-space:nowrap;" onclick="apriRicercaHardcover()" title="Cerca copertina, trama, generi, autore, anno e saga su Hardcover">🔎 Hardcover</button>
                     </div>
                 </div>
                 <div id="libriCandidatiWrapper"></div>
@@ -1164,7 +1165,7 @@
                 </div>
                 <div class="form-group">
                     <label>Saga (nome)</label>
-                    <input type="text" id="inpSagaNomeLibri" placeholder="Es. Dune â€” vuoto se volume unico" autocomplete="off">
+                    <input type="text" id="inpSagaNomeLibri" placeholder="Es. Dune — vuoto se volume unico" autocomplete="off">
                 </div>
                 <div class="form-group">
                     <label>Saga (numero volume)</label>
@@ -1193,7 +1194,7 @@
     <div class="modal-overlay" id="modalOverlayCinema">
         <div class="modal">
             <div class="modal-header">
-                <h2>ðŸŽ¬ Nuovo Film al Cinema</h2>
+                <h2>🎬 Nuovo Film al Cinema</h2>
                 <button class="close-modal" onclick="document.getElementById('modalOverlayCinema').classList.remove('active')">&times;</button>
             </div>
             <div id="cinemaModalBody"></div>
@@ -1205,14 +1206,14 @@
     </div>
 
     <!-- ================================================================
-         ðŸ“ PATCH NOTES: tendina laterale sinistra (elenco versioni) +
-         overlay di dettaglio. Contenuti in PATCH_NOTES (JS), dalla piÃ¹
-         recente alla piÃ¹ vecchia (v1.0.N = Richiesta N della guida).
+         📝 PATCH NOTES: tendina laterale sinistra (elenco versioni) +
+         overlay di dettaglio. Contenuti in PATCH_NOTES (JS), dalla più
+         recente alla più vecchia (v1.0.N = Richiesta N della guida).
          ==================================================== -->
     <div id="patchDrawerBackdrop" class="patch-drawer-backdrop" onclick="chiudiPatchNotes()"></div>
     <aside id="patchDrawer" class="patch-drawer">
         <div class="patch-drawer-header">
-            <span style="font-weight:700;">ðŸ“ Patch notes</span>
+            <span style="font-weight:700;">📝 Patch notes</span>
             <button class="close-modal" onclick="chiudiPatchNotes()">&times;</button>
         </div>
         <div id="patchNotesList" class="patch-drawer-list"></div>
@@ -1238,30 +1239,28 @@
                  style="height: 75vh; width: auto; max-width: 90vw; border: 2.5px solid var(--primary); box-shadow: 0 0 35px rgba(124,108,255,0.55); border-radius: 12px; object-fit: contain; display: block;">
         </div>
     </div>
-      <button id="backToTop" title="Torna in alto">â†‘</button>
+      <button id="backToTop" title="Torna in alto">↑</button>
       <div id="toastContainer"></div>
 
     </div><!-- /#appRoot -->
 
     <!-- ===================================================================
-         ðŸ” Client Supabase + gestione autenticazione (login/logout)
-         Va PRIMA di ogni altro script perchÃ© decide se mostrare il sito
+         🔐 Client Supabase + gestione autenticazione (login/logout)
+         Va PRIMA di ogni altro script perché decide se mostrare il sito
          o la schermata di login.
     ==================================================================== -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="js/config-auth.js"></script>
 
     <script src="js/state-ui.js"></script>
-    <script src="js/anime-all.js"></script>
-    <script src="js/serie-tv.js"></script>
-
-    <script src="js/manga.js"></script>
-
-    <script src="js/libri-patch.js"></script>
-    <script src="js/cinema.js"></script>
-    <script src="js/main.js"></script>
+<script src="js/anime-all.js"></script>
+<script src="js/serie-tv.js"></script>
+<script src="js/manga.js"></script>
+<script src="js/libri-patch.js"></script>
+<script src="js/cinema.js"></script>
+<script src="js/main.js"></script>
     <script>
-    // PWA: registra il service worker (installabilitÃ  + cache immagini/librerie).
+    // PWA: registra il service worker (installabilità + cache immagini/librerie).
     // Fallisce in silenzio dove non supportato: il sito resta identico.
     if ('serviceWorker' in navigator) {
         window.addEventListener('load', function() {
@@ -1273,4 +1272,3 @@
     </script>
 </body>
 </html>
-

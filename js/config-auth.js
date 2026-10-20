@@ -1,4 +1,4 @@
-﻿// --- Configurazione connessione a Supabase --------------------------
+// --- Configurazione connessione a Supabase --------------------------
         // Questi due valori NON sono segreti: sono pensati apposta per stare
         // in chiaro nel codice del frontend. La vera protezione dei dati la
         // fanno il login (Auth) + le regole RLS sul database, non la
@@ -8,22 +8,22 @@
 
         // --- Ricerca libri via Hardcover (Richiesta 38) -------------------------
         // Il token Hardcover NON sta qui (loro lo vietano + repo pubblica):
-        // vive come secret Supabase ed Ã¨ la Edge Function `hardcover-proxy`
-        // a usarlo â€” stesso schema di `tmdb-proxy` per TMDB.
+        // vive come secret Supabase ed è la Edge Function `hardcover-proxy`
+        // a usarlo — stesso schema di `tmdb-proxy` per TMDB.
 
         // Il tuo user_id (Supabase Auth): usato solo per decidere se mostrare
-        // il pulsante "Apri Database" â€” nessuna implicazione di sicurezza,
-        // la vera protezione dei dati resta la RLS, questo Ã¨ solo estetico.
+        // il pulsante "Apri Database" — nessuna implicazione di sicurezza,
+        // la vera protezione dei dati resta la RLS, questo è solo estetico.
         const OWNER_USER_ID = 'c2fcedfa-a2ff-4112-a0e1-7ed9f2053e34';
 
         // --- Ritentativo automatico delle chiamate di rete -------------------
         // Su iPhone/iPad Safari chiude senza preavviso le connessioni che tiene
         // aperte verso Supabase (pagina rimasta in background, schermo spento,
-        // passaggio Wi-Fi â†” rete dati). La prima chiamata successiva muore sul
-        // nascere con "TypeError: Load failed" â€” il messaggio Safari per "la
-        // richiesta non Ã¨ nemmeno partita" â€” mentre la seconda va a buon fine:
-        // Ã¨ il motivo per cui ricliccando subito "Salva" funzionava.
-        // Qui la ripetiamo da soli, cosÃ¬ l'errore non arriva piÃ¹ all'utente.
+        // passaggio Wi-Fi ↔ rete dati). La prima chiamata successiva muore sul
+        // nascere con "TypeError: Load failed" — il messaggio Safari per "la
+        // richiesta non è nemmeno partita" — mentre la seconda va a buon fine:
+        // è il motivo per cui ricliccando subito "Salva" funzionava.
+        // Qui la ripetiamo da soli, così l'errore non arriva più all'utente.
         const TENTATIVI_RETE = 3; // 1 tentativo + 2 ritentativi
         const ATTESE_RITENTATIVO_MS = [400, 1200];
 
@@ -33,8 +33,8 @@
 
         // Ritenta SOLO gli errori di rete veri e propri: `fetch` fallisce con un
         // TypeError quando la richiesta non arriva a destinazione. Se invece il
-        // server ha risposto â€” anche con un errore â€” la risposta viene restituita
-        // cosÃ¬ com'Ã¨ e la chiamata non viene ripetuta (potrebbe aver giÃ  scritto).
+        // server ha risposto — anche con un errore — la risposta viene restituita
+        // così com'è e la chiamata non viene ripetuta (potrebbe aver già scritto).
         async function fetchConRitentativi_(input, init) {
             let ultimoErrore;
             for (let tentativo = 0; tentativo < TENTATIVI_RETE; tentativo++) {
@@ -68,7 +68,7 @@
             const emailEl = document.getElementById('loggedUserEmail');
             if (emailEl) {
                 const email = (session && session.user && session.user.email) || '';
-                emailEl.innerText = email ? ('ðŸ‘¤ ' + email) : '';
+                emailEl.innerText = email ? ('👤 ' + email) : '';
             }
             const driveBtnEl = document.getElementById('driveShortcutBtn');
             if (driveBtnEl) {
@@ -78,7 +78,7 @@
             // Stesso criterio per il bottone giardino (solo proprietario).
             window.GIARDINO_IS_OWNER_ = !!(session && session.user && session.user.id === OWNER_USER_ID);
             // Ricarica il widget "In Corso" a ogni login: il caricamento
-            // automatico all'avvio puÃ² essere partito senza sessione (la RLS
+            // automatico all'avvio può essere partito senza sessione (la RLS
             // restituisce liste vuote senza errore) e non si riprenderebbe mai.
             // Stessa cosa per gli altri due widget della Home.
             caricaWidgetInCorso();
@@ -94,7 +94,7 @@
             if (emailEl) emailEl.innerText = '';
         }
 
-        // Al caricamento della pagina: c'Ã¨ giÃ  una sessione valida (es. non
+        // Al caricamento della pagina: c'è già una sessione valida (es. non
         // hai mai fatto logout e il browser se la ricorda) o serve loggarsi?
         supabaseClient.auth.getSession().then(function(result) {
             const session = result.data.session;
@@ -127,7 +127,7 @@
                     loginSubmitBtnEl.disabled = false;
                     loginSubmitBtnEl.textContent = 'Accedi';
                     if (result.error) {
-                        loginErrorEl.textContent = 'âŒ Email o password non corrette.';
+                        loginErrorEl.textContent = '❌ Email o password non corrette.';
                         return;
                     }
                     mostraApp_(result.data.session);
