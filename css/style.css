@@ -1,5 +1,4 @@
-<style>
-        /* --- CONFIGURAZIONE TEMA "AURORA" — DARK MODE MODERNO --- */
+﻿/* --- CONFIGURAZIONE TEMA "AURORA" â€” DARK MODE MODERNO --- */
         :root {
             --bg-dark: #0a0b12;
             --bg-dark-2: #0e0f1a;
@@ -26,7 +25,7 @@
             scroll-behavior: smooth !important;
             /* Safari/iOS ingrandisce da solo il testo di alcuni blocchi ("text
                autosizing"): senza questa riga i generi sotto al titolo, nelle
-               liste Anime e Manga, uscivano più grandi degli 11px previsti solo
+               liste Anime e Manga, uscivano piÃ¹ grandi degli 11px previsti solo
                su iPhone/iPad. Con 100% la dimensione resta quella del CSS. */
             -webkit-text-size-adjust: 100%;
             text-size-adjust: 100%;
@@ -123,7 +122,7 @@
             background: var(--surface-hover); 
         }
         /* ================================================================
-           📊 STATISTICHE (VIEW "STATS")
+           ðŸ“Š STATISTICHE (VIEW "STATS")
            ================================================================ */
         .stats-section { margin-bottom: 34px; }
         .stats-section h2 {
@@ -308,7 +307,7 @@
         .filter-btn.active { background: var(--primary); color: #fff; font-weight: bold; box-shadow: 0 2px 8px var(--primary-glow); }
 
         /* ==========================================================
-           📺 LINGUETTE "LISTA ANIME" / "LOG EPISODI"
+           ðŸ“º LINGUETTE "LISTA ANIME" / "LOG EPISODI"
            Switch tra la vista classica a tabella e il log storico dei
            singoli episodi segnati/tolti, mostrato subito sopra i filtri.
            ========================================================== */
@@ -402,7 +401,7 @@
         .ep-log-timestamp { font-family: 'Courier New', monospace; color: var(--text-muted); font-size: 12.5px; white-space: nowrap; }
 
         /* ==========================================================
-           📁 BOTTONCINO "APRI SU GOOGLE SHEET" (Home)
+           ðŸ“ BOTTONCINO "APRI SU GOOGLE SHEET" (Home)
            Link diretto al foglio Google associato allo script. Su desktop
            apre una nuova scheda del browser; su mobile, se installata,
            l'OS intercetta il link e apre l'app Google Fogli.
@@ -497,7 +496,7 @@
 				text-shadow: 0 0 8px rgba(251, 191, 36, 0.6);
 			}
 
-		/* NUOVO: Stile per l'icona 📌 di priorità (opere da mostrare in cima alla lista) */
+		/* NUOVO: Stile per l'icona ðŸ“Œ di prioritÃ  (opere da mostrare in cima alla lista) */
 			.pin-btn {
 				background: none;
 				border: none;
@@ -659,10 +658,10 @@
             gap: 2px;
         }
         /* Pillola scorrevole che evidenzia l'opzione attiva.
-           I due segmenti hanno larghezze diverse ("🎬 Sala" è più corto di
-           "📺 Streaming"), quindi posizione e larghezza non possono essere
-           metà e metà: le misura aggiornaPillolaSwitchCinema_() e le passa qui
-           come variabili CSS, così il bordo combacia al pixel con il segmento. */
+           I due segmenti hanno larghezze diverse ("ðŸŽ¬ Sala" Ã¨ piÃ¹ corto di
+           "ðŸ“º Streaming"), quindi posizione e larghezza non possono essere
+           metÃ  e metÃ : le misura aggiornaPillolaSwitchCinema_() e le passa qui
+           come variabili CSS, cosÃ¬ il bordo combacia al pixel con il segmento. */
         .cinema-mode-switch::before {
             content: '';
             position: absolute;
@@ -703,7 +702,7 @@
         }
         .cinema-slider-track[data-modalita="streaming"] { transform: translateX(-100%); }
         /* Il pannello non attivo resta nel flusso (serve per misurarne l'altezza e
-           per farlo scorrere via): resta visibile durante la transizione ed è la
+           per farlo scorrere via): resta visibile durante la transizione ed Ã¨ la
            viewport a nasconderlo. L'attributo `inert` lo esclude da mouse,
            tastiera e screen reader senza toccarne la resa grafica. */
         .cinema-slider-pane { flex: 0 0 100%; min-width: 0; }
@@ -728,7 +727,7 @@
             position: sticky; top: 0; z-index: 2;
         }
         /* table-layout fisso + colgroup: ogni riga entra per intero nella larghezza
-           disponibile, così non serve mai lo scorrimento orizzontale. */
+           disponibile, cosÃ¬ non serve mai lo scorrimento orizzontale. */
         .cinema-table { table-layout: fixed; width: 100%; }
         .cinema-table th, .cinema-table td { padding: 12px 14px; }
         .cinema-table .media-title {
@@ -739,7 +738,7 @@
         }
         .cinema-table .action-icon-btn { margin: 0 2px; }
 
-        /* Sotto i ~760px le quattro colonne a larghezza fissa non entrerebbero più:
+        /* Sotto i ~760px le quattro colonne a larghezza fissa non entrerebbero piÃ¹:
            torno al comportamento originale (larghezze automatiche + scorrimento
            laterale), altrimenti overflow-x:hidden taglierebbe fuori dei dati. */
         @media (max-width: 760px) {
@@ -843,7 +842,7 @@
 		}
 
 		/* ================================================================
-		   📱 FIX MOBILE (solo sotto i 640px, desktop invariato):
+		   ðŸ“± FIX MOBILE (solo sotto i 640px, desktop invariato):
 		   la mail in navbar allargava la pagina oltre il viewport, il banner
 		   contatori non andava mai a capo e i gruppi filtro coi bottoni lunghi
 		   spingevano fuori bordo. Qui restano tutti contenuti.
@@ -892,8 +891,8 @@
         #votoAnimeGrid button.sel { background: linear-gradient(135deg, #2f6fed, #38bdf8); color: #fff; border-color: transparent; }
 
         /* ================================================================
-           💊 TEMA AURORA PILL (Richiesta 24): forme morbide su colori
-           invariati — tutto stondato, font Trebuchet, titoli non maiuscoli.
+           ðŸ’Š TEMA AURORA PILL (Richiesta 24): forme morbide su colori
+           invariati â€” tutto stondato, font Trebuchet, titoli non maiuscoli.
            ================================================================ */
         .btn-nav, .filter-btn, .filter-group,
         .filter-bar input, .filter-bar select,
@@ -927,7 +926,7 @@
     transform: translateY(-4px); /* Effetto movimento verso l'alto */
 }
 
-/* Su mobile il pulsante è più piccolo e più a filo bordo, così non copre
+/* Su mobile il pulsante Ã¨ piÃ¹ piccolo e piÃ¹ a filo bordo, cosÃ¬ non copre
    i pulsanti di fine riga delle tabelle. */
 @media (max-width: 768px) {
     #backToTop {
@@ -1022,7 +1021,7 @@
 }
 
 /* ==========================================================
-   📜 WIDGET "LOG DI SISTEMA" — Log Storico delle Attività
+   ðŸ“œ WIDGET "LOG DI SISTEMA" â€” Log Storico delle AttivitÃ 
    ========================================================== */
 .system-log-widget {
     background: linear-gradient(180deg, var(--surface-solid) 0%, rgba(20, 22, 34, 0.85) 100%);
@@ -1319,7 +1318,7 @@
 .system-log-body::-webkit-scrollbar-thumb:hover { background: var(--accent); }
 
 /* ==========================================================
-   🔍 RICERCA GLOBALE (Home)
+   ðŸ” RICERCA GLOBALE (Home)
    Barra di ricerca "hero" tra il sottotitolo e i bottoni delle
    view, con dropdown risultati raggruppati per Anime/Manga/Cinema.
    ========================================================== */
@@ -1489,9 +1488,9 @@
 }
 
 /* ==========================================================
-   🎬 NUOVO WIDGET "IN CORSO" — Anime in Visione & Manga in Lettura
+   ðŸŽ¬ NUOVO WIDGET "IN CORSO" â€” Anime in Visione & Manga in Lettura
    Stesso "linguaggio visivo" del widget Log di Sistema: stessa
-   larghezza (è un blocco figlio di .home-dashboard) e stessa
+   larghezza (Ã¨ un blocco figlio di .home-dashboard) e stessa
    struttura header/collassabile, ma con una lista di card a
    scorrimento ORIZZONTALE quando le opere non entrano nella riga.
    ========================================================== */
@@ -1678,7 +1677,7 @@
 }
 
 /* Card del widget "Prossimi al Cinema": riusa .progress-card per banner/badge/
-   titolo, ma non è cliccabile (l'azione sta nei controlli interni). */
+   titolo, ma non Ã¨ cliccabile (l'azione sta nei controlli interni). */
 .cinema-upcoming-card {
     cursor: default;
 }
@@ -1736,4 +1735,3 @@
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: var(--border-color); border-radius: 10px; }
 ::-webkit-scrollbar-thumb:hover { background: var(--primary); }
-    </style>
