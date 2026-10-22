@@ -1874,3 +1874,5 @@ Su telefono la navbar andava a capo e occupava mezzo schermo. Sotto i 768px ora 
 - `js/libri-patch.js`: `aggiornaBadgePatchNotes` accende anche il pallino rosso sul ☰ se ci sono patch non lette.
 
 Backup: commit `2f9ca55` (versione in deploy prima della modifica). Patch notes v1.0.45.
+
+**Fix cache (stesso giorno):** dopo il push il telefono mostrava il nuovo `index.html` ma col `style.css` vecchio (GitHub Pages manda `Cache-Control: max-age=600`), quindi ☰ e barra comparivano senza stile. Ora CSS e JS sono richiamati con `?v=1.0.45`: **a ogni modifica va aggiornato il numero** (link CSS in testa e 8 `<script>` in fondo a `index.html`), così il browser riscarica subito i file.
