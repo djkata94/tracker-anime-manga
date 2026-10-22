@@ -58,8 +58,15 @@
     ==================================================================== -->
     <div id="appRoot" style="display:none;">
 
-    <div class="navbar">
+    <!-- Su desktop .nav-links e' "trasparente" (display: contents) e la navbar
+         resta identica; sotto i 768px i link finiscono in una barra laterale
+         aperta dal bottone ☰ (Richiesta 38). -->
+    <div class="navbar" id="navbar">
+        <button type="button" id="btnMenuMobile" class="btn-hamburger" onclick="toggleMenuMobile()" title="Menu" aria-label="Apri menu" aria-controls="navLinks" aria-expanded="false"><span></span><span></span><span></span><i id="menuMobileBadge" class="hamburger-dot" style="display:none;"></i></button>
         <span style="font-weight: 800; color: var(--primary); margin-right: 20px; font-family: monospace; letter-spacing: 1px;">🎮 NERD.TRACKER</span>
+        <div id="navBackdrop" class="nav-backdrop" onclick="chiudiMenuMobile()"></div>
+        <div id="navLinks" class="nav-links">
+        <div class="nav-drawer-header"><span>🎮 NERD.TRACKER</span><button type="button" class="nav-drawer-close" onclick="chiudiMenuMobile()" aria-label="Chiudi menu">✕</button></div>
         <button id="nav-home" class="btn btn-nav active-view" onclick="switchView('home')">🏠 Home</button>
         <button id="nav-anime" class="btn btn-nav" onclick="switchView('anime')">📺 Anime</button>
         <button id="nav-serietv" class="btn btn-nav" onclick="switchView('serietv')">📡 Serie TV</button>
@@ -69,6 +76,7 @@
         <button id="btnPatchNotes" class="btn btn-nav" style="margin-left:auto;" onclick="apriPatchNotes()" title="Note di versione">📝 Patch notes<span id="patchNotesBadge" class="patch-badge" style="display:none;">0</span></button>
         <span id="loggedUserEmail" style="color: var(--text-muted); font-size:13px; display:flex; align-items:center; gap:6px;"></span>
         <button id="btnLogout" class="btn btn-nav" onclick="handleLogout()" title="Esci">🚪 Esci</button>
+        </div>
     </div>
 
     <div id="homeView" class="view-container home-dashboard">

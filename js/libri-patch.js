@@ -824,6 +824,10 @@ function statoBadgeLibro_(stato) {
         //   Nuove voci: aggiungere in CIMA all'array.
         // ==========================================
         const PATCH_NOTES = [
+            { v: '1.0.45', titolo: 'Menu ☰ su smartphone', data: '22/10/2026', punti: [
+                'Su telefono la navbar non occupa più mezzo schermo: resta solo il bottone ☰ accanto al logo, in tutte le viste.',
+                'Il ☰ apre una barra laterale con Home, viste, Patch notes ed Esci; pallino rosso se ci sono patch da leggere. Da PC non cambia nulla.'
+            ] },
             { v: '1.0.44', titolo: 'Suggerimenti manga', data: '14/10/2026', punti: [
                 'Bottone 💡 in fondo alla riga manga: top 5 da AniList, esclusi i già in lista (controllo su entrambi i titoli).',
                 'Trama tradotta a pezzi, ＋ apre Nuovo Manga col titolo pronto.'
@@ -1013,11 +1017,15 @@ function statoBadgeLibro_(stato) {
             const badge = document.getElementById('patchNotesBadge');
             if (!badge) return;
             const mancanti = await versioniPatchNonLette_();
+            // Su mobile il bottone Patch notes sta nel menu ☰: il pallino sul ☰ avvisa che c'e' qualcosa da leggere
+            const pallinoMenu = document.getElementById('menuMobileBadge');
             if (mancanti.length > 0) {
                 badge.innerText = mancanti.length > 9 ? '9+' : String(mancanti.length);
                 badge.style.display = '';
+                if (pallinoMenu) pallinoMenu.style.display = '';
             } else {
                 badge.style.display = 'none';
+                if (pallinoMenu) pallinoMenu.style.display = 'none';
             }
         }
 
