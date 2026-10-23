@@ -401,11 +401,10 @@
         .ep-log-timestamp { font-family: 'Courier New', monospace; color: var(--text-muted); font-size: 12.5px; white-space: nowrap; }
 
         /* ==========================================================
-           ðŸ“ BOTTONCINO "APRI SU GOOGLE SHEET" (Home)
-           Link diretto al foglio Google associato allo script. Su desktop
-           apre una nuova scheda del browser; su mobile, se installata,
-           l'OS intercetta il link e apre l'app Google Fogli.
-           ========================================================== */
+            🗄️ BOTTONCINO "APRI DATABASE" (Home)
+            Link diretto all'editor tabelle Supabase (tabelle del tracker).
+            Su desktop apre una nuova scheda del browser.
+            ========================================================== */
         .drive-shortcut-btn {
             display: inline-flex;
             align-items: center;

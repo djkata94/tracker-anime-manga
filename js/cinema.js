@@ -756,8 +756,8 @@ function formattaDataCinemaISO_(valoreGrezzo) {
 
         // Gestore ricerca testuale e filtri nella view Cinema
         document.addEventListener('DOMContentLoaded', function() {
-            // 📁 Bottoncino "Apri Foglio Google" nella Home: recupera l'URL
-            // reale del foglio collegato allo script e lo imposta come href.
+            // 🗄️ Bottoncino "Apri Database" nella Home: recupera l'URL
+            // dell'editor tabelle Supabase e lo imposta come href.
             const driveBtnEl = document.getElementById('driveShortcutBtn');
             if (driveBtnEl) {
                 const matchProgetto = SUPABASE_URL.match(/^https:\/\/([a-z0-9]+)\.supabase\.co/i);
