@@ -90,17 +90,12 @@
             </div>
 
             <!-- ============================================================
-                 📁 Apri il Google Sheet collegato: su desktop apre una nuova
-                 scheda del browser, su mobile l'OS intercetta il link e apre
-                 direttamente l'app Google Fogli (se installata). L'href viene
-                 valorizzato via JS all'avvio con getSpreadsheetUrl().
+                 🗄️ Apri le tabelle su Supabase: su desktop apre una nuova
+                 scheda del browser dell'editor Supabase. L'href viene
+                 valorizzato via JS all'avvio (vedi js/cinema.js).
                  ============================================================ -->
-            <a id="driveShortcutBtn" href="#" target="_blank" rel="noopener noreferrer" class="drive-shortcut-btn is-loading" title="Apri il Google Sheet collegato" style="display:none;">
-                <svg width="18" height="18" viewBox="0 0 24 24">
-                    <polygon points="12,3.5 3.5,19 9.17,19" fill="#FBBC05"></polygon>
-                    <polygon points="12,3.5 9.17,19 14.83,19" fill="#4285F4"></polygon>
-                    <polygon points="12,3.5 14.83,19 20.5,19" fill="#34A853"></polygon>
-                </svg>
+            <a id="driveShortcutBtn" href="#" target="_blank" rel="noopener noreferrer" class="drive-shortcut-btn is-loading" title="Apri le tabelle su Supabase" style="display:none;">
+                <span style="font-size:18px;">🗄️</span>
                 <span>Apri Database</span>
             </a>
         </div>
