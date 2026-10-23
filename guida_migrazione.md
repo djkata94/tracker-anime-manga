@@ -1863,3 +1863,16 @@ Bottone 💡 in fondo alla riga anime. Niente id salvato e niente Edge: search A
 ## Richiesta 37 — Suggerimenti manga via AniList (patch v1.0.44)
 
 Mirror anime con type `MANGA`: bottone 💡 in fondo alla riga, overlay condiviso, filtro su entrambi i titoli (english+romaji), traduzione trame a pezzi, ＋ apre Nuovo Manga col titolo pronto. Solo `index.html` (backup `index_backup_pre_suggmanga.html`, fuori repo). Patch notes v1.0.44. Deployati su GitHub `index.html` e `guida_migrazione.md`.
+
+## Richiesta 38 — Menu ☰ su smartphone (patch v1.0.45)
+
+Su telefono la navbar andava a capo e occupava mezzo schermo. Sotto i 768px ora mostra solo ☰ + logo; il ☰ apre una barra laterale sinistra con le stesse voci (viste, Patch notes, mail utente, Esci). La navbar è sticky, quindi ☰ resta raggiungibile in ogni vista. Desktop invariato: i link stanno in `<div id="navLinks" class="nav-links">` con `display: contents`, quindi restano figli "di fatto" della navbar flex (verificato al pixel contro `2f9ca55` a 1366px).
+
+- `index.html`: bottone `#btnMenuMobile` (con pallino `#menuMobileBadge`), sfondo `#navBackdrop`, wrapper `#navLinks` con intestazione `.nav-drawer-header` (logo + ✕). La navbar ha ora `id="navbar"`.
+- `css/style.css`: blocco "MENU MOBILE" in fondo. Sotto i 768px tolto il `backdrop-filter` della navbar (renderebbe la navbar il riferimento dei figli `position: fixed`, la barra resterebbe chiusa dentro) e sfondo quasi opaco al suo posto. La mail utente nella barra è visibile anche sotto i 640px.
+- `js/main.js`: `apriMenuMobile` / `chiudiMenuMobile` / `toggleMenuMobile`. Chiusura su click di una voce, tap fuori, Esc e ritorno sopra i 768px.
+- `js/libri-patch.js`: `aggiornaBadgePatchNotes` accende anche il pallino rosso sul ☰ se ci sono patch non lette.
+
+Backup: commit `2f9ca55` (versione in deploy prima della modifica). Patch notes v1.0.45.
+
+**Fix cache (stesso giorno):** dopo il push il telefono mostrava il nuovo `index.html` ma col `style.css` vecchio (GitHub Pages manda `Cache-Control: max-age=600`), quindi ☰ e barra comparivano senza stile. Ora CSS e JS sono richiamati con `?v=1.0.45`: **a ogni modifica va aggiornato il numero** (link CSS in testa e 8 `<script>` in fondo a `index.html`), così il browser riscarica subito i file.

@@ -2564,3 +2564,40 @@ function toggleStatsWidget(widgetId) {
         widget.classList.add('collapsed'); // la regola !important riporta max-height a 0 e la transizione anima la chiusura
     }
 }
+
+// ==========================================
+//   ☰ MENU MOBILE (Richiesta 38)
+//   Sotto i 768px i link della navbar stanno in una barra laterale aperta
+//   dal bottone ☰. Su desktop la barra non esiste (vedi CSS) e queste
+//   funzioni non vengono mai chiamate.
+// ==========================================
+function apriMenuMobile() {
+    document.getElementById('navbar').classList.add('menu-open');
+    document.body.classList.add('menu-mobile-aperto');
+    document.getElementById('btnMenuMobile').setAttribute('aria-expanded', 'true');
+}
+
+function chiudiMenuMobile() {
+    const navbar = document.getElementById('navbar');
+    if (!navbar.classList.contains('menu-open')) return;
+    navbar.classList.remove('menu-open');
+    document.body.classList.remove('menu-mobile-aperto');
+    document.getElementById('btnMenuMobile').setAttribute('aria-expanded', 'false');
+}
+
+function toggleMenuMobile() {
+    if (document.getElementById('navbar').classList.contains('menu-open')) chiudiMenuMobile();
+    else apriMenuMobile();
+}
+
+// Ogni voce della barra (cambio vista, Patch notes, Esci) chiude il menu
+document.getElementById('navLinks').addEventListener('click', function (e) {
+    if (e.target.closest('button')) chiudiMenuMobile();
+});
+document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape') chiudiMenuMobile();
+});
+// Se la finestra torna larga (rotazione tablet, resize) il menu non resta aperto
+window.matchMedia('(max-width: 768px)').addEventListener('change', function (e) {
+    if (!e.matches) chiudiMenuMobile();
+});
