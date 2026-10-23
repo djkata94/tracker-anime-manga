@@ -25,7 +25,7 @@
             scroll-behavior: smooth !important;
             /* Safari/iOS ingrandisce da solo il testo di alcuni blocchi ("text
                autosizing"): senza questa riga i generi sotto al titolo, nelle
-               liste Anime e Manga, uscivano piÃ¹ grandi degli 11px previsti solo
+               liste Anime e Manga, uscivano più grandi degli 11px previsti solo
                su iPhone/iPad. Con 100% la dimensione resta quella del CSS. */
             -webkit-text-size-adjust: 100%;
             text-size-adjust: 100%;
@@ -495,7 +495,7 @@
 				text-shadow: 0 0 8px rgba(251, 191, 36, 0.6);
 			}
 
-		/* NUOVO: Stile per l'icona ðŸ“Œ di prioritÃ  (opere da mostrare in cima alla lista) */
+		/* NUOVO: Stile per l'icona �xR di priorità (opere da mostrare in cima alla lista) */
 			.pin-btn {
 				background: none;
 				border: none;
@@ -657,10 +657,10 @@
             gap: 2px;
         }
         /* Pillola scorrevole che evidenzia l'opzione attiva.
-           I due segmenti hanno larghezze diverse ("ðŸŽ¬ Sala" Ã¨ piÃ¹ corto di
+           I due segmenti hanno larghezze diverse ("�x}� Sala" è più corto di
            "ðŸ“º Streaming"), quindi posizione e larghezza non possono essere
-           metÃ  e metÃ : le misura aggiornaPillolaSwitchCinema_() e le passa qui
-           come variabili CSS, cosÃ¬ il bordo combacia al pixel con il segmento. */
+           metà e metà: le misura aggiornaPillolaSwitchCinema_() e le passa qui
+           come variabili CSS, così il bordo combacia al pixel con il segmento. */
         .cinema-mode-switch::before {
             content: '';
             position: absolute;
@@ -701,7 +701,7 @@
         }
         .cinema-slider-track[data-modalita="streaming"] { transform: translateX(-100%); }
         /* Il pannello non attivo resta nel flusso (serve per misurarne l'altezza e
-           per farlo scorrere via): resta visibile durante la transizione ed Ã¨ la
+           per farlo scorrere via): resta visibile durante la transizione ed è la
            viewport a nasconderlo. L'attributo `inert` lo esclude da mouse,
            tastiera e screen reader senza toccarne la resa grafica. */
         .cinema-slider-pane { flex: 0 0 100%; min-width: 0; }
@@ -726,7 +726,7 @@
             position: sticky; top: 0; z-index: 2;
         }
         /* table-layout fisso + colgroup: ogni riga entra per intero nella larghezza
-           disponibile, cosÃ¬ non serve mai lo scorrimento orizzontale. */
+           disponibile, così non serve mai lo scorrimento orizzontale. */
         .cinema-table { table-layout: fixed; width: 100%; }
         .cinema-table th, .cinema-table td { padding: 12px 14px; }
         .cinema-table .media-title {
@@ -737,7 +737,7 @@
         }
         .cinema-table .action-icon-btn { margin: 0 2px; }
 
-        /* Sotto i ~760px le quattro colonne a larghezza fissa non entrerebbero piÃ¹:
+        /* Sotto i ~760px le quattro colonne a larghezza fissa non entrerebbero più:
            torno al comportamento originale (larghezze automatiche + scorrimento
            laterale), altrimenti overflow-x:hidden taglierebbe fuori dei dati. */
         @media (max-width: 760px) {
@@ -925,7 +925,7 @@
     transform: translateY(-4px); /* Effetto movimento verso l'alto */
 }
 
-/* Su mobile il pulsante Ã¨ piÃ¹ piccolo e piÃ¹ a filo bordo, cosÃ¬ non copre
+/* Su mobile il pulsante è più piccolo e più a filo bordo, così non copre
    i pulsanti di fine riga delle tabelle. */
 @media (max-width: 768px) {
     #backToTop {
@@ -1020,7 +1020,7 @@
 }
 
 /* ==========================================================
-   ðŸ“œ WIDGET "LOG DI SISTEMA" â€” Log Storico delle AttivitÃ 
+   �xS WIDGET "LOG DI SISTEMA" � Log Storico delle Attività
    ========================================================== */
 .system-log-widget {
     background: linear-gradient(180deg, var(--surface-solid) 0%, rgba(20, 22, 34, 0.85) 100%);
@@ -1489,7 +1489,7 @@
 /* ==========================================================
    ðŸŽ¬ NUOVO WIDGET "IN CORSO" â€” Anime in Visione & Manga in Lettura
    Stesso "linguaggio visivo" del widget Log di Sistema: stessa
-   larghezza (Ã¨ un blocco figlio di .home-dashboard) e stessa
+   larghezza (è un blocco figlio di .home-dashboard) e stessa
    struttura header/collassabile, ma con una lista di card a
    scorrimento ORIZZONTALE quando le opere non entrano nella riga.
    ========================================================== */
@@ -1676,7 +1676,7 @@
 }
 
 /* Card del widget "Prossimi al Cinema": riusa .progress-card per banner/badge/
-   titolo, ma non Ã¨ cliccabile (l'azione sta nei controlli interni). */
+   titolo, ma non è cliccabile (l'azione sta nei controlli interni). */
 .cinema-upcoming-card {
     cursor: default;
 }

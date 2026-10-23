@@ -820,13 +820,6 @@ function switchView(viewName) {
             if (s === 'RELEASING' || s === 'HIATUS') return 'In corso';
             return '';
         }
-        // Stessa mappatura dell'import manga (RELEASING→In corso, ecc).
-        function statoMangaSugg_(s) {
-            if (s === 'FINISHED' || s === 'CANCELLED') return 'Concluso';
-            if (s === 'NOT_YET_RELEASED') return 'In arrivo';
-            if (s === 'RELEASING' || s === 'HIATUS') return 'In corso';
-            return '';
-        }
 
         async function getSuggManga_(titolo) {
             const hits = await cercaCandidatiAniListSB_(titolo, 'MANGA');
