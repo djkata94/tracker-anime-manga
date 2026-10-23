@@ -1837,3 +1837,13 @@
 
     body.menu-mobile-aperto { overflow: hidden; }
 }
+
+/* --- HOME COMPATTA MOBILE (Richiesta 38 / TODO 3/5) ---
+   Sotto i 768px i 5 bottoni catalogo sono nascosti (si naviga dal menu ☰),
+   intestazione più piccola e sottotitolo nascosto per guadagnare spazio.
+   Desktop invariato. */
+@media (max-width: 768px) {
+    #homeView .menu-grid { display: none; }
+    #homeView .home-titolo { font-size: 21px !important; margin: 0 0 4px 0 !important; }
+    #homeView .home-sottotitolo { display: none !important; }
+}
