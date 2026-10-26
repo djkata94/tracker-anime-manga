@@ -824,6 +824,14 @@ function statoBadgeLibro_(stato) {
         //   Nuove voci: aggiungere in CIMA all'array.
         // ==========================================
         const PATCH_NOTES = [
+            { v: '1.0.47', titolo: 'Home più compatta su telefono', data: '23/10/2026', punti: [
+                'Su telefono la Home parte subito con ricerca e widget: i 5 bottoni dei cataloghi si aprono ora dal menu ☰.',
+                'Titolo più piccolo e descrizione nascosta per guadagnare spazio. Da PC non cambia nulla.'
+            ] },
+            { v: '1.0.46', titolo: 'Bottone Apri Database', data: '23/10/2026', punti: [
+                'Il bottone "Apri Database" in Home ha la nuova icona 🗄️: apre le tabelle su Supabase, non più il vecchio foglio Google.',
+                'Piccola pulizia del codice, senza cambiamenti visibili.'
+            ] },
             { v: '1.0.45', titolo: 'Menu ☰ su smartphone', data: '22/10/2026', punti: [
                 'Su telefono la navbar non occupa più mezzo schermo: resta solo il bottone ☰ accanto al logo, in tutte le viste.',
                 'Il ☰ apre una barra laterale con Home, viste, Patch notes ed Esci; pallino rosso se ci sono patch da leggere. Da PC non cambia nulla.'

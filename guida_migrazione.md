@@ -1876,3 +1876,18 @@ Su telefono la navbar andava a capo e occupava mezzo schermo. Sotto i 768px ora 
 Backup: commit `2f9ca55` (versione in deploy prima della modifica). Patch notes v1.0.45.
 
 **Fix cache (stesso giorno):** dopo il push il telefono mostrava il nuovo `index.html` ma col `style.css` vecchio (GitHub Pages manda `Cache-Control: max-age=600`), quindi ☰ e barra comparivano senza stile. Ora CSS e JS sono richiamati con `?v=1.0.45`: **a ogni modifica va aggiornato il numero** (link CSS in testa e 8 `<script>` in fondo a `index.html`), così il browser riscarica subito i file.
+
+## Richiesta 39 — Bottone Apri Database + pulizia codice (patch v1.0.46)
+
+Fatta il 23/10/2026 con un'altra IA (TODO 1/5 e 2/5 in engram), completata il 26/10/2026.
+
+- **Apri Database** (commit `64afee4`, riapplicato in `9f492e2` dopo un merge): in `index.html` l'SVG di Google Drive è sostituito dall'emoji 🗄️ e il title è "Apri le tabelle su Supabase". Aggiornati i commenti in `index.html`, `css/style.css` e `js/cinema.js`, che parlavano ancora del Google Sheet e di `getSpreadsheetUrl()`. Il link era già quello dell'editor tabelle Supabase.
+- **Pulizia** (commit `ead1a60`): tolta da `js/anime-all.js` la seconda copia identica di `statoMangaSugg_`. Commenti di `css/style.css` rovinati dallo split del 20/10 (UTF-8 letto come Windows-1252, es. `ðŸ“Š`, `piÃ¹`): il 23/10 corretti solo in parte, e tre righe erano peggiorate (caratteri persi). Il 26/10 sistemate le 12 righe rimaste: ritraduzione automatica cp1252→UTF-8 dove possibile, emoji rimesse a mano (📌, 🎬, 📜) dove erano andate perse. Toccati solo commenti, mai selettori o valori.
+
+## Richiesta 40 — Home compatta su telefono (patch v1.0.47)
+
+Fatta il 23/10/2026 con un'altra IA (TODO 3/5, scelta dell'owner: nascondere i bottoni). Commit `292a792`.
+
+Sotto i 768px la `.menu-grid` della Home con i 5 bottoni catalogo è nascosta (si naviga dal menu ☰ della Richiesta 38), il titolo "Hub Centrale di Controllo" scende a 21px e la descrizione sotto è nascosta. In `index.html` h1 e p hanno le classi `home-titolo` / `home-sottotitolo` (gli style inline restano per il desktop); in `css/style.css` blocco "HOME COMPATTA MOBILE" in fondo, con `!important` per vincere sugli inline. Desktop invariato.
+
+**Recupero 26/10/2026:** le voci patch notes v1.0.46 e v1.0.47 e queste due richieste in guida mancavano (il `?v=` era stato portato a 1.0.47 senza voci in `PATCH_NOTES`). Aggiunte ora; il commento CSS del blocco Home diceva "Richiesta 38", corretto in 40. Per far riscaricare CSS e JS cambiati il `?v=` è `1.0.47.1` (nessuna nuova patch). Dal TODO 4/5 il numero sarà calcolato in automatico.

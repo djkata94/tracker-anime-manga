@@ -1,4 +1,4 @@
-﻿/* --- CONFIGURAZIONE TEMA "AURORA" â€” DARK MODE MODERNO --- */
+﻿/* --- CONFIGURAZIONE TEMA "AURORA" — DARK MODE MODERNO --- */
         :root {
             --bg-dark: #0a0b12;
             --bg-dark-2: #0e0f1a;
@@ -122,7 +122,7 @@
             background: var(--surface-hover); 
         }
         /* ================================================================
-           ðŸ“Š STATISTICHE (VIEW "STATS")
+           📊 STATISTICHE (VIEW "STATS")
            ================================================================ */
         .stats-section { margin-bottom: 34px; }
         .stats-section h2 {
@@ -307,7 +307,7 @@
         .filter-btn.active { background: var(--primary); color: #fff; font-weight: bold; box-shadow: 0 2px 8px var(--primary-glow); }
 
         /* ==========================================================
-           ðŸ“º LINGUETTE "LISTA ANIME" / "LOG EPISODI"
+           📺 LINGUETTE "LISTA ANIME" / "LOG EPISODI"
            Switch tra la vista classica a tabella e il log storico dei
            singoli episodi segnati/tolti, mostrato subito sopra i filtri.
            ========================================================== */
@@ -495,7 +495,7 @@
 				text-shadow: 0 0 8px rgba(251, 191, 36, 0.6);
 			}
 
-		/* NUOVO: Stile per l'icona �xR di priorità (opere da mostrare in cima alla lista) */
+		/* NUOVO: Stile per l'icona 📌 di priorità (opere da mostrare in cima alla lista) */
 			.pin-btn {
 				background: none;
 				border: none;
@@ -657,8 +657,8 @@
             gap: 2px;
         }
         /* Pillola scorrevole che evidenzia l'opzione attiva.
-           I due segmenti hanno larghezze diverse ("�x}� Sala" è più corto di
-           "ðŸ“º Streaming"), quindi posizione e larghezza non possono essere
+           I due segmenti hanno larghezze diverse ("🎬 Sala" è più corto di
+           "📺 Streaming"), quindi posizione e larghezza non possono essere
            metà e metà: le misura aggiornaPillolaSwitchCinema_() e le passa qui
            come variabili CSS, così il bordo combacia al pixel con il segmento. */
         .cinema-mode-switch::before {
@@ -841,7 +841,7 @@
 		}
 
 		/* ================================================================
-		   ðŸ“± FIX MOBILE (solo sotto i 640px, desktop invariato):
+		   📱 FIX MOBILE (solo sotto i 640px, desktop invariato):
 		   la mail in navbar allargava la pagina oltre il viewport, il banner
 		   contatori non andava mai a capo e i gruppi filtro coi bottoni lunghi
 		   spingevano fuori bordo. Qui restano tutti contenuti.
@@ -890,8 +890,8 @@
         #votoAnimeGrid button.sel { background: linear-gradient(135deg, #2f6fed, #38bdf8); color: #fff; border-color: transparent; }
 
         /* ================================================================
-           ðŸ’Š TEMA AURORA PILL (Richiesta 24): forme morbide su colori
-           invariati â€” tutto stondato, font Trebuchet, titoli non maiuscoli.
+           💊 TEMA AURORA PILL (Richiesta 24): forme morbide su colori
+           invariati — tutto stondato, font Trebuchet, titoli non maiuscoli.
            ================================================================ */
         .btn-nav, .filter-btn, .filter-group,
         .filter-bar input, .filter-bar select,
@@ -1020,7 +1020,7 @@
 }
 
 /* ==========================================================
-   �xS WIDGET "LOG DI SISTEMA" � Log Storico delle Attività
+   📜 WIDGET "LOG DI SISTEMA" — Log Storico delle Attività
    ========================================================== */
 .system-log-widget {
     background: linear-gradient(180deg, var(--surface-solid) 0%, rgba(20, 22, 34, 0.85) 100%);
@@ -1317,7 +1317,7 @@
 .system-log-body::-webkit-scrollbar-thumb:hover { background: var(--accent); }
 
 /* ==========================================================
-   ðŸ” RICERCA GLOBALE (Home)
+   🔍 RICERCA GLOBALE (Home)
    Barra di ricerca "hero" tra il sottotitolo e i bottoni delle
    view, con dropdown risultati raggruppati per Anime/Manga/Cinema.
    ========================================================== */
@@ -1487,7 +1487,7 @@
 }
 
 /* ==========================================================
-   ðŸŽ¬ NUOVO WIDGET "IN CORSO" â€” Anime in Visione & Manga in Lettura
+   🎬 NUOVO WIDGET "IN CORSO" — Anime in Visione & Manga in Lettura
    Stesso "linguaggio visivo" del widget Log di Sistema: stessa
    larghezza (è un blocco figlio di .home-dashboard) e stessa
    struttura header/collassabile, ma con una lista di card a
@@ -1838,7 +1838,7 @@
     body.menu-mobile-aperto { overflow: hidden; }
 }
 
-/* --- HOME COMPATTA MOBILE (Richiesta 38 / TODO 3/5) ---
+/* --- HOME COMPATTA MOBILE (Richiesta 40) ---
    Sotto i 768px i 5 bottoni catalogo sono nascosti (si naviga dal menu ☰),
    intestazione più piccola e sottotitolo nascosto per guadagnare spazio.
    Desktop invariato. */
