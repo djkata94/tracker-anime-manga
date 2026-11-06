@@ -75,8 +75,6 @@
                 const isOwner = !!(session && session.user && session.user.id === OWNER_USER_ID);
                 driveBtnEl.style.display = isOwner ? '' : 'none';
             }
-            // Stesso criterio per il bottone giardino (solo proprietario).
-            window.GIARDINO_IS_OWNER_ = !!(session && session.user && session.user.id === OWNER_USER_ID);
             // Ricarica il widget "In Corso" a ogni login: il caricamento
             // automatico all'avvio può essere partito senza sessione (la RLS
             // restituisce liste vuote senza errore) e non si riprenderebbe mai.

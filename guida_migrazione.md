@@ -1891,3 +1891,13 @@ Fatta il 23/10/2026 con un'altra IA (TODO 3/5, scelta dell'owner: nascondere i b
 Sotto i 768px la `.menu-grid` della Home con i 5 bottoni catalogo è nascosta (si naviga dal menu ☰ della Richiesta 38), il titolo "Hub Centrale di Controllo" scende a 21px e la descrizione sotto è nascosta. In `index.html` h1 e p hanno le classi `home-titolo` / `home-sottotitolo` (gli style inline restano per il desktop); in `css/style.css` blocco "HOME COMPATTA MOBILE" in fondo, con `!important` per vincere sugli inline. Desktop invariato.
 
 **Recupero 26/10/2026:** le voci patch notes v1.0.46 e v1.0.47 e queste due richieste in guida mancavano (il `?v=` era stato portato a 1.0.47 senza voci in `PATCH_NOTES`). Aggiunte ora; il commento CSS del blocco Home diceva "Richiesta 38", corretto in 40. Per far riscaricare CSS e JS cambiati il `?v=` è `1.0.47.1` (nessuna nuova patch). Dal TODO 4/5 il numero sarà calcolato in automatico.
+
+## Richiesta 41 — Rimosso il giardino digitale (patch v1.0.48)
+
+Fatta il 06/11/2026: l'owner ha deciso di dismettere completamente mind-garden (giardino digitale 3D su Vercel), quindi il collegamento della Richiesta 33 è stato tolto.
+
+- `js/anime-all.js`: eliminato tutto il blocco "GIARDINO DIGITALE (mind-garden)" (costanti `GIARDINO_URL` e `GIARDINO_SEED_TOKEN`, che era scritto in chiaro in questa repo pubblica, funzioni `slugPerGiardino_`, `stadioPerGiardino_`, `testoSenzaHtml_`, `giardinoBtn_`, `elementoGiardino_`, `generiPerGiardino_`, `giardinoCheck_`, `giardinoLeggi_`, `apriGiardinoOverlay`, `aggiornaStadioGiardino_`, `giardinoAvviso_`, `chiudiGiardinoOverlay`, `giardinoSalva_` e overlay `#giardinoOverlay`) e la chiamata `giardinoBtn_` nella riga anime.
+- `js/manga.js`: tolta la chiamata `giardinoBtn_` nella riga manga.
+- `js/config-auth.js`: tolto `window.GIARDINO_IS_OWNER_` (usato solo dal giardino; il bottone Drive ha il suo controllo proprietario).
+- `index.html`: `?v=` portato a `1.0.48`.
+- La voce v1.0.40 delle patch notes e la Richiesta 33 restano come storia. Il token resta nella cronologia git, ma smette di valere quando il giardino viene spento.

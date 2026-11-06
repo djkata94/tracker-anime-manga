@@ -360,7 +360,6 @@ filtered.sort((a, b) => {
                                 <div style="font-weight: 600; display: flex; align-items: center; gap: 6px;">
                                     <span>${item.titolo || 'Senza Titolo'}</span>
                                     <button class="action-icon-btn" style="font-size: 13px; padding: 0; background: none; border: none; cursor: pointer;" onclick="mostraSinossi('${safeTitle}', 'manga')" title="Visualizza Sinossi">ℹ️</button>
-                                    ${giardinoBtn_('manga', safeTitle)}
                                 </div>
                                 ${genresHTML}
                             </div>

@@ -824,6 +824,10 @@ function statoBadgeLibro_(stato) {
         //   Nuove voci: aggiungere in CIMA all'array.
         // ==========================================
         const PATCH_NOTES = [
+            { v: '1.0.48', titolo: 'Tolto il giardino digitale', data: '06/11/2026', punti: [
+                'Il giardino digitale è stato chiuso: dalle righe di anime e manga sparisce il bottone 🌱.',
+                'Nessun altro cambiamento: liste, episodi e suggerimenti funzionano come prima.'
+            ] },
             { v: '1.0.47', titolo: 'Home più compatta su telefono', data: '23/10/2026', punti: [
                 'Su telefono la Home parte subito con ricerca e widget: i 5 bottoni dei cataloghi si aprono ora dal menu ☰.',
                 'Titolo più piccolo e descrizione nascosta per guadagnare spazio. Da PC non cambia nulla.'
