@@ -1847,3 +1847,79 @@
     #homeView .home-titolo { font-size: 21px !important; margin: 0 0 4px 0 !important; }
     #homeView .home-sottotitolo { display: none !important; }
 }
+
+/* --- LISTE A SCHEDE SU TELEFONO (Richiesta 43, TODO 5/5) ---
+   Sotto i 768px le tabelle dentro .contiene-schede diventano schede
+   verticali: titolo e copertina in alto, poi i campi con la loro etichetta
+   (attributo data-label del td), in fondo i bottoni. Niente più scorrimento
+   di lato. Per ora solo Libri; le altre liste si aggiungono mettendo
+   .contiene-schede sul loro .table-container e data-label/td-* nei render.
+   Desktop invariato. */
+/* La seconda ℹ️ (tra i bottoni in fondo) esiste solo per le schede:
+   su desktop resta nascosta e vale quella accanto al titolo. */
+.contiene-schede .info-azioni { display: none; }
+@media (max-width: 768px) {
+    .contiene-schede {
+        background: transparent;
+        border: none;
+        box-shadow: none;
+        overflow: visible;
+    }
+    .contiene-schede table { min-width: 0; }
+    .contiene-schede thead { display: none; }
+    .contiene-schede tbody { display: block; }
+    .contiene-schede tr {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        column-gap: 12px;
+        background: var(--surface-solid);
+        border: 1px solid var(--border-color);
+        border-radius: var(--radius);
+        padding: 12px;
+        margin-bottom: 10px;
+        box-shadow: 0 4px 16px rgba(0,0,0,0.2);
+    }
+    .contiene-schede td {
+        display: block;
+        padding: 6px 0;
+        border: none;
+        white-space: normal !important;
+        text-align: left !important;
+        min-width: 0;
+    }
+    .contiene-schede tr:hover td { background: transparent; }
+    .contiene-schede td[data-label]::before {
+        content: attr(data-label);
+        display: block;
+        font-size: 10.5px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        color: var(--text-muted);
+        margin-bottom: 3px;
+    }
+    .contiene-schede .td-titolo {
+        grid-column: 1 / -1;
+        padding: 0 0 8px 0;
+        border-bottom: 1px solid #1c1e30;
+        margin-bottom: 4px;
+        overflow-wrap: anywhere;
+    }
+    /* stella, puntina e copertina piu' vicine: piu' spazio al titolo */
+    .contiene-schede .td-titolo > div { gap: 8px !important; }
+    .contiene-schede .td-note { grid-column: 1 / -1; }
+    .contiene-schede .td-vuota { display: none; }
+    .contiene-schede .td-azioni {
+        grid-column: 1 / -1;
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: flex-end;
+        gap: 4px;
+        padding: 8px 0 0 0;
+        border-top: 1px solid #1c1e30;
+        margin-top: 4px;
+    }
+    /* ℹ️ in basso a sinistra, ✏️ e 🗑️ restano a destra: la parte alta resta tutta per il titolo */
+    .contiene-schede .info-titolo { display: none; }
+    .contiene-schede .info-azioni { display: inline-block; margin-right: auto; }
+}

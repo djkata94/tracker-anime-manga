@@ -1913,3 +1913,16 @@ Fatta il 10/11/2026 (TODO 4/5, scelta B dell'owner del 23/10: un hash per ogni f
 - `index.html`: commento in testa aggiornato; i `?v=1.0.48` diventano hash (es. `css/style.css?v=de849dd4`).
 
 Il `?v=` non segue più il numero delle patch notes. Nessuna voce in `PATCH_NOTES`: la modifica non si vede nel sito.
+
+## Richiesta 43 — Libri a schede su telefono (patch v1.0.49)
+
+Fatta il 10/11/2026: primo gruppo del TODO 5/5 (liste a schede su smartphone). L'owner ha chiesto di partire da Libri. Su telefono la tabella Libri era larga circa 1500px (regola mobile `table { min-width: 850px }` + `white-space: nowrap`) e andava scorsa di lato per vedere stato, note e bottoni.
+
+- `index.html`: il `.table-container` della tabella Libri ha in più la classe `contiene-schede`.
+- `js/libri-patch.js`, `renderListLibri`: i `<td>` hanno `data-label` ("Anno", "Stato lettura", "Note personali") e le classi `td-titolo`, `td-note`, `td-azioni`; `td-vuota` sulle note vuote. Nessun effetto su desktop.
+- `css/style.css`: blocco "LISTE A SCHEDE SU TELEFONO" in fondo, solo sotto i 768px e solo dentro `.contiene-schede`. Ogni riga diventa una scheda a griglia su due colonne: titolo con stella, puntina e copertina a tutta larghezza; Anno e Stato affiancati con l'etichetta presa da `data-label`; Note a tutta larghezza (nascoste se vuote); bottoni ✏️ 🗑️ in fondo a destra e ℹ️ (trama) in fondo a sinistra, così la parte alta resta tutta per il libro (scelta dell'owner dopo aver visto la prima versione). La ℹ️ in fondo è un secondo bottone `.info-azioni` nella cella azioni, nascosto su desktop; su telefono è nascosta quella accanto al titolo (`.info-titolo`). Annulla per queste tabelle il `min-width: 850px` e il `nowrap` mobile.
+- `js/libri-patch.js`: voce v1.0.49 in `PATCH_NOTES`. Il `?v=` lo aggiorna l'hook (Richiesta 42).
+
+Provato in locale con libri finti (senza login): a 375px e 390px nessuno scorrimento orizzontale, ✏️ apre la modifica, nessun errore in console. Desktop a 1366px identico al pixel (posizioni di tutte le celle uguali con e senza le classi nuove).
+
+Per le prossime liste basta mettere `contiene-schede` sul loro `.table-container` e `data-label` / `td-*` nei rispettivi render: il CSS è già generico.

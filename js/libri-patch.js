@@ -243,8 +243,11 @@ function statoBadgeLibro_(stato) {
                     avatarHTML = `<div style="width: 45px; height: 65px; flex-shrink: 0;"></div>`;
                 }
 
+                // data-label e classi td-*: servono solo alle schede su telefono
+                // (Richiesta 43, css "LISTE A SCHEDE"); su desktop non cambiano nulla.
+                const noteVuoteClass = (item.note && String(item.note).trim() !== '') ? '' : ' td-vuota';
                 tr.innerHTML = `
-                    <td class="media-title">
+                    <td class="media-title td-titolo">
                         <div style="display: flex; align-items: center; gap: 12px;">
                             <button class="${starClass}" style="flex-shrink: 0;" onclick="toggleFavoriteLibri('${safeTitle}', this)">${starIcon}</button>
                             <button class="${pinClass}" onclick="togglePinLibri('${safeTitle}', this, event)" title="${pinTitle}">📌</button>
@@ -252,7 +255,7 @@ function statoBadgeLibro_(stato) {
                             <div style="display: flex; flex-direction: column; gap: 3px;">
                                 <div style="font-weight: 600; display: flex; align-items: center; gap: 6px;">
                                     <span>${item.titolo || 'Senza Titolo'}</span>
-                                    <button class="action-icon-btn" style="font-size: 13px; padding: 0; background: none; border: none; cursor: pointer;" onclick="mostraSinossi('${safeTitle}', 'libri')" title="Visualizza Trama">ℹ️</button>
+                                    <button class="action-icon-btn info-titolo" style="font-size: 13px; padding: 0; background: none; border: none; cursor: pointer;" onclick="mostraSinossi('${safeTitle}', 'libri')" title="Visualizza Trama">ℹ️</button>
                                 </div>
                                 ${autoreHTML}
                                 ${sagaHTML}
@@ -260,10 +263,11 @@ function statoBadgeLibro_(stato) {
                             </div>
                         </div>
                     </td>
-                    <td style="white-space:nowrap;">${item.anno || '-'}</td>
-                    <td><span class="status-badge ${badgeClass}">${item.stato || 'Da leggere'}</span></td>
-                    <td style="color: var(--text-muted); font-size: 13px;">${item.note || '-'}</td>
-                    <td style="text-align: center; white-space:nowrap;">
+                    <td style="white-space:nowrap;" data-label="Anno">${item.anno || '-'}</td>
+                    <td data-label="Stato lettura"><span class="status-badge ${badgeClass}">${item.stato || 'Da leggere'}</span></td>
+                    <td class="td-note${noteVuoteClass}" style="color: var(--text-muted); font-size: 13px;" data-label="Note personali">${item.note || '-'}</td>
+                    <td class="td-azioni" style="text-align: center; white-space:nowrap;">
+                        <button class="action-icon-btn info-azioni" onclick="mostraSinossi('${safeTitle}', 'libri')" title="Visualizza Trama">ℹ️</button>
                         <button class="action-icon-btn" onclick="apriModificaLibro('${safeTitle}')">✏️</button>
                         <button class="action-icon-btn" onclick="rimuoviLibro('${safeTitle}')">🗑️</button>
                     </td>
@@ -824,6 +828,10 @@ function statoBadgeLibro_(stato) {
         //   Nuove voci: aggiungere in CIMA all'array.
         // ==========================================
         const PATCH_NOTES = [
+            { v: '1.0.49', titolo: 'Libri a schede su telefono', data: '10/11/2026', punti: [
+                'Su telefono la lista Libri non è più una tabella da scorrere di lato: ogni libro è una scheda con copertina e titolo in alto, anno e stato sotto, note e bottoni in fondo (ℹ️ trama a sinistra, ✏️ 🗑️ a destra).',
+                'Le note vuote non occupano spazio. Da PC non cambia nulla; le altre liste passeranno alle schede una alla volta.'
+            ] },
             { v: '1.0.48', titolo: 'Tolto il giardino digitale', data: '06/11/2026', punti: [
                 'Il giardino digitale è stato chiuso: dalle righe di anime e manga sparisce il bottone 🌱.',
                 'Nessun altro cambiamento: liste, episodi e suggerimenti funzionano come prima.'
