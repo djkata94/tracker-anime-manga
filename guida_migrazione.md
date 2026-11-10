@@ -1934,3 +1934,17 @@ Fatta il 10/11/2026, ritocco della Richiesta 43 chiesto dall'owner. Su PC la ℹ
 - `js/libri-patch.js`, `renderListLibri`: tolto il bottone ℹ️ accanto al titolo; resta solo quello in `td-azioni` (`.info-azioni`), ora visibile anche su desktop.
 - `css/style.css`: tolte le regole che nascondevano una delle due ℹ️ (`.info-titolo`, `.info-azioni` fuori dal media); su telefono resta `margin-right: auto` per tenerla a sinistra.
 - Nessuna voce in `PATCH_NOTES`, per scelta dell'owner.
+
+## Richiesta 45 — Manga a schede su telefono e bottoni a quadrato su PC (patch v1.0.50)
+
+Fatta il 10/11/2026: secondo gruppo del TODO 5/5, scelto dall'owner, più un ritocco da PC chiesto insieme.
+
+- **Da PC**: nella colonna Azioni dei Manga i bottoni non sono più in colonna ma a quadrato 2×2, come negli Anime: ℹ️ ✏️ sopra, 💡 🗑️ sotto. La ℹ️ della trama non sta più accanto al titolo ma tra le azioni, come nei Libri (Richiesta 44). In `js/manga.js` i bottoni sono dentro uno `<span class="azioni-griglia">` con lo stesso `inline-grid` degli Anime.
+- **Da telefono**: la tabella Manga diventa schede, con lo stesso CSS generico dei Libri (Richiesta 43). Titolo con stella, puntina e copertina in alto; poi due righe da tre campi (scelta dell'owner, per tenere la scheda bassa): Tipologia | Volumi | Volumi letti (con ➖ ➕), Stato opera | Acquistato | Lettura; Note personali a tutta larghezza (nascoste se vuote); in fondo ℹ️ 💡 a sinistra e ✏️ 🗑️ a destra. Le tre colonne vengono dalla classe `schede-3col` sul container.
+- `index.html`: `contiene-schede` sul `.table-container` dei Manga.
+- `js/manga.js`, `renderListManga`: `data-label` sulle celle, classi `td-titolo`, `td-note`/`td-vuota`, `td-azioni`, `info-azioni`, `btn-modifica`, `btn-elimina` (queste due anche in `js/libri-patch.js`).
+- **Regola dei bottoni sulle schede, decisa dall'owner per tutte le liste:** a sinistra prima la ℹ️ e poi gli altri bottoni (💡 ecc.), a destra sempre ✏️ e poi 🗑️. Fatta con `order` nel CSS (`.info-azioni` -1, `.btn-modifica` 10 con `margin-left: auto`, `.btn-elimina` 11), quindi su PC l'ordine resta quello del codice. Vale già anche per i Libri.
+- `css/style.css`, blocco "LISTE A SCHEDE SU TELEFONO": `order` su note e azioni (restano in fondo anche se nel DOM le note vengono prima di Lettura); `.azioni-griglia { display: contents }` sulla scheda, così i bottoni tornano in fila; il primo bottone di un campo (➖, ❌ No) allineato all'etichetta; `padding-bottom: 56px` sotto l'ultima scheda, perché il bottone ↑ (`#backToTop`) copriva il 🗑️ dell'ultima scheda (valeva anche per i Libri).
+- `js/libri-patch.js`: voce v1.0.50 in `PATCH_NOTES`.
+
+Provato in locale con manga finti: a 375px e 390px nessuno scorrimento orizzontale, ℹ️, ➕ e ✏️ chiamano le funzioni giuste, nessun errore in console; da PC i 4 bottoni sono su due righe.

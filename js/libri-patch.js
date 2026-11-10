@@ -267,8 +267,8 @@ function statoBadgeLibro_(stato) {
                     <td class="td-note${noteVuoteClass}" style="color: var(--text-muted); font-size: 13px;" data-label="Note personali">${item.note || '-'}</td>
                     <td class="td-azioni" style="text-align: center; white-space:nowrap;">
                         <button class="action-icon-btn info-azioni" onclick="mostraSinossi('${safeTitle}', 'libri')" title="Visualizza Trama">ℹ️</button>
-                        <button class="action-icon-btn" onclick="apriModificaLibro('${safeTitle}')">✏️</button>
-                        <button class="action-icon-btn" onclick="rimuoviLibro('${safeTitle}')">🗑️</button>
+                        <button class="action-icon-btn btn-modifica" onclick="apriModificaLibro('${safeTitle}')">✏️</button>
+                        <button class="action-icon-btn btn-elimina" onclick="rimuoviLibro('${safeTitle}')">🗑️</button>
                     </td>
                 `;
                 tbody.appendChild(tr);
@@ -827,6 +827,11 @@ function statoBadgeLibro_(stato) {
         //   Nuove voci: aggiungere in CIMA all'array.
         // ==========================================
         const PATCH_NOTES = [
+            { v: '1.0.50', titolo: 'Manga a schede su telefono', data: '10/11/2026', punti: [
+                'Su telefono anche la lista Manga è a schede compatte: copertina e titolo in alto, poi due righe con tipologia, volumi e volumi letti, stato, acquisto e lettura; note e bottoni in fondo (ℹ️ 💡 a sinistra, ✏️ 🗑️ a destra, come nei Libri).',
+                'Da PC i bottoni dei Manga sono a quadrato come negli Anime, con la ℹ️ della trama tra le azioni.',
+                'Su telefono il bottone ↑ non copre più i bottoni dell\'ultima scheda, anche nei Libri.'
+            ] },
             { v: '1.0.49', titolo: 'Libri a schede su telefono', data: '10/11/2026', punti: [
                 'Su telefono la lista Libri non è più una tabella da scorrere di lato: ogni libro è una scheda con copertina e titolo in alto, anno e stato sotto, note e bottoni in fondo (ℹ️ trama a sinistra, ✏️ 🗑️ a destra).',
                 'Le note vuote non occupano spazio. Da PC non cambia nulla; le altre liste passeranno alle schede una alla volta.'

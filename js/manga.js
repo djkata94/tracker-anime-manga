@@ -348,8 +348,11 @@ filtered.sort((a, b) => {
                     avatarHTML = `<div style="width: 45px; height: 45px; flex-shrink: 0;"></div>`;
                 }
 
+                // data-label e classi td-*: servono alle schede su telefono (Richiesta 45,
+                // css "LISTE A SCHEDE"); su desktop non cambiano nulla.
+                const noteVuoteClass = (item.note && String(item.note).trim() !== '') ? '' : ' td-vuota';
                 tr.innerHTML = `
-                    <td class="media-title">
+                    <td class="media-title td-titolo">
                         <div style="display: flex; align-items: center; gap: 12px;">
                             <button class="${starClass}" style="flex-shrink: 0;" onclick="toggleFavoriteManga('${safeTitle}', this)">${starIcon}</button>
                             <button class="${pinClass}" onclick="togglePinManga('${safeTitle}', this, event)" title="${pinTitle}">📌</button>
@@ -359,27 +362,27 @@ filtered.sort((a, b) => {
                             <div style="display: flex; flex-direction: column; gap: 3px;">
                                 <div style="font-weight: 600; display: flex; align-items: center; gap: 6px;">
                                     <span>${item.titolo || 'Senza Titolo'}</span>
-                                    <button class="action-icon-btn" style="font-size: 13px; padding: 0; background: none; border: none; cursor: pointer;" onclick="mostraSinossi('${safeTitle}', 'manga')" title="Visualizza Sinossi">ℹ️</button>
                                 </div>
                                 ${genresHTML}
                             </div>
                         </div>
                     </td>
-                    <td><span class="type-badge">${item.tipologia || 'Manga'}</span></td>
-                    <td style="text-align: center; font-weight: 700;">${parseInt(item.volumi) || 0}</td>
-                    <td style="text-align: center; white-space: nowrap;">
+                    <td data-label="Tipologia"><span class="type-badge">${item.tipologia || 'Manga'}</span></td>
+                    <td style="text-align: center; font-weight: 700;" data-label="Volumi">${parseInt(item.volumi) || 0}</td>
+                    <td style="text-align: center; white-space: nowrap;" data-label="Volumi letti">
                         <button class="action-icon-btn" style="font-size: 13px;" onclick="modificaVolumiLettiManga('${safeTitle}', -1)" title="Diminuisci volumi letti">➖</button>
                         <span style="display: inline-block; min-width: 22px; font-weight: 700;">${parseInt(item.volumiLetti) || 0}</span>
                         <button class="action-icon-btn" style="font-size: 13px;" onclick="modificaVolumiLettiManga('${safeTitle}', 1)" title="Aumenta volumi letti">➕</button>
                     </td>
-                    <td><span class="status-badge ${badgeClass}">${item.stato || 'In corso'}</span></td>
-                    <td style="text-align: center;">${buyText}</td>
-                    <td style="color: var(--text-muted); font-size: 13px;">${item.note || '-'}</td>
-                    <td style="text-align: center;"><span class="vision-box box-${coloreLettura}"></span></td>
-                    <td style="text-align: center;">
-                        <button class="action-icon-btn" onclick="apriModificaManga('${safeTitle}')">✏️</button>
+                    <td data-label="Stato opera"><span class="status-badge ${badgeClass}">${item.stato || 'In corso'}</span></td>
+                    <td style="text-align: center;" data-label="Acquistato">${buyText}</td>
+                    <td class="td-note${noteVuoteClass}" style="color: var(--text-muted); font-size: 13px;" data-label="Note personali">${item.note || '-'}</td>
+                    <td style="text-align: center;" data-label="Lettura"><span class="vision-box box-${coloreLettura}"></span></td>
+                    <td class="td-azioni" style="text-align: center;">
+                        <span class="azioni-griglia" style="display:inline-grid;grid-template-columns:repeat(2,max-content);gap:2px;justify-items:center;justify-content:center;"><button class="action-icon-btn info-azioni" onclick="mostraSinossi('${safeTitle}', 'manga')" title="Visualizza Sinossi">ℹ️</button>
+                        <button class="action-icon-btn btn-modifica" onclick="apriModificaManga('${safeTitle}')">✏️</button>
                         <button class="action-icon-btn" onclick="suggManga_('${safeTitle}')" title="Potrebbero piacerti anche">💡</button>
-                        <button class="action-icon-btn" onclick="rimuoviManga('${safeTitle}')">🗑️</button>
+                        <button class="action-icon-btn btn-elimina" onclick="rimuoviManga('${safeTitle}')">🗑️</button></span>
                     </td>
                 `;
                 tbody.appendChild(tr);

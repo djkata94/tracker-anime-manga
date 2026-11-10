@@ -1852,8 +1852,9 @@
    Sotto i 768px le tabelle dentro .contiene-schede diventano schede
    verticali: titolo e copertina in alto, poi i campi con la loro etichetta
    (attributo data-label del td), in fondo i bottoni. Niente più scorrimento
-   di lato. Per ora solo Libri; le altre liste si aggiungono mettendo
-   .contiene-schede sul loro .table-container e data-label/td-* nei render.
+   di lato. Liste convertite: Libri (Richiesta 43), Manga (Richiesta 45); le
+   altre si aggiungono mettendo .contiene-schede sul loro .table-container
+   e data-label/td-* nei render.
    Desktop invariato. */
 @media (max-width: 768px) {
     .contiene-schede {
@@ -1861,6 +1862,8 @@
         border: none;
         box-shadow: none;
         overflow: visible;
+        /* spazio sotto l'ultima scheda: il bottone ↑ (#backToTop) non copre i suoi bottoni */
+        padding-bottom: 56px;
     }
     .contiene-schede table { min-width: 0; }
     .contiene-schede thead { display: none; }
@@ -1876,6 +1879,8 @@
         margin-bottom: 10px;
         box-shadow: 0 4px 16px rgba(0,0,0,0.2);
     }
+    /* liste con tanti campi (Manga): tre per riga, la scheda resta bassa */
+    .contiene-schede.schede-3col tr { grid-template-columns: repeat(3, minmax(0, 1fr)); column-gap: 8px; }
     .contiene-schede td {
         display: block;
         padding: 6px 0;
@@ -1895,6 +1900,8 @@
         color: var(--text-muted);
         margin-bottom: 3px;
     }
+    /* il primo bottone di un campo (➖ volumi, ❌ No acquisto) allineato all'etichetta */
+    .contiene-schede td[data-label] > .action-icon-btn:first-of-type { margin-left: 0; }
     .contiene-schede .td-titolo {
         grid-column: 1 / -1;
         padding: 0 0 8px 0;
@@ -1904,7 +1911,8 @@
     }
     /* stella, puntina e copertina piu' vicine: piu' spazio al titolo */
     .contiene-schede .td-titolo > div { gap: 8px !important; }
-    .contiene-schede .td-note { grid-column: 1 / -1; }
+    /* note e bottoni sempre in fondo, dopo i campi a due colonne */
+    .contiene-schede .td-note { grid-column: 1 / -1; order: 5; }
     .contiene-schede .td-vuota { display: none; }
     .contiene-schede .td-azioni {
         grid-column: 1 / -1;
@@ -1915,8 +1923,14 @@
         padding: 8px 0 0 0;
         border-top: 1px solid #1c1e30;
         margin-top: 4px;
+        order: 6;
     }
-    /* ℹ️ in basso a sinistra, ✏️ e 🗑️ restano a destra: la parte alta resta tutta per il titolo.
-       Su PC la ℹ️ sta nella colonna Azioni prima di ✏️ (Richiesta 44). */
-    .contiene-schede .info-azioni { margin-right: auto; }
+    /* bottoni raccolti a quadrato su PC (Manga): sulla scheda tornano in fila */
+    .contiene-schede .azioni-griglia { display: contents !important; }
+    /* REGOLA BOTTONI (scelta dell'owner, vale per tutte le liste): a sinistra
+       prima la ℹ️ e poi gli altri bottoni (💡 ecc.), a destra sempre ✏️ e poi 🗑️.
+       Su PC l'ordine resta quello del codice (Richieste 44-45). */
+    .contiene-schede .info-azioni { order: -1; }
+    .contiene-schede .btn-modifica { order: 10; margin-left: auto; }
+    .contiene-schede .btn-elimina { order: 11; }
 }
