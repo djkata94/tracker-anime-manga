@@ -1926,3 +1926,11 @@ Fatta il 10/11/2026: primo gruppo del TODO 5/5 (liste a schede su smartphone). L
 Provato in locale con libri finti (senza login): a 375px e 390px nessuno scorrimento orizzontale, ✏️ apre la modifica, nessun errore in console. Desktop a 1366px identico al pixel (posizioni di tutte le celle uguali con e senza le classi nuove).
 
 Per le prossime liste basta mettere `contiene-schede` sul loro `.table-container` e `data-label` / `td-*` nei rispettivi render: il CSS è già generico.
+
+## Richiesta 44 — ℹ️ dei Libri tra le azioni anche su PC (nessuna patch)
+
+Fatta il 10/11/2026, ritocco della Richiesta 43 chiesto dall'owner. Su PC la ℹ️ della trama non sta più accanto al titolo ma nella colonna Azioni, prima di ✏️ e 🗑️. Su telefono non cambia nulla: resta in fondo alla scheda a sinistra.
+
+- `js/libri-patch.js`, `renderListLibri`: tolto il bottone ℹ️ accanto al titolo; resta solo quello in `td-azioni` (`.info-azioni`), ora visibile anche su desktop.
+- `css/style.css`: tolte le regole che nascondevano una delle due ℹ️ (`.info-titolo`, `.info-azioni` fuori dal media); su telefono resta `margin-right: auto` per tenerla a sinistra.
+- Nessuna voce in `PATCH_NOTES`, per scelta dell'owner.

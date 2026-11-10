@@ -255,7 +255,6 @@ function statoBadgeLibro_(stato) {
                             <div style="display: flex; flex-direction: column; gap: 3px;">
                                 <div style="font-weight: 600; display: flex; align-items: center; gap: 6px;">
                                     <span>${item.titolo || 'Senza Titolo'}</span>
-                                    <button class="action-icon-btn info-titolo" style="font-size: 13px; padding: 0; background: none; border: none; cursor: pointer;" onclick="mostraSinossi('${safeTitle}', 'libri')" title="Visualizza Trama">ℹ️</button>
                                 </div>
                                 ${autoreHTML}
                                 ${sagaHTML}

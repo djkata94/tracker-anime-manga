@@ -1855,9 +1855,6 @@
    di lato. Per ora solo Libri; le altre liste si aggiungono mettendo
    .contiene-schede sul loro .table-container e data-label/td-* nei render.
    Desktop invariato. */
-/* La seconda ℹ️ (tra i bottoni in fondo) esiste solo per le schede:
-   su desktop resta nascosta e vale quella accanto al titolo. */
-.contiene-schede .info-azioni { display: none; }
 @media (max-width: 768px) {
     .contiene-schede {
         background: transparent;
@@ -1919,7 +1916,7 @@
         border-top: 1px solid #1c1e30;
         margin-top: 4px;
     }
-    /* ℹ️ in basso a sinistra, ✏️ e 🗑️ restano a destra: la parte alta resta tutta per il titolo */
-    .contiene-schede .info-titolo { display: none; }
-    .contiene-schede .info-azioni { display: inline-block; margin-right: auto; }
+    /* ℹ️ in basso a sinistra, ✏️ e 🗑️ restano a destra: la parte alta resta tutta per il titolo.
+       Su PC la ℹ️ sta nella colonna Azioni prima di ✏️ (Richiesta 44). */
+    .contiene-schede .info-azioni { margin-right: auto; }
 }
