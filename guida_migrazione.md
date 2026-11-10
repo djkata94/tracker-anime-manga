@@ -2004,3 +2004,16 @@ Fatta il 10/11/2026: ultimo gruppo del TODO 5/5. Scheda compatta scelta dall'own
 Con questa richiesta il TODO 5/5 è completo: Libri, Manga, Serie TV, Film, Anime e i due registri sono a schede su telefono.
 
 Provato in locale con voci finte: a 375px nessuno scorrimento orizzontale, voci semplici su due righe, azioni di completamento su tre; nessun errore in console. Da PC il registro anime è identico al pixel (posizioni di tutte le celle uguali con e senza le classi nuove).
+
+## Richiesta 50 — Controlli di sicurezza e manutenzione (nessuna patch)
+
+Fatta il 10/11/2026: tre migliorie "invisibili" scelte dall'owner tra quelle proposte dopo le liste a schede. Nessuna voce in `PATCH_NOTES`: nel sito non cambia niente.
+
+- **Hook pre-commit, controllo errori JS** (`.githooks/pre-commit`): prima di ricalcolare i `?v=`, ogni file `.js` preparato per il commit viene controllato con `node --check` (si controlla il contenuto che entra nel commit, non quello della cartella). Se c'è un errore di sintassi il commit viene bloccato e viene mostrato file, riga e punto dell'errore. Perché: un solo errore blocca l'intero file nel browser e i suoi bottoni smettono di funzionare (è il "sospetto n.1" delle convenzioni); il 10/11 un apostrofo non escapato nelle patch notes era arrivato fino al controllo manuale. Provato su copie del repository: errore bloccato, commit corretto con un errore solo nella cartella accettato, commit senza JS accettato.
+- **`.gitattributes`** (nuovo): `.githooks/* text eol=lf`, così gli hook restano con fine riga LF anche su Windows (con `core.autocrlf=true` diventerebbero CRLF e uno script sh più complesso potrebbe non partire).
+- **Versione di supabase-js fissata** (`index.html`): da `@supabase/supabase-js@2` (prendeva da solo ogni nuova 2.x) a `@2.119.0`, la versione che jsDelivr serviva già il 10/11 (uscita il 04/11/2026), quindi il comportamento non cambia. Per aggiornarla: cambiare il numero e provare login e liste.
+- **Controllo sicurezza del database** (advisor Supabase, sola lettura, nessuna modifica):
+  - 14 tabelle, tutte con RLS attiva.
+  - `public.rls_auto_enable()`: funzione `SECURITY DEFINER` eseguibile da `anon` e `authenticated` via `/rest/v1/rpc`. È la funzione dell'event trigger `ensure_rls` che attiva da sola la RLS sulle nuove tabelle; restituisce `event_trigger`, quindi chiamata da fuori fallisce: rischio pratico quasi nullo. Pulizia possibile: `revoke execute on function public.rls_auto_enable() from public, anon, authenticated;` (l'event trigger continua a funzionare). Non applicata: in attesa dell'ok dell'owner.
+  - "Leaked password protection" disattivata: controllo delle password rubate (HaveIBeenPwned). Da verificare se è disponibile nel piano Free.
+  - Prestazioni: 14 policy RLS con `auth.uid()` rivalutato per ogni riga e 15 chiavi esterne senza indice. Con le quantità attuali (al massimo ~670 righe per tabella) l'effetto non si nota: non urgente.

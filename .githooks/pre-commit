@@ -1,8 +1,31 @@
 #!/bin/sh
-# Richiesta 42 (TODO 4/5): prima di ogni commit ricalcola i ?v= di CSS e JS
-# in index.html (hash del contenuto di ogni file) e li mette nel commit.
+# Prima di ogni commit:
+# 1) (Richiesta 50) controlla che ogni file .js del commit non abbia errori di
+#    sintassi: un solo errore blocca l'intero file nel browser e i suoi bottoni
+#    smettono di funzionare. Si controlla il contenuto preparato per il commit.
+# 2) (Richiesta 42, TODO 4/5) ricalcola i ?v= di CSS e JS in index.html (hash
+#    del contenuto di ogni file) e li mette nel commit.
 # Attivazione, una volta sola per ogni copia del repository:
 #   git config core.hooksPath .githooks
+
+cartella_tmp=$(mktemp -d)
+errori=0
+for f in $(git diff --cached --name-only --diff-filter=ACMR -- '*.js'); do
+  git show ":$f" > "$cartella_tmp/controllo.js"
+  if ! node --check "$cartella_tmp/controllo.js" 2> "$cartella_tmp/errore.txt"; then
+    echo "" >&2
+    echo "Errore di sintassi in $f:" >&2
+    # prima riga "percorso-temporaneo:N" -> "js/file.js, riga N"; via le righe di node
+    sed -e "s#^.*controllo\.js:#$f, riga #" -e '/^    at /d' -e '/^Node\.js v/d' "$cartella_tmp/errore.txt" >&2
+    errori=1
+  fi
+done
+rm -rf "$cartella_tmp"
+if [ "$errori" -ne 0 ]; then
+  echo "" >&2
+  echo "Commit bloccato: correggi l'errore qui sopra e riprova." >&2
+  exit 1
+fi
 
 node tools/bump-version.js --staged || {
   echo "Commit bloccato: tools/bump-version.js e' andato in errore." >&2

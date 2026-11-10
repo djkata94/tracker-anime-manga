@@ -1,0 +1,3 @@
+# Richiesta 50: gli hook git sono script sh e devono restare con fine riga LF
+# anche su Windows (core.autocrlf=true li convertirebbe in CRLF).
+.githooks/* text eol=lf
