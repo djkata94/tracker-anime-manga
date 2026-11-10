@@ -2017,3 +2017,12 @@ Fatta il 10/11/2026: tre migliorie "invisibili" scelte dall'owner tra quelle pro
   - `public.rls_auto_enable()`: funzione `SECURITY DEFINER` eseguibile da `anon` e `authenticated` via `/rest/v1/rpc`. È la funzione dell'event trigger `ensure_rls` che attiva da sola la RLS sulle nuove tabelle; restituisce `event_trigger`, quindi chiamata da fuori fallisce: rischio pratico quasi nullo. Pulizia possibile: `revoke execute on function public.rls_auto_enable() from public, anon, authenticated;` (l'event trigger continua a funzionare). Non applicata: in attesa dell'ok dell'owner.
   - "Leaked password protection" disattivata: controllo delle password rubate (HaveIBeenPwned). Da verificare se è disponibile nel piano Free.
   - Prestazioni: 14 policy RLS con `auth.uid()` rivalutato per ogni riga e 15 chiavi esterne senza indice. Con le quantità attuali (al massimo ~670 righe per tabella) l'effetto non si nota: non urgente.
+
+## Richiesta 51 — Permesso tolto alla funzione rls_auto_enable (solo database, nessuna patch)
+
+Fatta il 10/11/2026 con l'ok dell'owner, dopo il controllo di sicurezza della Richiesta 50. Nel sito non cambia niente.
+
+- Migrazione `revoke_execute_rls_auto_enable` sul database Supabase: `REVOKE EXECUTE ON FUNCTION public.rls_auto_enable() FROM PUBLIC, anon, authenticated;`. La funzione è quella dell'event trigger `ensure_rls`, che attiva da sola la RLS sulle nuove tabelle in `public`; adesso non è più chiamabile da fuori via `/rest/v1/rpc`.
+- Prima di applicarla l'ho provata in un blocco annullato: dopo il revoke `anon` e `authenticated` non possono più eseguirla e una tabella di prova creata in `public` riceve comunque la RLS. Dopo l'applicazione: permessi verificati e advisor di sicurezza rilanciato, i due avvisi sulla funzione sono spariti.
+- Avviso rimasto: "Leaked password protection" (rifiuto delle password già finite in elenchi rubati, HaveIBeenPwned). Secondo la documentazione Supabase è disponibile solo dal piano Pro in su: con il piano Free non si può attivare, nessuna azione.
+- Per tornare indietro (se mai servisse): `GRANT EXECUTE ON FUNCTION public.rls_auto_enable() TO PUBLIC;`.
