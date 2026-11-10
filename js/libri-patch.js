@@ -827,6 +827,11 @@ function statoBadgeLibro_(stato) {
         //   Nuove voci: aggiungere in CIMA all'array.
         // ==========================================
         const PATCH_NOTES = [
+            { v: '1.0.51', titolo: 'Serie TV a schede su telefono', data: '10/11/2026', punti: [
+                'Su telefono la lista Serie TV è a schede compatte: copertina e titolo in alto, una riga con stagioni, stato e visione, note solo se ci sono.',
+                'In fondo alla scheda ℹ️ 📺 📊 💡 🔄 ⛔ a sinistra e ✏️ 🗑️ a destra, tutti su una riga.',
+                'Da PC ℹ️ e 📺 passano dal titolo alla colonna Azioni, con i bottoni a griglia su due righe come Anime e Manga.'
+            ] },
             { v: '1.0.50', titolo: 'Manga a schede su telefono', data: '10/11/2026', punti: [
                 'Su telefono anche la lista Manga è a schede compatte: copertina e titolo in alto, poi due righe con tipologia, volumi e volumi letti, stato, acquisto e lettura; note e bottoni in fondo (ℹ️ 💡 a sinistra, ✏️ 🗑️ a destra, come nei Libri).',
                 'Da PC i bottoni dei Manga sono a quadrato come negli Anime, con la ℹ️ della trama tra le azioni.',

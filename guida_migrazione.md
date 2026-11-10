@@ -1948,3 +1948,15 @@ Fatta il 10/11/2026: secondo gruppo del TODO 5/5, scelto dall'owner, più un rit
 - `js/libri-patch.js`: voce v1.0.50 in `PATCH_NOTES`.
 
 Provato in locale con manga finti: a 375px e 390px nessuno scorrimento orizzontale, ℹ️, ➕ e ✏️ chiamano le funzioni giuste, nessun errore in console; da PC i 4 bottoni sono su due righe.
+
+## Richiesta 46 — Serie TV a schede su telefono e bottoni a griglia su PC (patch v1.0.51)
+
+Fatta il 10/11/2026: terzo gruppo del TODO 5/5. Raggruppamento dei campi scelto dall'owner prima di implementare.
+
+- **Da PC**: ℹ️ (trama) e 📺 (gestione stagioni) non stanno più accanto al titolo ma tra le azioni. I bottoni sono a griglia su due righe da quattro, come Anime e Manga: ℹ️ 📺 📊 💡 sopra, 🔄 ⛔ ✏️ 🗑️ sotto (📊 e 💡 ci sono solo se la serie ha l'id TMDB: senza, la griglia si accorcia). Wrapper `<span class="azioni-griglia">` con `inline-grid` a 4 colonne.
+- **Da telefono**: la tabella Serie TV diventa schede compatte (`contiene-schede schede-3col`). Titolo con stella e copertina in alto, generi ed eventuale ⛔ Abbandonata sotto; una riga Stagioni | Stato prod. | Visione; Note personali solo se ci sono; in fondo ℹ️ 📺 📊 💡 🔄 ⛔ a sinistra e ✏️ 🗑️ a destra (regola dei bottoni della Richiesta 45).
+- `js/serie-tv.js`, `renderListSerieTv`: nuova cella `<td class="solo-schede" data-label="Stagioni">` (esiste solo per la scheda: su PC è nascosta, quindi le colonne della tabella non cambiano); la scritta "Stagioni: x/y" sotto il titolo è in `<span class="stagioni-titolo">`, nascosta sulla scheda; `data-label` sulle altre celle; classi `td-titolo`, `td-note`/`td-vuota`, `td-azioni`, `info-azioni`, `btn-modifica`, `btn-elimina`.
+- `css/style.css`: `.contiene-schede .solo-schede` nascosta fuori dal telefono e visibile sulla scheda; `.stagioni-titolo` nascosta sulla scheda; bottoni delle schede con margine laterale ridotto (`margin: 0 2px`) così anche 8 bottoni stanno su una riga a 375px. Vale anche per Libri e Manga (bottoni un po' più vicini).
+- `js/libri-patch.js`: voce v1.0.51 in `PATCH_NOTES`.
+
+Provato in locale con serie finte: a 375px nessuno scorrimento orizzontale, tutti gli 8 bottoni chiamano la funzione giusta, nessun errore in console; da PC 5 colonne visibili come prima e bottoni su due righe.

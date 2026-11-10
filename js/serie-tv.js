@@ -625,37 +625,40 @@ function haProgressoStagioniParzialeSerieTv(titolo) {
                     avatarHTML = `<div style="width: 45px; height: 45px; flex-shrink: 0;"></div>`;
                 }
 
+                // data-label e classi td-*/solo-schede: servono alle schede su telefono
+                // (Richiesta 46, css "LISTE A SCHEDE"); su PC la cella Stagioni resta nascosta.
+                const noteVuoteClass = (item.note && String(item.note).trim() !== '') ? '' : ' td-vuota';
                 tr.innerHTML = `
-                    <td class="media-title">
+                    <td class="media-title td-titolo">
                         <div style="display: flex; align-items: center; gap: 12px;">
                             <button class="${starClass}" style="color: var(--warning); font-size: 16px; flex-shrink: 0;" onclick="toggleFavoriteSerieTv('${safeTitle}', this)">${starIcon}</button>
                             ${avatarHTML}
                             <div style="display: flex; flex-direction: column; gap: 3px;">
                                 <div style="font-weight: 600; display: flex; align-items: center; gap: 6px;">
                                     <span>${item.titolo || 'Senza Titolo'}</span>
-                                    <button class="action-icon-btn" style="font-size: 13px; padding: 0; background: none; border: none; cursor: pointer;" onclick="mostraSinossi('${safeTitle}', 'serietv')" title="Visualizza Trama">ℹ️</button>
-                                    <button class="action-icon-btn" style="font-size: 13px; padding: 0; background: none; border: none; cursor: pointer;" onclick="apriGestioneStagioniSerieTv('${safeTitle}')" title="Gestisci Stagioni">📺</button>
                                 </div>
                                 <div style="font-size: 12px; color: var(--text-muted); font-weight: normal;">
-                                    Stagioni: <b>${stagioniViste}/${stagioniTotali}</b>${item.abbandonata ? ' <span style="color:#f87171; font-weight:700;">⛔ Abbandonata</span>' : ''}
+                                    <span class="stagioni-titolo">Stagioni: <b>${stagioniViste}/${stagioniTotali}</b></span>${item.abbandonata ? ' <span style="color:#f87171; font-weight:700;">⛔ Abbandonata</span>' : ''}
                                 </div>
                                 ${genresHTML}
                             </div>
                         </div>
                     </td>
-                    <td><span class="status-badge ${statusClass}">${item.stato || '-'}</span></td>
-                    <td style="color:var(--text-muted); font-size:13px;">${item.note || '-'}</td>
-                    <td style="text-align: center;">
+                    <td class="solo-schede" style="font-weight: 700;" data-label="Stagioni">${stagioniViste}/${stagioniTotali}</td>
+                    <td data-label="Stato prod."><span class="status-badge ${statusClass}">${item.stato || '-'}</span></td>
+                    <td class="td-note${noteVuoteClass}" style="color:var(--text-muted); font-size:13px;" data-label="Note personali">${item.note || '-'}</td>
+                    <td style="text-align: center;" data-label="Visione">
                         <span class="vision-box box-${coloreVisione}"></span>
                     </td>
-                    <td style="text-align: center; white-space: nowrap;">
-
+                    <td class="td-azioni" style="text-align: center; white-space: nowrap;">
+                        <span class="azioni-griglia" style="display:inline-grid;grid-template-columns:repeat(4,max-content);gap:2px;justify-items:center;justify-content:center;"><button class="action-icon-btn info-azioni" onclick="mostraSinossi('${safeTitle}', 'serietv')" title="Visualizza Trama">ℹ️</button>
+                        <button class="action-icon-btn" onclick="apriGestioneStagioniSerieTv('${safeTitle}')" title="Gestisci Stagioni">📺</button>
                         ${item.tmdbId ? `<button class="action-icon-btn" onclick="apriSeriesGraphSerieTv(${item.tmdbId})" title="Voti episodi su Series Graph">📊</button>` : ''}
                         ${item.tmdbId ? `<button class="action-icon-btn" onclick="suggSerieTv_('${safeTitle}')" title="Potrebbero piacerti anche">💡</button>` : ''}
                         <button class="action-icon-btn" onclick="aggiornaStagioniSerieTvDaTMDB('${safeTitle}')" title="Rileggi da TMDB: aggiunge eventuali nuove stagioni uscite">🔄</button>
-                        <button class="action-icon-btn" onclick="apriModificaSerieTv('${safeTitle}')">✏️</button>
-                        <button class="action-icon-btn" onclick="rimuoviSerieTv('${safeTitle}')">🗑️</button>
                         <button class="action-icon-btn" style="${item.abbandonata ? '' : 'opacity:0.45;'}" onclick="toggleAbbandonataSerieTv('${safeTitle}')" title="${item.abbandonata ? 'Riprendi la serie' : 'Abbandona la serie'}">⛔</button>
+                        <button class="action-icon-btn btn-modifica" onclick="apriModificaSerieTv('${safeTitle}')">✏️</button>
+                        <button class="action-icon-btn btn-elimina" onclick="rimuoviSerieTv('${safeTitle}')">🗑️</button></span>
                     </td>
                 `;
                 tbody.appendChild(tr);

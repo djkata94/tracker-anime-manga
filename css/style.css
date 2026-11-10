@@ -1852,10 +1852,12 @@
    Sotto i 768px le tabelle dentro .contiene-schede diventano schede
    verticali: titolo e copertina in alto, poi i campi con la loro etichetta
    (attributo data-label del td), in fondo i bottoni. Niente più scorrimento
-   di lato. Liste convertite: Libri (Richiesta 43), Manga (Richiesta 45); le
+   di lato. Liste convertite: Libri (43), Manga (45), Serie TV (46); le
    altre si aggiungono mettendo .contiene-schede sul loro .table-container
    e data-label/td-* nei render.
    Desktop invariato. */
+/* celle che esistono solo per la scheda (es. Stagioni delle Serie TV): su PC nascoste */
+.contiene-schede .solo-schede { display: none; }
 @media (max-width: 768px) {
     .contiene-schede {
         background: transparent;
@@ -1914,6 +1916,9 @@
     /* note e bottoni sempre in fondo, dopo i campi a due colonne */
     .contiene-schede .td-note { grid-column: 1 / -1; order: 5; }
     .contiene-schede .td-vuota { display: none; }
+    /* sulla scheda le stagioni hanno la loro cella: tolte da sotto il titolo */
+    .contiene-schede .stagioni-titolo { display: none; }
+    .contiene-schede .solo-schede { display: block; }
     .contiene-schede .td-azioni {
         grid-column: 1 / -1;
         display: flex;
@@ -1933,4 +1938,7 @@
     .contiene-schede .info-azioni { order: -1; }
     .contiene-schede .btn-modifica { order: 10; margin-left: auto; }
     .contiene-schede .btn-elimina { order: 11; }
+    /* bottoni senza margine laterale (lo spazio lo dà il gap): fino a 8 bottoni in una riga anche su 375px */
+    .contiene-schede .td-azioni .action-icon-btn { margin: 0 2px; }
+    .contiene-schede .td-azioni .btn-modifica { margin-left: auto; }
 }
