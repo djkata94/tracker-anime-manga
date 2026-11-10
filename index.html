@@ -19,10 +19,11 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-    <!-- ?v= = versione patch notes: GitHub Pages fa tenere CSS/JS in cache
-         10 minuti, cambiando il numero il browser li riscarica subito.
-         Va aggiornato (qui e sugli script in fondo) a ogni modifica. -->
-    <link rel="stylesheet" href="css/style.css?v=1.0.48">
+    <!-- ?v= = hash del contenuto del file: GitHub Pages fa tenere CSS/JS in
+         cache 10 minuti, cambiando il valore il browser li riscarica subito.
+         Non va toccato a mano: lo calcola tools/bump-version.js (qui e sugli
+         script in fondo), lanciato in automatico prima di ogni commit. -->
+    <link rel="stylesheet" href="css/style.css?v=de849dd4">
 
 </head>
 <body>
@@ -1256,14 +1257,14 @@
          o la schermata di login.
     ==================================================================== -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="js/state-ui.js?v=1.0.48"></script>
-    <script src="js/anime-all.js?v=1.0.48"></script>
-    <script src="js/serie-tv.js?v=1.0.48"></script>
-    <script src="js/manga.js?v=1.0.48"></script>
-    <script src="js/libri-patch.js?v=1.0.48"></script>
-    <script src="js/cinema.js?v=1.0.48"></script>
-    <script src="js/main.js?v=1.0.48"></script>
-    <script src="js/config-auth.js?v=1.0.48"></script>
+    <script src="js/state-ui.js?v=2a7043e9"></script>
+    <script src="js/anime-all.js?v=24b9c451"></script>
+    <script src="js/serie-tv.js?v=77b30201"></script>
+    <script src="js/manga.js?v=e4dd8f05"></script>
+    <script src="js/libri-patch.js?v=9dfe391c"></script>
+    <script src="js/cinema.js?v=7f8bb160"></script>
+    <script src="js/main.js?v=fb657e11"></script>
+    <script src="js/config-auth.js?v=73ba4f06"></script>
 
     <script>
     // PWA: registra il service worker (installabilità + cache immagini/librerie).

@@ -1,0 +1,11 @@
+#!/bin/sh
+# Richiesta 42 (TODO 4/5): prima di ogni commit ricalcola i ?v= di CSS e JS
+# in index.html (hash del contenuto di ogni file) e li mette nel commit.
+# Attivazione, una volta sola per ogni copia del repository:
+#   git config core.hooksPath .githooks
+
+node tools/bump-version.js --staged || {
+  echo "Commit bloccato: tools/bump-version.js e' andato in errore." >&2
+  exit 1
+}
+git add index.html

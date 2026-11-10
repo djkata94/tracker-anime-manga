@@ -1901,3 +1901,15 @@ Fatta il 06/11/2026: l'owner ha deciso di dismettere completamente mind-garden (
 - `js/config-auth.js`: tolto `window.GIARDINO_IS_OWNER_` (usato solo dal giardino; il bottone Drive ha il suo controllo proprietario).
 - `index.html`: `?v=` portato a `1.0.48`.
 - La voce v1.0.40 delle patch notes e la Richiesta 33 restano come storia. Il token resta nella cronologia git, ma smette di valere quando il giardino viene spento.
+
+## Richiesta 42 — ?v= automatico su CSS e JS (nessuna patch)
+
+Fatta il 10/11/2026 (TODO 4/5, scelta B dell'owner del 23/10: un hash per ogni file). Prima il `?v=` di CSS e JS in `index.html` andava aggiornato a mano a ogni modifica (vedi fix cache della Richiesta 38): se ci si dimenticava, il telefono caricava il nuovo `index.html` con i vecchi CSS/JS per 10 minuti.
+
+- `tools/bump-version.js` (Node, nessuna dipendenza): per ogni `href`/`src` di `index.html` che punta a `css/*.css` o `js/*.js` scrive `?v=` = primi 8 caratteri dello SHA-256 del contenuto di quel file. Il valore cambia solo quando cambia quel file. I fine riga sono portati a LF prima dell'hash, quindi il risultato è lo stesso su Windows e nel repository. Se un file richiamato non esiste esce con errore; se non c'è niente da cambiare non riscrive `index.html`. Gli script da CDN (supabase-js) non vengono toccati.
+- `.githooks/pre-commit`: prima di ogni commit lancia `node tools/bump-version.js --staged` (hash dei file così come entrano nel commit) e aggiunge `index.html` al commit. Se lo script va in errore il commit viene bloccato. Nota: l'hook aggiunge al commit tutto `index.html`, comprese eventuali modifiche non ancora preparate.
+- **Attivazione, una volta per ogni copia del repository** (sul PC dell'owner è già fatta), dalla cartella del progetto: `git config core.hooksPath .githooks`.
+- **Caricamento dalla pagina web di GitHub** (lì l'hook non parte): prima di caricare, dalla cartella del progetto lanciare `node tools/bump-version.js` e caricare anche `index.html`.
+- `index.html`: commento in testa aggiornato; i `?v=1.0.48` diventano hash (es. `css/style.css?v=de849dd4`).
+
+Il `?v=` non segue più il numero delle patch notes. Nessuna voce in `PATCH_NOTES`: la modifica non si vede nel sito.
