@@ -1852,7 +1852,7 @@
    Sotto i 768px le tabelle dentro .contiene-schede diventano schede
    verticali: titolo e copertina in alto, poi i campi con la loro etichetta
    (attributo data-label del td), in fondo i bottoni. Niente più scorrimento
-   di lato. Liste convertite: Libri (43), Manga (45), Serie TV (46), Cinema (47); le
+   di lato. Liste convertite: Libri (43), Manga (45), Serie TV (46), Cinema (47), Anime (48); le
    altre si aggiungono mettendo .contiene-schede sul loro .table-container
    e data-label/td-* nei render.
    Desktop invariato. */
@@ -1916,6 +1916,11 @@
     }
     /* stella, puntina e copertina piu' vicine: piu' spazio al titolo */
     .contiene-schede .td-titolo > div { gap: 8px !important; }
+    /* ordine dei campi sulla scheda quando non segue quello delle colonne (Anime:
+       Stagioni | Film | Visione, poi Stato | Voto) */
+    .contiene-schede .ordine-1 { order: 1; }
+    .contiene-schede .ordine-2 { order: 2; }
+    .contiene-schede .ordine-3 { order: 3; }
     /* note e bottoni sempre in fondo, dopo i campi a due colonne */
     .contiene-schede .td-note { grid-column: 1 / -1; order: 5; }
     .contiene-schede .td-vuota { display: none; }

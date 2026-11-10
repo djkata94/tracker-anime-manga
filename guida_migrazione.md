@@ -1978,3 +1978,15 @@ La vista Cinema è diversa dalle altre: 4 tabelle (`.cinema-table`) dentro due w
 - `js/libri-patch.js`: voce v1.0.52 in `PATCH_NOTES`.
 
 Provato in locale con film finti: a 375px nessuno scorrimento orizzontale; "Da Vedere" alto esattamente 3 schede e "Visti" 5; lo switch Sala/Streaming fa scorrere il pannello e adatta l'altezza; il widget "Visti", chiuso all'avvio, si apre con l'altezza giusta; tutti i bottoni (anche data visione e Visto/Da vedere) chiamano la funzione giusta; nessun errore in console. Da PC: 5 e 15 righe, colonne alle stesse larghezze.
+
+## Richiesta 48 — Anime a schede su telefono e bottoni a griglia su PC (patch v1.0.53)
+
+Fatta il 10/11/2026: quinto gruppo del TODO 5/5. Raggruppamento dei campi e bottoni da PC scelti dall'owner prima di implementare (come Serie TV, Richiesta 46).
+
+- **Da PC**: ℹ️ (trama) e 📺 (gestione episodi) non stanno più accanto al titolo ma tra le azioni. I bottoni passano dal quadrato 2×2 a una griglia 3×2: ℹ️ 📺 💡 sopra, ⛔ ✏️ 🗑️ sotto (`<span class="azioni-griglia">`, `inline-grid` a 3 colonne). Il resto della tabella non cambia.
+- **Da telefono**: la tabella Anime diventa schede compatte (`contiene-schede schede-3col`). Titolo con stella, puntina e copertina in alto, generi ed eventuale ⛔ Abbandonato sotto; riga 1 Stagioni | Film | Visione, riga 2 Stato prod. | Voto (il bottone "Vota" o il voto, cliccabili come prima); Note personali solo se ci sono; in fondo ℹ️ 📺 💡 ⛔ a sinistra e ✏️ 🗑️ a destra.
+- `js/anime-all.js`, `renderListAnime`: due celle `solo-schede` (Stagioni e Film, nascoste su PC: le colonne della tabella non cambiano); "Stagioni … | Film …" sotto il titolo in `<span class="stagioni-titolo">`, nascosto sulla scheda; `data-label` sulle altre celle; classi `td-titolo`, `td-note`/`td-vuota`, `td-azioni`, `info-azioni`, `btn-modifica`, `btn-elimina`, e `ordine-1/2/3` su Visione, Stato e Voto.
+- `css/style.css`, blocco "LISTE A SCHEDE SU TELEFONO": classi generiche `.ordine-1`, `.ordine-2`, `.ordine-3` (`order` 1-3) per mettere i campi della scheda in un ordine diverso da quello delle colonne. Qui servono per avere Visione nella prima riga accanto a Stagioni e Film.
+- `js/libri-patch.js`: voce v1.0.53 in `PATCH_NOTES`.
+
+Provato in locale con anime finti: a 375px nessuno scorrimento orizzontale, schede alte 240-270px; tutti i bottoni, "Vota" e il voto chiamano la funzione giusta; nessun errore in console. Da PC 6 colonne come prima e bottoni su due righe da tre.

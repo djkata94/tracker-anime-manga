@@ -928,8 +928,11 @@ function switchView(viewName) {
                     avatarHTML = `<div style="width: 45px; height: 45px; flex-shrink: 0;"></div>`;
                 }
 
+                // data-label, classi td-*/ordine-*/solo-schede: servono alle schede su telefono
+                // (Richiesta 48, css "LISTE A SCHEDE"); su PC le celle Stagioni e Film restano nascoste.
+                const noteVuoteClass = (item.note && String(item.note).trim() !== '') ? '' : ' td-vuota';
                 tr.innerHTML = `
-                    <td class="media-title">
+                    <td class="media-title td-titolo">
                         <div style="display: flex; align-items: center; gap: 12px;">
                             <button class="${starClass}" style="color: var(--warning); font-size: 16px; flex-shrink: 0;" onclick="toggleFavoriteAnime('${safeTitle}', this)">${starIcon}</button>
                             <button class="${pinClass}" onclick="togglePinAnime('${safeTitle}', this, event)" title="${pinTitle}">📌</button>
@@ -939,27 +942,29 @@ function switchView(viewName) {
                             <div style="display: flex; flex-direction: column; gap: 3px;">
                                 <div style="font-weight: 600; display: flex; align-items: center; gap: 6px;">
                                     <span>${item.titolo || 'Senza Titolo'}</span>
-                                    <button class="action-icon-btn" style="font-size: 13px; padding: 0; background: none; border: none; cursor: pointer;" onclick="mostraSinossi('${safeTitle}', 'anime')" title="Visualizza Sinossi">ℹ️</button>
-                                    <button class="action-icon-btn" style="font-size: 13px; padding: 0; background: none; border: none; cursor: pointer;" onclick="apriGestioneEpisodi('${safeTitle}')" title="Gestisci Episodi">📺</button>
                                 </div>
                                 <div style="font-size: 12px; color: var(--text-muted); font-weight: normal;">
-                                    Stagioni: <b>${stagioniViste}/${stagioniTotali}</b> | Film: <b>${filmVisti}/${filmTotali}</b>${item.abbandonata ? ' <span style="color:#f87171; font-weight:700;">⛔ Abbandonato</span>' : ''}
+                                    <span class="stagioni-titolo">Stagioni: <b>${stagioniViste}/${stagioniTotali}</b> | Film: <b>${filmVisti}/${filmTotali}</b></span>${item.abbandonata ? ' <span style="color:#f87171; font-weight:700;">⛔ Abbandonato</span>' : ''}
                                 </div>
                                 ${genresHTML}
                             </div>
                         </div>
                     </td>
-                    <td><span class="status-badge ${statusClass}">${item.stato || '-'}</span></td>
-                    <td style="color:var(--text-muted); font-size:13px;">${item.note || '-'}</td>
-                    <td style="text-align: center; font-weight: bold; color:var(--primary); font-size:15px;">${votoCellHTML}</td>
-                    <td style="text-align: center;">
+                    <td class="solo-schede" style="font-weight: 700;" data-label="Stagioni">${stagioniViste}/${stagioniTotali}</td>
+                    <td class="solo-schede" style="font-weight: 700;" data-label="Film">${filmVisti}/${filmTotali}</td>
+                    <td class="ordine-2" data-label="Stato prod."><span class="status-badge ${statusClass}">${item.stato || '-'}</span></td>
+                    <td class="td-note${noteVuoteClass}" style="color:var(--text-muted); font-size:13px;" data-label="Note personali">${item.note || '-'}</td>
+                    <td class="ordine-3" style="text-align: center; font-weight: bold; color:var(--primary); font-size:15px;" data-label="Voto">${votoCellHTML}</td>
+                    <td class="ordine-1" style="text-align: center;" data-label="Visione">
                         <span class="vision-box box-${coloreVisione}"></span>
                     </td>
-                    <td style="text-align: center;">
-                        <span style="display:inline-grid;grid-template-columns:repeat(2,max-content);gap:2px;justify-items:center;justify-content:center;"><button class="action-icon-btn" onclick="apriModificaAnime('${safeTitle}')">✏️</button>
+                    <td class="td-azioni" style="text-align: center;">
+                        <span class="azioni-griglia" style="display:inline-grid;grid-template-columns:repeat(3,max-content);gap:2px;justify-items:center;justify-content:center;"><button class="action-icon-btn info-azioni" onclick="mostraSinossi('${safeTitle}', 'anime')" title="Visualizza Sinossi">ℹ️</button>
+                        <button class="action-icon-btn" onclick="apriGestioneEpisodi('${safeTitle}')" title="Gestisci Episodi">📺</button>
                         <button class="action-icon-btn" onclick="suggAnime_('${safeTitle}')" title="Potrebbero piacerti anche">💡</button>
-                        <button class="action-icon-btn" onclick="rimuoviAnime('${safeTitle}')">🗑️</button>
-                        <button class="action-icon-btn" style="${item.abbandonata ? '' : 'opacity:0.45;'}" onclick="toggleAbbandonataAnime('${safeTitle}')" title="${item.abbandonata ? 'Riprendi l\'anime' : 'Abbandona l\'anime'}">⛔</button></span>
+                        <button class="action-icon-btn" style="${item.abbandonata ? '' : 'opacity:0.45;'}" onclick="toggleAbbandonataAnime('${safeTitle}')" title="${item.abbandonata ? 'Riprendi l\'anime' : 'Abbandona l\'anime'}">⛔</button>
+                        <button class="action-icon-btn btn-modifica" onclick="apriModificaAnime('${safeTitle}')">✏️</button>
+                        <button class="action-icon-btn btn-elimina" onclick="rimuoviAnime('${safeTitle}')">🗑️</button></span>
                     </td>
                 `;
                 tbody.appendChild(tr);
