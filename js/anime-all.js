@@ -1784,9 +1784,11 @@ function switchView(viewName) {
                     }
                 }
 
+                // td-log-*: servono alla scheda compatta su telefono (Richiesta 49,
+                // css "LISTE A SCHEDE", variante schede-log); su PC non cambiano nulla.
                 tr.innerHTML =
-                    '<td class="ep-log-timestamp">' + formatLogTimestamp(log.timestamp) + '</td>' +
-                    '<td class="ep-log-titolo">' + escapeHtmlLog(log.titolo) + '</td>' +
+                    '<td class="ep-log-timestamp td-log-data">' + formatLogTimestamp(log.timestamp) + '</td>' +
+                    '<td class="ep-log-titolo td-log-titolo">' + escapeHtmlLog(log.titolo) + '</td>' +
                     '<td><span class="ep-log-badge ' + tipoClass + '">' + tipoIcona + ' ' + escapeHtmlLog(log.tipo) + ' ' + log.numero + '</span></td>' +
                     '<td style="text-align:center; font-family:\'Courier New\', monospace;">' + epLabel + '</td>' +
                     '<td style="text-align:center;"><span class="ep-log-azione ' + azioneClass + '">' + azioneLabel + '</span></td>';

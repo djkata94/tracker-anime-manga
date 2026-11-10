@@ -1329,9 +1329,11 @@ function haProgressoStagioniParzialeSerieTv(titolo) {
                     azioneBadge = '<span class="log-badge" style="background:rgba(248,113,113,.15); color:#fca5a5; border:1px solid rgba(248,113,113,.4);">↩️ Rimosso</span>';
                 }
 
+                // td-log-*: servono alla scheda compatta su telefono (Richiesta 49,
+                // css "LISTE A SCHEDE", variante schede-log); su PC non cambiano nulla.
                 tr.innerHTML =
-                    '<td style="white-space:nowrap;">' + formatLogTimestamp(log.timestamp) + '</td>' +
-                    '<td>' + escapeHtmlLog(log.titolo || '') + '</td>' +
+                    '<td class="td-log-data" style="white-space:nowrap;">' + formatLogTimestamp(log.timestamp) + '</td>' +
+                    '<td class="td-log-titolo">' + escapeHtmlLog(log.titolo || '') + '</td>' +
                     '<td><span class="ep-log-badge-stagione">🎞️ Stagione ' + (parseInt(log.numero) || 0) + '</span></td>' +
                     '<td style="text-align:center;">Ep. ' + (parseInt(log.episodioInteressato) || 0) + '/' + (parseInt(log.episodiTotali) || 0) + '</td>' +
                     '<td style="text-align:center;">' + azioneBadge + '</td>';

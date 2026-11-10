@@ -1990,3 +1990,17 @@ Fatta il 10/11/2026: quinto gruppo del TODO 5/5. Raggruppamento dei campi e bott
 - `js/libri-patch.js`: voce v1.0.53 in `PATCH_NOTES`.
 
 Provato in locale con anime finti: a 375px nessuno scorrimento orizzontale, schede alte 240-270px; tutti i bottoni, "Vota" e il voto chiamano la funzione giusta; nessun errore in console. Da PC 6 colonne come prima e bottoni su due righe da tre.
+
+## Richiesta 49 — Registri episodi e stagioni a schede su telefono (patch v1.0.54)
+
+Fatta il 10/11/2026: ultimo gruppo del TODO 5/5. Scheda compatta scelta dall'owner prima di implementare. Da PC non cambia nulla.
+
+- **Da telefono**: nel registro episodi degli Anime (linguetta Log Episodi) e in quello delle stagioni delle Serie TV ogni voce è una scheda compatta, senza etichette: riga 1 il titolo e a destra data e ora; riga 2 i badge Stagione/Film, Episodio e Azione uno dopo l'altro. L'azione lunga ("✅ Visto — 🏆 Anime Completato", "Serie completata", "Film completato") va a capo da sola. Una voce semplice è alta circa 65px, quindi in una schermata se ne vedono una decina.
+- `index.html`: `contiene-schede schede-log` sui `.table-container` di `#episodiLogTable` e `#stagioniLogTable`.
+- `js/anime-all.js` (`renderLogEpisodi`) e `js/serie-tv.js` (`renderLogStagioniSerieTv`): classi `td-log-data` e `td-log-titolo` sulle prime due celle.
+- `css/style.css`, blocco "LISTE A SCHEDE SU TELEFONO": variante `schede-log`, con la riga a `flex` invece che a griglia. Il titolo ha `flex-basis: calc(100% - 140px)`, così sulla prima riga c'è posto solo per la data e i badge vanno sempre sotto. La data resta in alto anche quando il titolo va a capo.
+- `js/libri-patch.js`: voce v1.0.54 in `PATCH_NOTES`.
+
+Con questa richiesta il TODO 5/5 è completo: Libri, Manga, Serie TV, Film, Anime e i due registri sono a schede su telefono.
+
+Provato in locale con voci finte: a 375px nessuno scorrimento orizzontale, voci semplici su due righe, azioni di completamento su tre; nessun errore in console. Da PC il registro anime è identico al pixel (posizioni di tutte le celle uguali con e senza le classi nuove).

@@ -1852,7 +1852,8 @@
    Sotto i 768px le tabelle dentro .contiene-schede diventano schede
    verticali: titolo e copertina in alto, poi i campi con la loro etichetta
    (attributo data-label del td), in fondo i bottoni. Niente più scorrimento
-   di lato. Liste convertite: Libri (43), Manga (45), Serie TV (46), Cinema (47), Anime (48); le
+   di lato. Liste convertite: Libri (43), Manga (45), Serie TV (46), Cinema (47), Anime (48),
+   registri episodi e stagioni (49, variante compatta schede-log); le
    altre si aggiungono mettendo .contiene-schede sul loro .table-container
    e data-label/td-* nei render.
    Desktop invariato. */
@@ -1957,4 +1958,36 @@
        per il bottone ↑, che va in fondo alla vista. */
     .contiene-schede.cinema-scroll-area { overflow-y: auto; overflow-x: hidden; padding-bottom: 0; padding-right: 6px; }
     #cinemaContent { padding-bottom: 56px; }
+
+    /* REGISTRI (Richiesta 49): scheda compatta senza etichette. Riga 1 titolo e data
+       a destra; riga 2 i badge Stagione/Film, Episodio e Azione uno dopo l'altro
+       (l'azione lunga "Anime Completato" va a capo da sola). */
+    .contiene-schede.schede-log tr {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 6px 12px;
+        padding: 10px 12px;
+        margin-bottom: 8px;
+    }
+    .contiene-schede.schede-log td { padding: 0; }
+    /* il titolo occupa la riga tranne lo spazio della data: i badge vanno sempre sotto */
+    .contiene-schede.schede-log .td-log-titolo {
+        order: -2;
+        flex: 1 1 calc(100% - 140px);
+        min-width: 0;
+        font-weight: 600;
+        color: #fff;
+        overflow-wrap: anywhere;
+    }
+    .contiene-schede.schede-log .td-log-data {
+        order: -1;
+        flex: 0 0 auto;
+        margin-left: auto;
+        align-self: flex-start; /* resta accanto alla prima riga del titolo anche se va a capo */
+        margin-top: 1px;
+        font-family: 'Courier New', monospace;
+        font-size: 12px;
+        color: var(--text-muted);
+    }
 }
