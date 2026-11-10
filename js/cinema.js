@@ -323,15 +323,30 @@ function formattaDataCinemaISO_(valoreGrezzo) {
         // Righe visibili senza scorrere: 5 nel widget "Da Vedere", 15 nello storico "Visti"
         const CINEMA_MAX_RIGHE_VISIBILI = 5;
         const CINEMA_MAX_RIGHE_VISTI = 15;
+        // Da telefono le righe sono schede (Richiesta 47): 3 in "Da Vedere", 5 in "Visti"
+        const CINEMA_MAX_SCHEDE_VISIBILI = 3;
+        const CINEMA_MAX_SCHEDE_VISTI = 5;
 
         // Limita l'area scorrevole all'altezza reale di intestazione + prime N righe.
         // Con N film o meno la tabella resta libera di occupare l'altezza che le serve.
         function applicaScrollCinema_(scrollEl, maxRighe) {
             if (!scrollEl) return;
-            const limite = maxRighe || CINEMA_MAX_RIGHE_VISIBILI;
+            // Sotto i 768px le righe diventano schede (css "LISTE A SCHEDE"): meno elementi
+            // visibili e altezza misurata dalla posizione della prima scheda nascosta,
+            // perché tra le schede c'è un margine che offsetHeight non conta.
+            const schede = window.matchMedia('(max-width: 768px)').matches;
+            const limite = schede
+                ? (maxRighe === CINEMA_MAX_RIGHE_VISTI ? CINEMA_MAX_SCHEDE_VISTI : CINEMA_MAX_SCHEDE_VISIBILI)
+                : (maxRighe || CINEMA_MAX_RIGHE_VISIBILI);
             const righe = scrollEl.querySelectorAll('tbody tr');
             if (righe.length <= limite) {
                 scrollEl.style.maxHeight = '';
+                return;
+            }
+            if (schede) {
+                const altezzaSchede = righe[limite].getBoundingClientRect().top - scrollEl.getBoundingClientRect().top + scrollEl.scrollTop;
+                // Widget chiuso o vista non a schermo: misura nulla, meglio nessun limite
+                scrollEl.style.maxHeight = altezzaSchede > 0 ? altezzaSchede + 'px' : '';
                 return;
             }
             const thead = scrollEl.querySelector('thead');
@@ -443,7 +458,7 @@ function formattaDataCinemaISO_(valoreGrezzo) {
                 : '';
 
             const titoloCol = `
-                <td>
+                <td class="td-titolo">
                     <div style="display:flex; align-items:center; gap:10px;">
                         ${badgeStreaming}
                         ${posterHTML}
@@ -454,8 +469,8 @@ function formattaDataCinemaISO_(valoreGrezzo) {
                     </div>
                 </td>`;
 
-            const dataUscitaCol = `<td style="color:var(--text-muted); font-size:13px; font-family:'Courier New', monospace;">${formattaDataItalianaCinema_(item.dataUscita)}</td>`;
-            const dataVisioneCol = `<td><span class="cinema-data-visione" onclick="modificaDataVisioneCinemaLista('${safeTitle}')" title="Clicca per correggere la data">${formattaDataItalianaCinema_(item.dataVisione)}</span></td>`;
+            const dataUscitaCol = `<td data-label="Data uscita" style="color:var(--text-muted); font-size:13px; font-family:'Courier New', monospace;">${formattaDataItalianaCinema_(item.dataUscita)}</td>`;
+            const dataVisioneCol = `<td data-label="Data visione"><span class="cinema-data-visione" onclick="modificaDataVisioneCinemaLista('${safeTitle}')" title="Clicca per correggere la data">${formattaDataItalianaCinema_(item.dataVisione)}</span></td>`;
 
             let visioneBtn;
             visioneBtn = isVisto
@@ -467,7 +482,7 @@ function formattaDataCinemaISO_(valoreGrezzo) {
                 : '';
 
             const infoBtn = (item.trama || item.generi)
-                ? `<button class="action-icon-btn" onclick="mostraDettaglioCinemaLista_('${safeTitle}')" title="Trama e generi">ℹ️</button>`
+                ? `<button class="action-icon-btn info-azioni" onclick="mostraDettaglioCinemaLista_('${safeTitle}')" title="Trama e generi">ℹ️</button>`
                 : '';
 
             const trashDisabled = isVisto ? 'disabled title="Non puoi eliminare un film già visto"' : `onclick="eliminaCinemaLista('${safeTitle}')" title="Elimina film"`;
@@ -475,12 +490,12 @@ function formattaDataCinemaISO_(valoreGrezzo) {
             tr.innerHTML = `
                 ${titoloCol}
                 ${isVisto ? dataVisioneCol : dataUscitaCol}
-                <td style="text-align:center;">${visioneBtn}</td>
-                <td style="text-align:center;">
+                <td style="text-align:center;" data-label="Visione">${visioneBtn}</td>
+                <td class="td-azioni" style="text-align:center;">
                     ${infoBtn}
                     ${streamingBtn}
                     <button class="action-icon-btn" onclick="suggCinema_('${safeTitle}')" title="Potrebbero piacerti anche">💡</button>
-                    <button class="action-icon-btn" ${trashDisabled}>🗑️</button>
+                    <button class="action-icon-btn btn-elimina" ${trashDisabled}>🗑️</button>
                 </td>
             `;
             return tr;

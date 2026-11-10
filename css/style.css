@@ -1852,7 +1852,7 @@
    Sotto i 768px le tabelle dentro .contiene-schede diventano schede
    verticali: titolo e copertina in alto, poi i campi con la loro etichetta
    (attributo data-label del td), in fondo i bottoni. Niente più scorrimento
-   di lato. Liste convertite: Libri (43), Manga (45), Serie TV (46); le
+   di lato. Liste convertite: Libri (43), Manga (45), Serie TV (46), Cinema (47); le
    altre si aggiungono mettendo .contiene-schede sul loro .table-container
    e data-label/td-* nei render.
    Desktop invariato. */
@@ -1867,7 +1867,10 @@
         /* spazio sotto l'ultima scheda: il bottone ↑ (#backToTop) non copre i suoi bottoni */
         padding-bottom: 56px;
     }
-    .contiene-schede table { min-width: 0; }
+    /* la tabella diventa un blocco e le larghezze fisse delle colonne (colgroup
+       delle tabelle Cinema) non contano più: le schede usano tutta la larghezza */
+    .contiene-schede table { min-width: 0; display: block; width: 100%; }
+    .contiene-schede colgroup { display: none; }
     .contiene-schede thead { display: none; }
     .contiene-schede tbody { display: block; }
     .contiene-schede tr {
@@ -1941,4 +1944,12 @@
     /* bottoni senza margine laterale (lo spazio lo dà il gap): fino a 8 bottoni in una riga anche su 375px */
     .contiene-schede .td-azioni .action-icon-btn { margin: 0 2px; }
     .contiene-schede .td-azioni .btn-modifica { margin-left: auto; }
+    /* senza ✏️ (Cinema) è il 🗑️ ad andare a destra */
+    .contiene-schede .td-azioni .btn-elimina { margin-left: auto; }
+    .contiene-schede .td-azioni .btn-modifica ~ .btn-elimina { margin-left: 2px; }
+    /* CINEMA (Richiesta 47): le aree dei widget restano scorrevoli in verticale
+       (altezza 3 o 5 schede, calcolata in applicaScrollCinema_), senza lo spazio
+       per il bottone ↑, che va in fondo alla vista. */
+    .contiene-schede.cinema-scroll-area { overflow-y: auto; overflow-x: hidden; padding-bottom: 0; padding-right: 6px; }
+    #cinemaContent { padding-bottom: 56px; }
 }

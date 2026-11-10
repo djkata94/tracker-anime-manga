@@ -1960,3 +1960,21 @@ Fatta il 10/11/2026: terzo gruppo del TODO 5/5. Raggruppamento dei campi scelto 
 - `js/libri-patch.js`: voce v1.0.51 in `PATCH_NOTES`.
 
 Provato in locale con serie finte: a 375px nessuno scorrimento orizzontale, tutti gli 8 bottoni chiamano la funzione giusta, nessun errore in console; da PC 5 colonne visibili come prima e bottoni su due righe.
+
+## Richiesta 47 — Film a schede su telefono (patch v1.0.52)
+
+Fatta il 10/11/2026: quarto gruppo del TODO 5/5. Scheda e scorrimento scelti dall'owner prima di implementare. Da PC non cambia nulla.
+
+La vista Cinema è diversa dalle altre: 4 tabelle (`.cinema-table`) dentro due widget, "Da Vedere" e "Visti", ognuno con lo switch Sala/Streaming che fa scorrere due pannelli (slider) e un'area con scorrimento interno (`.cinema-scroll-area`) alta 5 righe (15 in "Visti"), calcolata in `applicaScrollCinema_()`.
+
+- **Scheda**: locandina, eventuale badge S (streaming), titolo e generi in alto; una riga Data uscita (o Data visione nei "Visti") | Visione (bottone ☐ Da vedere / ✅ Visto); in fondo ℹ️ 📺 💡 a sinistra e 🗑️ a destra (regola dei bottoni della Richiesta 45; i film non hanno ✏️).
+- **Scorrimento nei widget da telefono**: 3 schede in "Da Vedere" e 5 in "Visti", poi si scorre dentro il widget (da PC restano 5 e 15). `applicaScrollCinema_()` sotto i 768px usa `CINEMA_MAX_SCHEDE_VISIBILI` / `CINEMA_MAX_SCHEDE_VISTI` e misura l'altezza dalla posizione della prima scheda nascosta (tra le schede c'è un margine che `offsetHeight` non conta). Se la misura è nulla (vista non a schermo) non mette limiti. Il ricalcolo al resize c'era già.
+- `index.html`: `contiene-schede` sulle 4 `.cinema-scroll-area`.
+- `js/cinema.js`, `costruisciRigaCinema_`: `td-titolo`, `data-label` ("Data uscita", "Data visione", "Visione"), `td-azioni`, `info-azioni` sulla ℹ️, `btn-elimina` sul 🗑️.
+- `css/style.css`, blocco "LISTE A SCHEDE SU TELEFONO":
+  - `.contiene-schede table` diventa `display: block` e `colgroup` sparisce: le tabelle Cinema hanno larghezze fisse delle colonne (120/132/142px) che schiacciavano le schede nella prima colonna. Libri, Manga e Serie TV non cambiano (la loro tabella ha `display` impostato dal JS).
+  - 🗑️ va a destra anche quando non c'è ✏️ (`.btn-elimina` con `margin-left: auto`, annullato da `.btn-modifica ~ .btn-elimina` nelle liste che hanno entrambi).
+  - Le aree dei widget restano scorrevoli in verticale (`overflow-y: auto`, la regola generica le avrebbe rese `visible`), senza lo spazio per il bottone ↑ (spostato in fondo a `#cinemaContent`) e con 6px a destra per non toccare la barra di scorrimento.
+- `js/libri-patch.js`: voce v1.0.52 in `PATCH_NOTES`.
+
+Provato in locale con film finti: a 375px nessuno scorrimento orizzontale; "Da Vedere" alto esattamente 3 schede e "Visti" 5; lo switch Sala/Streaming fa scorrere il pannello e adatta l'altezza; il widget "Visti", chiuso all'avvio, si apre con l'altezza giusta; tutti i bottoni (anche data visione e Visto/Da vedere) chiamano la funzione giusta; nessun errore in console. Da PC: 5 e 15 righe, colonne alle stesse larghezze.

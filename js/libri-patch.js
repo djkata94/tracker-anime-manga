@@ -827,6 +827,11 @@ function statoBadgeLibro_(stato) {
         //   Nuove voci: aggiungere in CIMA all'array.
         // ==========================================
         const PATCH_NOTES = [
+            { v: '1.0.52', titolo: 'Film a schede su telefono', data: '10/11/2026', punti: [
+                'Su telefono i film dei widget Da Vedere e Visti sono a schede: locandina e titolo in alto, una riga con data e bottone Visto, in fondo ℹ️ 📺 💡 a sinistra e 🗑️ a destra.',
+                'Dentro i widget si vedono 3 film in Da Vedere e 5 in Visti, poi si scorre; lo switch Sala/Streaming funziona come prima.',
+                'Da PC non cambia nulla.'
+            ] },
             { v: '1.0.51', titolo: 'Serie TV a schede su telefono', data: '10/11/2026', punti: [
                 'Su telefono la lista Serie TV è a schede compatte: copertina e titolo in alto, una riga con stagioni, stato e visione, note solo se ci sono.',
                 'In fondo alla scheda ℹ️ 📺 📊 💡 🔄 ⛔ a sinistra e ✏️ 🗑️ a destra, tutti su una riga.',
