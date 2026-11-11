@@ -827,6 +827,10 @@ function statoBadgeLibro_(stato) {
         //   Nuove voci: aggiungere in CIMA all'array.
         // ==========================================
         const PATCH_NOTES = [
+            { v: '1.0.55', titolo: 'Esporta i miei dati', data: '11/11/2026', punti: [
+                'Nuovo bottone 💾 Esporta i miei dati: scarica un file con tutte le tue liste, episodi, trame e registri, da tenere come copia di sicurezza.',
+                'Esporta solo i dati di chi lo preme. Da PC è in Home in alto a destra, da telefono nel menu ☰.'
+            ] },
             { v: '1.0.54', titolo: 'Registri a schede su telefono', data: '10/11/2026', punti: [
                 'Su telefono i registri degli episodi anime e delle stagioni delle serie TV sono a schede compatte: titolo e data in alto, sotto stagione, episodio e azione.',
                 'Con questo tutte le liste del tracker si leggono su telefono senza scorrere di lato. Da PC non cambia nulla.'

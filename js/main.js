@@ -2601,3 +2601,118 @@ document.addEventListener('keydown', function (e) {
 window.matchMedia('(max-width: 768px)').addEventListener('change', function (e) {
     if (!e.matches) chiudiMenuMobile();
 });
+
+// ============================================================================
+// 💾 ESPORTA I MIEI DATI (Richiesta 52)
+// Scarica un file .json con tutte le righe dell'utente collegato, tabella per
+// tabella: è il backup da tenere sul PC (con Supabase Free non ci sono copie
+// scaricabili). Ogni query filtra per user_id dell'utente che preme il bottone
+// e la RLS ("solo le proprie righe") fa comunque lo stesso lato database.
+// Bottoni: Home su PC (#btnEsportaHome, sotto "Apri Database" per l'owner, al
+// suo posto per l'altro utente) e barra laterale ☰ su telefono (#btnEsportaMenu).
+// ============================================================================
+const TABELLE_ESPORTAZIONE_ = [
+    'anime', 'episodi_anime', 'sinossi_anime',
+    'serie_tv', 'episodi_serie_tv', 'sinossi_serie_tv',
+    'manga', 'sinossi_manga',
+    'libri', 'sinossi_libri',
+    'cinema',
+    'log_episodi', 'log_attivita', 'patch_lette'
+];
+// Colonna per un ordine stabile tra le pagine (prima colonna della chiave primaria)
+const ORDINE_ESPORTAZIONE_ = {
+    sinossi_anime: 'anime_titolo', sinossi_serie_tv: 'serie_titolo',
+    sinossi_manga: 'manga_titolo', sinossi_libri: 'libro_titolo',
+    patch_lette: 'versione'
+};
+const RIGHE_PER_PAGINA_ESPORTAZIONE_ = 1000; // limite di righe per richiesta di Supabase
+let esportazioneInCorso_ = false;
+
+function aggiornaBottoniEsporta_(inCorso) {
+    ['btnEsportaHome', 'btnEsportaMenu'].forEach(function (id) {
+        const el = document.getElementById(id);
+        if (!el) return;
+        el.disabled = inCorso;
+        const testo = el.querySelector('.esporta-testo');
+        if (testo) testo.textContent = inCorso ? 'Esportazione…' : 'Esporta i miei dati';
+    });
+}
+
+async function leggiTabellaPerEsportazione_(nome, userId) {
+    const righe = [];
+    const ordine = ORDINE_ESPORTAZIONE_[nome] || 'id';
+    for (let da = 0; ; da += RIGHE_PER_PAGINA_ESPORTAZIONE_) {
+        const risposta = await supabaseClient
+            .from(nome)
+            .select('*')
+            .eq('user_id', userId)
+            .order(ordine, { ascending: true })
+            .range(da, da + RIGHE_PER_PAGINA_ESPORTAZIONE_ - 1);
+        if (risposta.error) throw new Error('tabella ' + nome + ': ' + risposta.error.message);
+        const pagina = risposta.data || [];
+        for (let i = 0; i < pagina.length; i++) righe.push(pagina[i]);
+        if (pagina.length < RIGHE_PER_PAGINA_ESPORTAZIONE_) break;
+    }
+    return righe;
+}
+
+async function esportaDatiUtente() {
+    if (esportazioneInCorso_) return;
+    const sessione = (await supabaseClient.auth.getSession()).data.session;
+    const utente = sessione && sessione.user;
+    if (!utente) {
+        showToast('Accedi per esportare i tuoi dati.', 'error');
+        return;
+    }
+
+    esportazioneInCorso_ = true;
+    aggiornaBottoniEsporta_(true);
+    showToast('Preparo il file con i tuoi dati…');
+    try {
+        const tabelle = {};
+        const conteggi = {};
+        let totale = 0;
+        for (let i = 0; i < TABELLE_ESPORTAZIONE_.length; i++) {
+            const nome = TABELLE_ESPORTAZIONE_[i];
+            const righe = await leggiTabellaPerEsportazione_(nome, utente.id);
+            tabelle[nome] = righe;
+            conteggi[nome] = righe.length;
+            totale += righe.length;
+        }
+
+        const adesso = new Date();
+        const backup = {
+            app: 'NERD.TRACKER',
+            formato: 1,
+            esportatoIl: adesso.toISOString(),
+            utente: { id: utente.id, email: utente.email || '' },
+            totaleRighe: totale,
+            conteggi: conteggi,
+            tabelle: tabelle
+        };
+
+        // Nome file con data e ora locali, es. nerdtracker-backup-2026-11-11-2130.json
+        const due = function (n) { return String(n).padStart(2, '0'); };
+        const nomeFile = 'nerdtracker-backup-' + adesso.getFullYear() + '-' + due(adesso.getMonth() + 1) + '-' +
+            due(adesso.getDate()) + '-' + due(adesso.getHours()) + due(adesso.getMinutes()) + '.json';
+
+        const blob = new Blob([JSON.stringify(backup, null, 2)], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = nomeFile;
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+        setTimeout(function () { URL.revokeObjectURL(url); }, 10000);
+
+        showToast('Esportati ' + totale + ' dati in ' + nomeFile, 'success');
+    } catch (err) {
+        console.error('Errore esportazione dati:', err);
+        showToast('Esportazione non riuscita: ' + (err && err.message ? err.message : 'errore sconosciuto'), 'error');
+    } finally {
+        esportazioneInCorso_ = false;
+        aggiornaBottoniEsporta_(false);
+    }
+}
+window.esportaDatiUtente = esportaDatiUtente;

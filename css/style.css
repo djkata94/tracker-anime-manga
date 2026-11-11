@@ -1991,3 +1991,23 @@
         color: var(--text-muted);
     }
 }
+
+/* --- ESPORTA I MIEI DATI (Richiesta 52) ---
+   PC: colonna di bottoni in alto a destra nella Home, "Apri Database" (solo
+   owner) e sotto "Esporta i miei dati"; per l'altro utente Esporta resta da
+   solo nella stessa posizione. Telefono: il bottone della Home sparisce e
+   Esporta compare come voce della barra laterale ☰ (#btnEsportaMenu). */
+.home-azioni-utente {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 8px;
+    flex-shrink: 0;
+}
+button.drive-shortcut-btn { font-family: inherit; cursor: pointer; }
+button.drive-shortcut-btn:disabled { opacity: 0.55; cursor: wait; transform: none; }
+.nav-links .solo-menu-mobile { display: none; }
+@media (max-width: 768px) {
+    .btn-esporta-home { display: none; }
+    .nav-links .solo-menu-mobile { display: inline-flex; }
+}

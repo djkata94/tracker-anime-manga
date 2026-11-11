@@ -2026,3 +2026,17 @@ Fatta il 10/11/2026 con l'ok dell'owner, dopo il controllo di sicurezza della Ri
 - Prima di applicarla l'ho provata in un blocco annullato: dopo il revoke `anon` e `authenticated` non possono più eseguirla e una tabella di prova creata in `public` riceve comunque la RLS. Dopo l'applicazione: permessi verificati e advisor di sicurezza rilanciato, i due avvisi sulla funzione sono spariti.
 - Avviso rimasto: "Leaked password protection" (rifiuto delle password già finite in elenchi rubati, HaveIBeenPwned). Secondo la documentazione Supabase è disponibile solo dal piano Pro in su: con il piano Free non si può attivare, nessuna azione.
 - Per tornare indietro (se mai servisse): `GRANT EXECUTE ON FUNCTION public.rls_auto_enable() TO PUBLIC;`.
+
+## Richiesta 52 — Bottone "Esporta i miei dati" (patch v1.0.55)
+
+Fatta l'11/11/2026, chiesta dall'owner (era la proposta 4 dopo le liste a schede). Con Supabase Free non ci sono backup scaricabili: il bottone scarica un file da tenere sul PC.
+
+- **Cosa fa**: scarica `nerdtracker-backup-AAAA-MM-GG-HHMM.json` con tutte le righe dell'utente collegato nelle 14 tabelle (anime, episodi_anime, sinossi_anime, serie_tv, episodi_serie_tv, sinossi_serie_tv, manga, sinossi_manga, libri, sinossi_libri, cinema, log_episodi, log_attivita, patch_lette). Il file contiene anche data di esportazione, id ed email dell'utente e il numero di righe per tabella. Formato JSON scelto dall'owner (completo, adatto a un futuro ripristino).
+- **Solo i dati di chi lo preme**: ogni richiesta filtra per `user_id` dell'utente collegato, e la RLS "solo le proprie righe" fa comunque lo stesso lato database. Le tabelle sono lette a pagine di 1000 righe (limite di Supabase), in ordine di chiave primaria, così nessuna riga si perde quando una tabella supera le 1000.
+- **Dove sta**: da PC in Home, nella colonna in alto a destra: per l'owner sotto "Apri Database", per l'altro utente al posto di "Apri Database" (che lui non vede). Da telefono il bottone della Home è nascosto e c'è la voce "💾 Esporta i miei dati" nella barra laterale ☰, sotto Cinema.
+- `js/main.js`: sezione "ESPORTA I MIEI DATI" in fondo (`esportaDatiUtente`, `leggiTabellaPerEsportazione_`); durante l'esportazione i bottoni sono disattivati e scrivono "Esportazione…"; messaggio finale con il numero di dati esportati, o con la tabella che ha dato errore (in quel caso non scarica niente).
+- `index.html`: `<div class="home-azioni-utente">` attorno a `#driveShortcutBtn` e al nuovo `#btnEsportaHome`; voce `#btnEsportaMenu` (classe `solo-menu-mobile`) nella barra laterale.
+- `css/style.css`: blocco "ESPORTA I MIEI DATI" in fondo.
+- `js/libri-patch.js`: voce v1.0.55 in `PATCH_NOTES`.
+
+Provato in locale: posizioni da PC per owner e altro utente, voce nel menu da telefono (che si chiude al tocco). La funzione è stata provata con un database simulato: 2500 righe lette in 3 pagine, tutte le richieste filtrate per utente, file JSON con 14 tabelle; in caso di errore niente file e messaggio chiaro; senza login chiede di accedere. Nessun errore in console. L'esportazione con i dati veri va provata dall'owner dopo la pubblicazione.
