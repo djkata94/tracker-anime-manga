@@ -1,4 +1,33 @@
+// Cambio sezione con la transizione "messa a fuoco" (Richiesta 54): il browser
+// fotografa la pagina, cambia sezione e poi anima il passaggio tra le due foto
+// (CSS "TRANSIZIONI"). Sulle foto la sfocatura dei pannelli di vetro resta
+// giusta: animando direttamente la sezione (opacità/filtro) il vetro perderebbe
+// la sfocatura per tutta l'animazione e poi "scatterebbe". Senza supporto del
+// browser o con "riduci movimento" attivo la sezione cambia subito come prima.
 function switchView(viewName) {
+            const conTransizione = typeof document.startViewTransition === 'function'
+                && !window.matchMedia('(prefers-reduced-motion: reduce)').matches
+                && document.getElementById('appRoot').style.display !== 'none';
+            if (conTransizione) {
+                // la classe dà un nome alla barra solo durante il passaggio: resta ferma
+                // (e il quadratino si vede scivolare) mentre la sezione cambia
+                const radice = document.documentElement;
+                radice.classList.add('vt-sezioni');
+                const t = document.startViewTransition(function() { switchViewOra_(viewName); });
+                switchView.ultima_ = t;
+                t.finished.finally(function() {
+                    if (switchView.ultima_ === t) radice.classList.remove('vt-sezioni');
+                });
+            } else {
+                switchViewOra_(viewName);
+            }
+            // il quadratino della barra parte subito verso l'icona nuova (con la
+            // transizione la sezione cambia un attimo dopo, quando il browser ha
+            // fatto la foto della pagina)
+            if (typeof aggiornaIndicatoreNav_ === 'function') aggiornaIndicatoreNav_('nav-' + viewName, true);
+        }
+
+function switchViewOra_(viewName) {
             document.getElementById('homeView').style.display = 'none';
             document.getElementById('animeView').style.display = 'none';
             document.getElementById('mangaView').style.display = 'none';

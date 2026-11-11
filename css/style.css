@@ -2594,3 +2594,73 @@ body {
     #mangaView .table-container th,
     #mangaView .table-container td { padding-left: 13px; padding-right: 13px; }
 }
+
+/* =====================================================================
+   🧊 NUOVO STILE VETRO — TRANSIZIONI (Richiesta 54)
+   1) Quadratino di selezione della barra: un solo riquadro (creato dal JS
+      in #navLinks) che scivola dall'icona di prima a quella nuova. Ha lo
+      stesso aspetto che prima aveva il bottone attivo, che ora è trasparente.
+   2) Cambio sezione "messa a fuoco": con document.startViewTransition il
+      browser fotografa la pagina prima e dopo e anima le due foto: la vecchia
+      svanisce sfocandosi, la nuova sale di 8px e passa da sfocata a nitida.
+      Stessa durata e stessa curva per le due, così lo sfondo (uguale nelle
+      due foto) resta fermo e non lampeggia. La barra durante il passaggio ha
+      un nome suo (classe .vt-sezioni messa dal JS): resta ferma e si vede il
+      quadratino scivolare.
+      Le vecchie dissolvenze delle sezioni e dei riquadri della Home vanno
+      spente dove il browser supporta la transizione: animavano l'opacità, e
+      un elemento semitrasparente toglie la sfocatura al vetro che contiene,
+      che poi "scattava" a fine animazione (l'effetto popup).
+   ===================================================================== */
+#navbar .nav-links { position: relative; }
+#navbar .nav-indicatore {
+    position: absolute;
+    top: 0;
+    left: 0;
+    z-index: 0;
+    box-sizing: border-box;
+    pointer-events: none;
+    opacity: 0;
+    border-radius: 14px;
+    background: rgba(124, 108, 255, 0.22);
+    border: 1px solid rgba(124, 108, 255, 0.55);
+    box-shadow: 0 0 18px var(--primary-glow);
+    transition:
+        transform 0.42s cubic-bezier(0.3, 1.25, 0.5, 1),
+        width 0.42s cubic-bezier(0.3, 1.25, 0.5, 1),
+        height 0.42s cubic-bezier(0.3, 1.25, 0.5, 1),
+        opacity 0.2s ease;
+}
+#navbar .nav-indicatore.senza-animazione { transition: none; }
+#navbar .nav-links.con-indicatore .btn-nav { z-index: 1; }
+#navbar .nav-links.con-indicatore .btn-nav.active-view {
+    background: transparent;
+    border-color: transparent;
+    box-shadow: none;
+}
+#navbar .nav-links.con-indicatore .btn-nav.active-view:hover { background: var(--vetro-forte); }
+
+@supports (view-transition-name: none) {
+    .view-container,
+    #homeView .home-progress-widget,
+    #homeView .system-log-widget { animation: none; }
+}
+.vt-sezioni #navbar { view-transition-name: barra; }
+::view-transition-old(barra) { display: none; }
+::view-transition-new(barra) { animation: none; }
+/* plus-lighter: le due foto si sommano invece di coprirsi, così a metà passaggio
+   la pagina non si scurisce (il browser lo mette da sé solo con la sua animazione
+   predefinita, che qui sostituiamo) */
+::view-transition-old(root) { animation: vetro-esce 0.34s cubic-bezier(0.4, 0, 0.2, 1) both; mix-blend-mode: plus-lighter; }
+::view-transition-new(root) { animation: vetro-entra 0.34s cubic-bezier(0.4, 0, 0.2, 1) both; mix-blend-mode: plus-lighter; }
+@keyframes vetro-esce {
+    from { opacity: 1; filter: blur(0); }
+    to { opacity: 0; filter: blur(6px); }
+}
+@keyframes vetro-entra {
+    from { opacity: 0; filter: blur(10px); transform: translateY(8px); }
+    to { opacity: 1; filter: blur(0); transform: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+    #navbar .nav-indicatore { transition: none; }
+}

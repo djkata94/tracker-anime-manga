@@ -2097,3 +2097,15 @@ Correzioni nate dalla prova, nel blocco CSS "PIANO B E RITOCCHI FINALI":
 
 ### Passo 5 — Pubblicazione (11/11/2026)
 Ramo `redesign-vetro` unito in main con un unico commit di merge (`--no-ff`) e voce patch notes v1.1.0. Punto di ritorno: commit `eddb64e` (v1.0.55), tag locale `prima-del-redesign`. Per tornare indietro senza riscrivere la storia: `git revert -m 1 <commit di merge>` su main e push.
+
+## Richiesta 54 — Passaggi fluidi tra le sezioni (patch v1.1.1)
+Richiesta dell'owner dell'11/11/2026, dopo la pubblicazione del redesign: (1) da PC il riquadro "Prossimi al cinema" aperto di default, così la Home è piena; (2) il riquadro di selezione della barra che scivola dall'icona di prima alla nuova; (3) un passaggio tra le sezioni pulito, perché la sezione "compariva dal nulla come un popup". Per (3) l'owner ha scelto la "messa a fuoco"; (2) e (3) valgono anche sul telefono.
+
+**Prossimi al cinema** (`js/main.js`, `initHomeCinemaWidget`): su PC (`min-width: 769px` al caricamento) toglie `collapsed`, come già fa il Log. Provato a 1440×900: In corso e Prossimi al cinema alti uguali (335 px), il Log finisce a 886 px come la barra.
+
+**Quadratino che scivola** (`js/main.js` in fondo + CSS "NUOVO STILE VETRO — TRANSIZIONI"): un solo `<span id="navIndicatore">` creato dal JS dentro `#navLinks`, spostato con `transform` sulla posizione del bottone (offsetLeft/offsetTop) con una curva che rimbalza appena. Il bottone attivo diventa trasparente solo se c'è `.con-indicatore` su `#navLinks`, quindi senza JS resta l'evidenziazione di prima. Un ResizeObserver lo riposiziona senza animazione quando la barra cambia misura (comparsa dopo il login, ridimensionamento).
+
+**Messa a fuoco** (`js/anime-all.js`): `switchView` ora chiama `document.startViewTransition` e la logica di prima è in `switchViewOra_`. Il browser fotografa la pagina prima e dopo: la vecchia svanisce sfocandosi, la nuova sale di 8px da sfocata a nitida (0,34 s, stessa curva per le due e `mix-blend-mode: plus-lighter`, altrimenti a metà la pagina si scurisce). Durante il passaggio la classe `.vt-sezioni` su `<html>` dà alla barra un nome suo (`view-transition-name: barra`): resta ferma e si vede il quadratino scivolare.
+- Perché sembrava un popup: le sezioni e i riquadri della Home entravano con un'animazione di opacità; un elemento semitrasparente toglie la sfocatura al vetro che contiene, che poi "scattava" a fine animazione. Dove il browser supporta la transizione quelle animazioni sono spente.
+- Senza supporto (browser vecchi) o con "riduci movimento" attivo nel sistema la sezione cambia subito come prima.
+- Provato su PC (1440×900) e telefono (375×812), fermando le animazioni a metà per gli screenshot; clic rapidi in sequenza (anime → libri → home) finiscono sulla sezione giusta, con il quadratino al suo posto e senza errori in console.

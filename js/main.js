@@ -2185,6 +2185,9 @@ function creaCinemaUpcomingCard(item) {
         headerEl.addEventListener('click', function() {
             widgetEl.classList.toggle('collapsed');
         });
+        // Nuovo stile vetro: su PC parte aperto, così la Home è piena; sul telefono
+        // resta chiuso come nella Home compatta.
+        if (window.matchMedia('(min-width: 769px)').matches) widgetEl.classList.remove('collapsed');
     }
 })();
 
@@ -2755,3 +2758,47 @@ async function caricaConteggiCataloghi() {
     }));
 }
 window.caricaConteggiCataloghi = caricaConteggiCataloghi;
+
+// ==========================================================================
+//   🧊 QUADRATINO DI SELEZIONE DELLA BARRA (Richiesta 54)
+// ==========================================================================
+// Un solo riquadro (.nav-indicatore) dietro le icone delle sezioni, che
+// scivola dall'icona di prima a quella nuova (in verticale su PC, in
+// orizzontale nella barra in basso del telefono). Si sposta con transform,
+// che resta fluido anche sui telefoni. La classe .con-indicatore su #navLinks
+// spegne lo sfondo del bottone attivo: se questo codice non partisse, resta
+// l'evidenziazione di prima sul bottone.
+function aggiornaIndicatoreNav_(idBottone, anima) {
+    const links = document.getElementById('navLinks');
+    const ind = document.getElementById('navIndicatore');
+    if (!links || !ind) return;
+    const btn = idBottone ? document.getElementById(idBottone) : links.querySelector('.btn-nav.active-view');
+    if (!btn || btn.offsetWidth === 0) { ind.style.opacity = '0'; return; }
+    if (!anima) ind.classList.add('senza-animazione');
+    ind.style.width = btn.offsetWidth + 'px';
+    ind.style.height = btn.offsetHeight + 'px';
+    ind.style.transform = 'translate(' + btn.offsetLeft + 'px, ' + btn.offsetTop + 'px)';
+    ind.style.opacity = '1';
+    if (!anima) {
+        void ind.offsetWidth; // applica la posizione prima di riaccendere l'animazione
+        ind.classList.remove('senza-animazione');
+    }
+}
+
+(function initIndicatoreNav() {
+    const links = document.getElementById('navLinks');
+    if (!links) return;
+    const ind = document.createElement('span');
+    ind.id = 'navIndicatore';
+    ind.className = 'nav-indicatore';
+    ind.setAttribute('aria-hidden', 'true');
+    links.prepend(ind);
+    links.classList.add('con-indicatore');
+    // Riposiziona senza animazione quando la barra cambia misura: comparsa dopo
+    // il login (prima è nascosta e misura 0), finestra ridimensionata, passaggio
+    // da PC a telefono.
+    const riposiziona = function() { aggiornaIndicatoreNav_(null, false); };
+    if (typeof ResizeObserver === 'function') new ResizeObserver(riposiziona).observe(links);
+    window.addEventListener('resize', riposiziona);
+    riposiziona();
+})();

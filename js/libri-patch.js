@@ -827,6 +827,11 @@ function statoBadgeLibro_(stato) {
         //   Nuove voci: aggiungere in CIMA all'array.
         // ==========================================
         const PATCH_NOTES = [
+            { v: '1.1.1', titolo: 'Passaggi fluidi tra le sezioni', data: '11/11/2026', punti: [
+                'Cambiando sezione la pagina vecchia svanisce e la nuova entra sfocata e si mette a fuoco, invece di comparire di colpo.',
+                'Il riquadro di selezione della barra scivola dall\'icona di prima a quella nuova (in verticale da PC, in orizzontale da telefono).',
+                'Da PC il riquadro Prossimi al cinema della Home parte aperto.'
+            ] },
             { v: '1.1.0', titolo: 'Nuovo stile vetro', data: '11/11/2026', punti: [
                 'Tutto il tracker ha un nuovo aspetto: pannelli di vetro semitrasparenti e sfocati su uno sfondo colorato.',
                 'Da PC il menu è una barra verticale di icone a sinistra (il nome compare passandoci sopra); in basso patch notes, database, esporta, utente ed esci.',
