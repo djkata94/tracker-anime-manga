@@ -2063,3 +2063,13 @@ Provato in locale (dati e login simulati): PC 1366px, telefono 375px, cambio sez
 Provato in locale con dati finti: PC 1366px (posizioni dei riquadri, numeri dei cataloghi, card di In corso, film in elenco, Log), telefono 375px (una colonna, nessuno scorrimento orizzontale), nessun errore in console.
 - Ritocco chiesto dall'owner: "Prossimi al cinema" era più alto di "In corso" e lasciava un vuoto sotto In corso prima del Log. Ora su PC i due riquadri hanno la stessa altezza, decisa da In corso (`contain: size` su Prossimi al cinema aperto, minimo 300px); i film in più scorrono dentro il riquadro. Da chiuso Prossimi al cinema è alto solo quanto la testata. Sotto i 1100px, dove i due riquadri sono uno sotto l'altro, Prossimi al cinema torna alto quanto i suoi film (massimo 560px).
 - Ritocco chiesto dall'owner (corretto subito dopo): **su PC** il Log di sistema parte aperto e finisce esattamente alla base della barra laterale; **sul telefono** parte chiuso come nella Home compatta. `index.html` tiene la classe `collapsed` su `#systemLogWidget`; `initSystemLogWidget` in `js/main.js` la toglie se lo schermo è largo almeno 769px. Blocco CSS "LOG APERTO SU PC": sopra i 1100px, con il Log aperto, `#homeView` è alta `100vh` con in fondo il margine della barra (`--barra-margine`), la griglia ha l'ultima riga `minmax(140px, 1fr)` e il Log scorre al suo interno; con il Log chiuso la Home torna alta quanto il contenuto. Misurato con animazioni finite: base del Log = base della barra a 768, 900 e 1000px di altezza. Sotto i 1100px (riquadri uno sotto l'altro) il Log è aperto con l'altezza normale.
+
+### Passo 3 — Sezioni (dall'11/11/2026)
+Stile comune a tutte le liste, nel blocco CSS "NUOVO STILE VETRO — VISTE LISTA", attivato dalla classe `vista-vetro` sul `.view-container` della sezione (aggiunta una sezione alla volta):
+- contatori (`.stat-banner`): una fila di riquadri di vetro (spariscono i separatori verticali); su telefono 2×2;
+- linguette (`.subview-tabs`, es. Lista Anime / Log Episodi): pillole, quella attiva in vetro;
+- filtri (`.filter-bar`): pannello di vetro con `position: relative; z-index: 20`, così il menu "Filtra Generi" resta sopra il riquadro della tabella (anch'esso ha `backdrop-filter`, che crea un nuovo livello);
+- tabella su PC: pannello di vetro, intestazione e righe trasparenti;
+- schede su telefono: sfondo semitrasparente senza sfocatura (con decine di schede la sfocatura su ognuna rallenterebbe i telefoni).
+
+**Anime** (11/11/2026): `vista-vetro` su `#animeView`. Provato con dati finti: contatori, filtri con il menu dei generi aperto sopra la tabella, lista su PC, registro episodi (linguetta Log Episodi), schede su telefono; nessuno scorrimento orizzontale, nessun errore in console.

@@ -2297,3 +2297,100 @@ body {
         max-height: none;
     }
 }
+
+/* =====================================================================
+   🧊 NUOVO STILE VETRO — VISTE LISTA (redesign, passo 3)
+   Vale per ogni vista con la classe .vista-vetro (Anime per prima; le altre
+   la ricevono una alla volta). Le parti sono comuni a tutte le liste:
+   - contatori (.stat-banner): una fila di riquadri di vetro;
+   - linguette (.subview-tabs): pillole, quella attiva in vetro;
+   - filtri (.filter-bar): pannello di vetro, sopra la tabella (z-index) così
+     il menu "Filtra Generi" non finisce sotto il riquadro della tabella, che
+     anch'esso ha backdrop-filter;
+   - tabella su PC: pannello di vetro, intestazione e righe trasparenti;
+   - schede su telefono: vetro senza sfocatura (con decine di schede la
+     sfocatura su ognuna rallenterebbe i telefoni).
+   ===================================================================== */
+.vista-vetro .stat-banner {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+    gap: 14px;
+    padding: 0;
+    background: transparent;
+    border: 0;
+    box-shadow: none;
+}
+.vista-vetro .stat-banner > div:not(.stat-block) { display: none; }
+.vista-vetro .stat-block {
+    gap: 6px;
+    min-width: 0;
+    padding: 14px 16px;
+    border-radius: 18px;
+    background: var(--vetro);
+    border: 1px solid var(--vetro-bordo);
+    box-shadow: inset 0 1px 0 var(--vetro-luce), var(--vetro-ombra);
+    backdrop-filter: var(--vetro-blur);
+    -webkit-backdrop-filter: var(--vetro-blur);
+}
+.vista-vetro .stat-label { font-size: 11px; font-weight: 700; letter-spacing: 0.6px; }
+.vista-vetro .stat-value { font-size: 22px; }
+
+.vista-vetro .subview-tabs { border-bottom: 0; gap: 8px; }
+.vista-vetro .subview-tab {
+    padding: 8px 14px;
+    margin-bottom: 0;
+    border: 1px solid transparent;
+    border-radius: 999px;
+}
+.vista-vetro .subview-tab.active {
+    color: var(--text);
+    text-shadow: none;
+    background: var(--vetro-forte);
+    border-color: var(--vetro-bordo);
+    box-shadow: inset 0 1px 0 var(--vetro-luce);
+}
+
+.vista-vetro .filter-bar {
+    position: relative;
+    z-index: 20;
+    border-radius: 18px;
+    background: var(--vetro);
+    border-color: var(--vetro-bordo);
+    box-shadow: inset 0 1px 0 var(--vetro-luce), var(--vetro-ombra);
+    backdrop-filter: var(--vetro-blur);
+    -webkit-backdrop-filter: var(--vetro-blur);
+}
+.vista-vetro .filter-bar input,
+.vista-vetro .filter-bar select,
+.vista-vetro .filter-group {
+    background: rgba(0, 0, 0, 0.22);
+    border-color: var(--vetro-bordo);
+}
+
+@media (min-width: 769px) {
+    .vista-vetro .table-container {
+        background: var(--vetro);
+        border-color: var(--vetro-bordo);
+        box-shadow: inset 0 1px 0 var(--vetro-luce), var(--vetro-ombra);
+        backdrop-filter: var(--vetro-blur);
+        -webkit-backdrop-filter: var(--vetro-blur);
+    }
+    .vista-vetro .table-container th {
+        background: rgba(255, 255, 255, 0.035);
+        border-bottom-color: var(--vetro-bordo);
+    }
+    .vista-vetro .table-container td { border-bottom-color: rgba(255, 255, 255, 0.06); }
+    .vista-vetro .table-container tr:hover td { background: rgba(255, 255, 255, 0.04); }
+}
+
+@media (max-width: 768px) {
+    .vista-vetro .stat-banner { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+    .vista-vetro .stat-value { font-size: 19px; }
+    .vista-vetro .contiene-schede tr {
+        background: rgba(20, 22, 34, 0.55);
+        border-color: var(--vetro-bordo);
+        box-shadow: inset 0 1px 0 var(--vetro-luce), 0 6px 18px rgba(0, 0, 0, 0.25);
+    }
+    .vista-vetro .contiene-schede .td-titolo { border-bottom-color: rgba(255, 255, 255, 0.07); }
+    .vista-vetro .contiene-schede .td-azioni { border-top-color: rgba(255, 255, 255, 0.07); }
+}
