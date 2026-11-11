@@ -2437,3 +2437,103 @@ body {
 @media (min-width: 761px) {
     #cinemaView .cinema-table col:last-child { width: 184px !important; }
 }
+
+/* =====================================================================
+   🧊 NUOVO STILE VETRO — FINESTRE (redesign, passo 3b)
+   Tutte le finestre che si aprono sopra la pagina diventano pannelli di
+   vetro "spesso" (più opaco dei riquadri, perché ci si legge e scrive):
+   - .modal dentro .modal-overlay: moduli Anime/Manga/Serie TV/Libri/Cinema,
+     episodi, stagioni, volumi, voto, "Aggiorna tutte", dettaglio patch notes,
+     suggerimenti 💡 (anche lui usa .modal-overlay);
+   - finestre create dal JS con stile scritto nel codice (trama, ricerca
+     AniList, scheda film della ricerca globale, info film del Cinema): le
+     regole vanno per id e con !important per battere lo stile in linea;
+   - pannello patch notes, ingrandimento copertina, messaggi (toast), menu
+     dei generi e risultati delle ricerche.
+   Lo sfondo scuro dietro le finestre è più leggero e sfocato, così si
+   intravede la pagina.
+   ===================================================================== */
+:root {
+    --finestra-sfondo: rgba(22, 24, 38, 0.80);
+    --finestra-blur: blur(24px) saturate(150%);
+    --finestra-ombra: 0 30px 80px rgba(0, 0, 0, 0.55);
+    --velo-sfondo: rgba(6, 6, 12, 0.55);
+}
+
+/* sfondo dietro le finestre */
+.modal-overlay,
+#sinossiOverlay,
+#anilistOverlay,
+#globalSearchCinemaOverlay,
+#cinemaInfoOverlay,
+.patch-drawer-backdrop {
+    background: var(--velo-sfondo) !important;
+    backdrop-filter: blur(12px) !important;
+    -webkit-backdrop-filter: blur(12px) !important;
+}
+
+/* le finestre: la sfocatura la fa già lo sfondo qui sopra. Una seconda
+   sfocatura sulla finestra non si vedrebbe (sta dentro lo sfondo sfocato)
+   e renderebbe la finestra il riferimento degli elementi "fixed" interni. */
+.modal,
+#sinossiContent,
+#anilistContent,
+#globalSearchCinemaContent,
+#cinemaInfoContent {
+    background: var(--finestra-sfondo) !important;
+    border: 1px solid var(--vetro-bordo) !important;
+    border-radius: 22px !important;
+    box-shadow: inset 0 1px 0 var(--vetro-luce), var(--finestra-ombra) !important;
+}
+.modal .modal-header { padding-bottom: 14px; border-bottom: 1px solid rgba(255, 255, 255, 0.07); }
+
+/* campi dei moduli: scuri e trasparenti come i filtri */
+.modal .form-group input,
+.modal .form-group select,
+.modal .form-group textarea {
+    background: rgba(0, 0, 0, 0.25);
+    border-color: var(--vetro-bordo);
+}
+
+/* pannello patch notes (da sinistra, sopra la barra) */
+.patch-drawer {
+    background: var(--finestra-sfondo);
+    border-right: 1px solid var(--vetro-bordo);
+    backdrop-filter: var(--finestra-blur);
+    -webkit-backdrop-filter: var(--finestra-blur);
+}
+.patch-drawer-header { border-bottom-color: rgba(255, 255, 255, 0.07); }
+.patch-item { border-color: var(--vetro-bordo); }
+
+/* ingrandimento copertina: sfondo sfocato invece che quasi nero pieno */
+#lightboxOverlay {
+    background: rgba(5, 5, 8, 0.80) !important;
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+}
+
+/* menu dei generi e risultati delle ricerche */
+.dropdown-genres,
+.global-search-results,
+.widget-search-results {
+    background: rgba(20, 22, 34, 0.92);
+    border-color: var(--vetro-bordo);
+    backdrop-filter: var(--finestra-blur);
+    -webkit-backdrop-filter: var(--finestra-blur);
+}
+
+/* messaggi in basso: vetro, e non più sopra la barra di navigazione */
+.toast {
+    background: rgba(22, 24, 38, 0.85);
+    border-color: var(--vetro-bordo);
+    box-shadow: inset 0 1px 0 var(--vetro-luce), 0 12px 32px rgba(0, 0, 0, 0.45);
+    backdrop-filter: var(--finestra-blur);
+    -webkit-backdrop-filter: var(--finestra-blur);
+}
+@media (min-width: 769px) {
+    #toastContainer { left: calc(var(--barra-larghezza) + 2 * var(--barra-margine) + 10px); bottom: 24px; }
+}
+@media (max-width: 768px) {
+    #toastContainer { left: 12px; right: 12px; bottom: calc(92px + env(safe-area-inset-bottom, 0px)); }
+    #toastContainer .toast { max-width: none; }
+}
