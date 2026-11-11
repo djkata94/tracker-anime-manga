@@ -2041,7 +2041,7 @@ Fatta l'11/11/2026, chiesta dall'owner (era la proposta 4 dopo le liste a schede
 
 Provato in locale: posizioni da PC per owner e altro utente, voce nel menu da telefono (che si chiude al tocco). La funzione è stata provata con un database simulato: 2500 righe lette in 3 pagine, tutte le richieste filtrate per utente, file JSON con 14 tabelle; in caso di errore niente file e messaggio chiaro; senza login chiede di accedere. Nessun errore in console. L'esportazione con i dati veri va provata dall'owner dopo la pubblicazione.
 
-## Richiesta 53 — Nuovo stile vetro con barra verticale (IN CORSO sul ramo redesign-vetro)
+## Richiesta 53 — Nuovo stile vetro con barra verticale (patch v1.1.0)
 
 Iniziata l'11/11/2026. L'owner vuole tutto il sito in stile "vetro" (pannelli semitrasparenti sfocati) con layout da app: barra di icone verticale a sinistra che cambia la sezione, Home a riquadri (bento), mantenendo tutte le funzioni e i widget di oggi. Anteprima approvata: https://claude.ai/artifact/PvLNoXZjkQbbtxcmRHfUZm (dati di esempio). Si lavora sul ramo git `redesign-vetro`: il sito online resta invariato finché il nuovo stile non è completo su PC e telefono, poi si pubblica tutto insieme (merge su `main`) con una sola voce nelle patch notes.
 
@@ -2094,3 +2094,6 @@ Correzioni nate dalla prova, nel blocco CSS "PIANO B E RITOCCHI FINALI":
 - **Manga su PC**: con la barra laterale la tabella (9 colonne) superava di 9 px lo spazio a 1280 px e compariva lo scorrimento laterale della tabella. Fino a 1400 px le celle hanno 13 px di imbottitura ai lati invece di 18. Sotto i ~1150 px scorre ancora di lato, come già succedeva prima del redesign.
 - **Telefoni lenti**: lo sfondo colorato con `background-attachment: fixed` costringe a ridipingere tutta la pagina a ogni scorrimento; sul telefono ora sta su `body::before` fisso (stesso aspetto, il telefono lo sposta senza ridipingerlo). Sfocatura del vetro sul telefono da 18 a 12 px.
 - **Browser senza sfocatura** (`@supports not (backdrop-filter…)`) o con "trasparenze ridotte" attive nel sistema (`prefers-reduced-transparency`): pannelli quasi pieni, così il testo resta leggibile.
+
+### Passo 5 — Pubblicazione (11/11/2026)
+Ramo `redesign-vetro` unito in main con un unico commit di merge (`--no-ff`) e voce patch notes v1.1.0. Punto di ritorno: commit `eddb64e` (v1.0.55), tag locale `prima-del-redesign`. Per tornare indietro senza riscrivere la storia: `git revert -m 1 <commit di merge>` su main e push.
