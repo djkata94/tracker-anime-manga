@@ -1735,109 +1735,6 @@
 ::-webkit-scrollbar-thumb { background: var(--border-color); border-radius: 10px; }
 ::-webkit-scrollbar-thumb:hover { background: var(--primary); }
 
-/* --- MENU MOBILE ☰ (Richiesta 38) ---
-   Desktop: .nav-links non genera box (display: contents), i bottoni restano
-   figli diretti della navbar come prima; hamburger, sfondo e intestazione
-   della barra sono nascosti. Sotto i 768px la navbar mostra solo ☰ + logo
-   e i link diventano una barra laterale sinistra. */
-.nav-links { display: contents; }
-.btn-hamburger, .nav-backdrop, .nav-drawer-header { display: none; }
-
-@media (max-width: 768px) {
-    /* backdrop-filter renderebbe la navbar il riferimento dei figli
-       position: fixed, e la barra laterale resterebbe chiusa al suo interno */
-    .navbar {
-        flex-wrap: nowrap;
-        backdrop-filter: none;
-        -webkit-backdrop-filter: none;
-        background: rgba(14, 15, 26, 0.96);
-    }
-
-    .btn-hamburger {
-        display: inline-flex;
-        flex-direction: column;
-        justify-content: center;
-        gap: 5px;
-        width: 42px;
-        height: 42px;
-        padding: 0 10px;
-        flex-shrink: 0;
-        position: relative;
-        background: transparent;
-        border: 1px solid var(--border-color);
-        border-radius: 12px;
-        cursor: pointer;
-    }
-    .btn-hamburger span { display: block; height: 2px; width: 100%; background: var(--text); border-radius: 2px; }
-    .btn-hamburger:hover { background: var(--surface-hover); }
-    /* Pallino rosso se ci sono patch notes non lette (il conteggio e' nella barra) */
-    .hamburger-dot { position: absolute; top: 5px; right: 5px; width: 9px; height: 9px; border-radius: 50%; background: #ef4444; box-shadow: 0 0 6px rgba(239, 68, 68, 0.6); }
-
-    .nav-backdrop {
-        display: block;
-        position: fixed;
-        inset: 0;
-        background: rgba(6, 6, 12, 0.6);
-        opacity: 0;
-        pointer-events: none;
-        transition: opacity 0.3s ease;
-        z-index: 1;
-    }
-    .navbar.menu-open .nav-backdrop { opacity: 1; pointer-events: auto; }
-
-    .nav-links {
-        display: flex;
-        flex-direction: column;
-        align-items: stretch;
-        gap: 4px;
-        position: fixed;
-        top: 0;
-        left: 0;
-        bottom: 0;
-        width: min(300px, 82vw);
-        padding: 0 12px 20px 12px;
-        box-sizing: border-box;
-        overflow-y: auto;
-        background: #14162a;
-        border-right: 1px solid var(--border-color);
-        box-shadow: 24px 0 60px rgba(0, 0, 0, 0.5);
-        transform: translateX(-105%);
-        visibility: hidden;
-        transition: transform 0.3s ease, visibility 0.3s;
-        z-index: 2;
-    }
-    .navbar.menu-open .nav-links { transform: translateX(0); visibility: visible; }
-
-    .nav-drawer-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        padding: calc(14px + env(safe-area-inset-top, 0px)) 4px 12px 8px;
-        margin-bottom: 8px;
-        border-bottom: 1px solid var(--border-color);
-        font-weight: 800;
-        color: var(--primary);
-        font-family: monospace;
-        letter-spacing: 1px;
-    }
-    .nav-drawer-close { background: transparent; border: none; color: var(--text-muted); font-size: 20px; cursor: pointer; padding: 6px 10px; }
-    .nav-drawer-close:hover { color: var(--text); }
-
-    /* Voci una sotto l'altra, allineate a sinistra; Esci in fondo alla barra */
-    .nav-links .btn-nav {
-        justify-content: flex-start;
-        width: 100%;
-        padding: 12px 16px;
-        font-size: 15px;
-        margin-left: 0 !important;
-    }
-    /* Nella barra la mail ha spazio: torna visibile anche sotto i 640px
-       (in navbar era nascosta perche' allargava la pagina) */
-    .nav-links #loggedUserEmail { display: flex !important; padding: 12px 16px 4px 16px; margin-top: auto; overflow-wrap: anywhere; }
-
-    body.menu-mobile-aperto { overflow: hidden; }
-}
-
 /* --- HOME COMPATTA MOBILE (Richiesta 40) ---
    Sotto i 768px i 5 bottoni catalogo sono nascosti (si naviga dal menu ☰),
    intestazione più piccola e sottotitolo nascosto per guadagnare spazio.
@@ -1992,22 +1889,708 @@
     }
 }
 
-/* --- ESPORTA I MIEI DATI (Richiesta 52) ---
-   PC: colonna di bottoni in alto a destra nella Home, "Apri Database" (solo
-   owner) e sotto "Esporta i miei dati"; per l'altro utente Esporta resta da
-   solo nella stessa posizione. Telefono: il bottone della Home sparisce e
-   Esporta compare come voce della barra laterale ☰ (#btnEsportaMenu). */
-.home-azioni-utente {
+/* =====================================================================
+   🧊 NUOVO STILE VETRO — STRUTTURA (redesign, ramo redesign-vetro)
+   Variabili del vetro (riusate da tutti i blocchi del redesign), sfondo
+   aurora più acceso perché il vetro si veda, barra di navigazione:
+   - PC: barra verticale di sole icone fissata a sinistra; il nome compare
+     al passaggio del mouse (.nav-nome come etichetta a destra).
+   - Telefono (sotto i 768px): barra fissa in basso con le 6 sezioni e il
+     bottone ⋯ che apre il foglio degli strumenti (Patch notes, Apri
+     Database, Esporta, email, Esci). Il foglio usa le funzioni di sempre
+     apriMenuMobile / chiudiMenuMobile (classe .menu-open sulla barra).
+   La sfocatura sta su uno pseudo-elemento (::before) e non sulla barra:
+   backdrop-filter sulla barra la renderebbe il riferimento dei figli
+   position: fixed (lo sfondo scuro del foglio resterebbe chiuso dentro).
+   ===================================================================== */
+:root {
+    --vetro: rgba(255, 255, 255, 0.045);
+    --vetro-forte: rgba(255, 255, 255, 0.075);
+    --vetro-bordo: rgba(255, 255, 255, 0.10);
+    --vetro-luce: rgba(255, 255, 255, 0.14);
+    --vetro-blur: blur(18px) saturate(150%);
+    --vetro-ombra: 0 10px 30px rgba(0, 0, 0, 0.30);
+    --barra-larghezza: 76px;
+    --barra-margine: 14px;
+}
+
+body {
+    background:
+        radial-gradient(700px 520px at 6% 4%, rgba(124, 108, 255, 0.40), transparent 70%),
+        radial-gradient(640px 480px at 96% 6%, rgba(255, 93, 162, 0.26), transparent 70%),
+        radial-gradient(760px 560px at 72% 100%, rgba(56, 189, 248, 0.20), transparent 70%),
+        radial-gradient(520px 400px at 20% 92%, rgba(52, 211, 153, 0.10), transparent 70%),
+        var(--bg-dark);
+    background-attachment: fixed;
+}
+
+/* ---------- barra (comune) ---------- */
+#navbar {
+    position: fixed;
+    z-index: 500;
+    display: flex;
+    flex-wrap: nowrap;
+    gap: 6px;
+    padding: 14px 0;
+    background: transparent;
+    border: 1px solid var(--vetro-bordo);
+    border-radius: 24px;
+    box-shadow: inset 0 1px 0 var(--vetro-luce), var(--vetro-ombra);
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    isolation: isolate;
+}
+#navbar::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    border-radius: inherit;
+    background: rgba(14, 15, 26, 0.55);
+    backdrop-filter: var(--vetro-blur);
+    -webkit-backdrop-filter: var(--vetro-blur);
+}
+#navbar .nav-logo { font-size: 24px; line-height: 1; }
+#navbar .nav-links,
+#navbar .nav-strumenti { display: flex; gap: 6px; }
+
+#navbar .btn-nav {
+    position: relative;
+    padding: 0;
+    border: 1px solid transparent;
+    border-radius: 14px;
+    background: transparent;
+    color: var(--text);
+    font-size: 20px;
+    text-decoration: none;
+    justify-content: center;
+    gap: 10px;
+}
+#navbar .btn-nav:hover { background: var(--vetro-forte); }
+#navbar .btn-nav.active-view {
+    background: rgba(124, 108, 255, 0.22);
+    border-color: rgba(124, 108, 255, 0.55);
+    box-shadow: 0 0 18px var(--primary-glow);
+    color: var(--text);
+}
+#navbar .nav-ico { line-height: 1; }
+#driveShortcutBtn.is-loading { opacity: 0.55; pointer-events: none; }
+#navbar .nav-utente {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    color: var(--text-muted);
+    font-size: 20px;
+}
+#navbar .nav-utente:empty { display: none; }
+#navbar .nav-altro { display: none; }
+#navbar .nav-backdrop { display: none; }
+/* pallino rosso delle patch notes non lette (il numero resta nel badge) */
+#navbar .hamburger-dot {
+    position: absolute; top: 8px; right: 10px; width: 9px; height: 9px; border-radius: 50%;
+    background: #ef4444; box-shadow: 0 0 6px rgba(239, 68, 68, 0.7);
+}
+
+/* ---------- PC: barra verticale a sinistra ---------- */
+@media (min-width: 769px) {
+    #appRoot { padding-left: calc(var(--barra-larghezza) + 2 * var(--barra-margine)); }
+    #navbar {
+        top: var(--barra-margine);
+        bottom: var(--barra-margine);
+        left: var(--barra-margine);
+        width: var(--barra-larghezza);
+        flex-direction: column;
+        align-items: center;
+    }
+    #navbar .nav-logo { margin-bottom: 12px; }
+    #navbar .nav-links,
+    #navbar .nav-strumenti { flex-direction: column; align-items: center; }
+    #navbar .nav-strumenti { margin-top: auto; }
+    #navbar .btn-nav,
+    #navbar .nav-utente { width: 48px; height: 48px; }
+    /* il nome compare a destra dell'icona, al passaggio del mouse o col tasto Tab */
+    #navbar .nav-nome {
+        position: absolute;
+        left: calc(100% + 14px);
+        top: 50%;
+        transform: translate(-4px, -50%);
+        white-space: nowrap;
+        font-size: 13px;
+        font-weight: 700;
+        color: var(--text);
+        padding: 6px 10px;
+        border-radius: 8px;
+        background: rgba(20, 22, 34, 0.95);
+        border: 1px solid var(--vetro-bordo);
+        box-shadow: 0 6px 18px rgba(0, 0, 0, 0.4);
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 0.15s ease, transform 0.15s ease;
+    }
+    #navbar .btn-nav:hover .nav-nome,
+    #navbar .btn-nav:focus-visible .nav-nome,
+    #navbar .nav-utente:hover .nav-nome { opacity: 1; transform: translate(0, -50%); }
+    /* il numero delle patch non lette diventa un bollino sull'icona */
+    #navbar .patch-badge {
+        position: absolute; top: 2px; right: 0; margin: 0;
+        min-width: 18px; height: 18px; font-size: 10px; padding: 0 5px;
+    }
+}
+
+/* ---------- telefono: barra in basso + foglio ⋯ ---------- */
+@media (max-width: 768px) {
+    #appRoot { padding-bottom: calc(86px + env(safe-area-inset-bottom, 0px)); }
+    #navbar {
+        top: auto;
+        left: 10px;
+        right: 10px;
+        bottom: calc(10px + env(safe-area-inset-bottom, 0px));
+        flex-direction: row;
+        align-items: center;
+        padding: 6px;
+        border-radius: 22px;
+    }
+    #navbar .nav-logo { display: none; }
+    #navbar .nav-links { flex: 6; min-width: 0; justify-content: space-between; }
+    #navbar .nav-links .btn-nav,
+    #navbar .nav-altro { flex: 1; min-width: 0; height: 50px; border-radius: 16px; }
+    #navbar .nav-links .nav-nome { display: none; }
+    #navbar .nav-altro { display: inline-flex; flex: 1; font-size: 22px; font-weight: 800; }
+
+    /* foglio degli strumenti, sopra la barra */
+    #navbar .nav-strumenti {
+        display: none;
+        position: absolute;
+        left: 0;
+        right: 0;
+        bottom: calc(100% + 10px);
+        flex-direction: column;
+        align-items: stretch;
+        gap: 2px;
+        padding: 8px;
+        border-radius: 22px;
+        background: rgba(20, 22, 34, 0.94);
+        border: 1px solid var(--vetro-bordo);
+        box-shadow: inset 0 1px 0 var(--vetro-luce), 0 -10px 40px rgba(0, 0, 0, 0.45);
+    }
+    #navbar.menu-open .nav-strumenti { display: flex; }
+    #navbar.menu-open .nav-backdrop {
+        display: block;
+        position: fixed;
+        inset: 0;
+        z-index: -2;
+        background: rgba(6, 6, 12, 0.55);
+    }
+    #navbar.menu-open .nav-altro { background: rgba(124, 108, 255, 0.22); border-color: rgba(124, 108, 255, 0.55); }
+    #navbar .nav-strumenti .btn-nav {
+        width: 100%;
+        height: auto;
+        justify-content: flex-start;
+        padding: 12px 14px;
+        font-size: 15px;
+        font-weight: 600;
+    }
+    #navbar .nav-strumenti .nav-ico { font-size: 19px; }
+    #navbar .nav-strumenti .patch-badge { margin-left: auto; }
+    /* email: nel foglio si legge per intera (sotto i 640px era nascosta in navbar) */
+    #navbar #loggedUserEmail {
+        display: flex !important;
+        justify-content: flex-start;
+        padding: 8px 14px 4px;
+        font-size: 13px;
+        overflow-wrap: anywhere;
+    }
+    #navbar #loggedUserEmail:empty { display: none !important; }
+    #navbar #loggedUserEmail .nav-ico { font-size: 16px; }
+
+    /* il bottone ↑ sale sopra la barra in basso */
+    #backToTop { bottom: calc(86px + env(safe-area-inset-bottom, 0px)); }
+}
+
+/* =====================================================================
+   🧊 NUOVO STILE VETRO — HOME A RIQUADRI (redesign, passo 2)
+   .home-bento: griglia a 6 colonne su PC. Ricerca e cataloghi a tutta
+   larghezza, In corso 4/6 + Prossimi al cinema 2/6, Log a tutta larghezza.
+   Sotto i 1100px In corso e Cinema vanno a tutta larghezza; sotto i 768px
+   una colonna (i cataloghi restano nascosti come nella Home compatta, R40).
+   Widget e riquadri in vetro: la sfocatura sta su ::before e non sul widget,
+   perché i risultati della ricerca di "In corso" sono position: fixed dentro
+   il widget e backdrop-filter li chiuderebbe al suo interno.
+   ===================================================================== */
+#homeView .home-bento {
+    display: grid;
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+    gap: 16px;
+    align-items: start;
+}
+#homeView .bento-ricerca,
+#homeView .bento-cataloghi,
+#homeView .bento-log { grid-column: 1 / -1; }
+#homeView .bento-incorso { grid-column: span 4; }
+#homeView .bento-cinema { grid-column: span 2; }
+#homeView .bento-cataloghi { margin-top: 0; gap: 14px; grid-template-columns: repeat(5, minmax(0, 1fr)); }
+
+/* ricerca globale in vetro (i risultati sono fratelli del box, non figli) */
+#homeView .global-search-box {
+    background: var(--vetro);
+    border-color: var(--vetro-bordo);
+    box-shadow: inset 0 1px 0 var(--vetro-luce), var(--vetro-ombra);
+    backdrop-filter: var(--vetro-blur);
+    -webkit-backdrop-filter: var(--vetro-blur);
+}
+
+/* riquadri dei cataloghi: vetro colorato con la sfumatura di ogni catalogo */
+#homeView .cat-tile {
+    position: relative;
+    isolation: isolate;
+    overflow: hidden;
+    min-height: 112px;
+    height: auto;
+    padding: 16px;
+    border-radius: var(--radius);
     display: flex;
     flex-direction: column;
+    align-items: flex-start;
+    justify-content: flex-start;
+    gap: 4px;
+    text-align: left;
+    font-size: 14px;
+    color: var(--text);
+    background: var(--vetro);
+    border: 1px solid var(--vetro-bordo);
+    box-shadow: inset 0 1px 0 var(--vetro-luce), var(--vetro-ombra);
+    backdrop-filter: var(--vetro-blur);
+    -webkit-backdrop-filter: var(--vetro-blur);
+}
+#homeView .cat-tile::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    opacity: 0.38;
+    transition: opacity 0.2s ease;
+}
+#homeView .cat-tile:hover::before { opacity: 0.55; }
+#homeView .btn-anime.cat-tile::before   { background: linear-gradient(135deg, #2f6fed, #38bdf8); }
+#homeView .btn-serietv.cat-tile::before { background: linear-gradient(135deg, #7c3aed, #38bdf8); }
+#homeView .btn-manga.cat-tile::before   { background: linear-gradient(135deg, #f97316, #fb923c); }
+#homeView .btn-libri.cat-tile::before   { background: linear-gradient(135deg, #059669, #34d399); }
+#homeView .btn-cinema.cat-tile::before  { background: linear-gradient(135deg, #dc2626, #f59e0b); }
+#homeView .cat-ico { font-size: 22px; line-height: 1; }
+#homeView .cat-nome { margin-top: auto; font-weight: 700; }
+#homeView .cat-num {
+    min-height: 20px;
+    font-family: 'Courier New', monospace;
+    font-size: 15px;
+    font-weight: 800;
+    font-variant-numeric: tabular-nums;
+    color: rgba(255, 255, 255, 0.85);
+}
+
+/* widget in vetro */
+#homeView .home-progress-widget,
+#homeView .system-log-widget {
+    position: relative;
+    isolation: isolate;
+    background: transparent;
+    border: 1px solid var(--vetro-bordo);
+    box-shadow: inset 0 1px 0 var(--vetro-luce), var(--vetro-ombra);
+}
+#homeView .home-progress-widget::before,
+#homeView .system-log-widget::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    border-radius: inherit;
+    background: var(--vetro);
+    backdrop-filter: var(--vetro-blur);
+    -webkit-backdrop-filter: var(--vetro-blur);
+}
+#homeView .home-progress-widget .progress-card {
+    background: rgba(0, 0, 0, 0.18);
+    border-color: var(--vetro-bordo);
+}
+
+/* Prossimi al cinema nel riquadro stretto: card orizzontali una sotto l'altra */
+#homeView .bento-cinema .home-progress-list {
+    flex-direction: column;
+    gap: 10px;
+    overflow-x: visible;
+    padding-bottom: 0;
+}
+#homeView .bento-cinema .progress-card {
+    flex: none;
+    width: 100%;
+    flex-direction: row;
     align-items: stretch;
-    gap: 8px;
+}
+#homeView .bento-cinema .progress-card-banner,
+#homeView .bento-cinema .progress-card-banner-placeholder {
+    width: 64px;
+    height: auto;
+    min-height: 96px;
     flex-shrink: 0;
 }
-button.drive-shortcut-btn { font-family: inherit; cursor: pointer; }
-button.drive-shortcut-btn:disabled { opacity: 0.55; cursor: wait; transform: none; }
-.nav-links .solo-menu-mobile { display: none; }
+#homeView .bento-cinema .progress-card-title { min-height: 0; }
+/* Su PC In corso e Prossimi al cinema hanno la stessa altezza, decisa da In corso:
+   contain: size fa sì che la lista dei film non allunghi la riga (niente vuoto
+   sotto In corso prima del Log); i film in più scorrono dentro il riquadro.
+   Da chiuso, Prossimi al cinema resta alto solo quanto la sua testata. */
+#homeView .bento-incorso { align-self: stretch; }
+#homeView .bento-cinema:not(.collapsed) {
+    align-self: stretch;
+    contain: size;
+    min-height: 300px;
+    display: flex;
+    flex-direction: column;
+}
+#homeView .bento-cinema:not(.collapsed) .home-progress-body {
+    flex: 1 1 auto;
+    min-height: 0;
+    max-height: none;
+    overflow-y: auto;
+}
+
+@media (max-width: 1100px) {
+    #homeView .bento-incorso,
+    #homeView .bento-cinema { grid-column: 1 / -1; }
+    /* uno sotto l'altro: Prossimi al cinema torna alto quanto i suoi film (max 560px) */
+    #homeView .bento-cinema:not(.collapsed) { contain: none; min-height: 0; }
+    #homeView .bento-cinema:not(.collapsed) .home-progress-body { max-height: 560px; }
+    #homeView .bento-cataloghi { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
 @media (max-width: 768px) {
-    .btn-esporta-home { display: none; }
-    .nav-links .solo-menu-mobile { display: inline-flex; }
+    #homeView .home-bento { grid-template-columns: minmax(0, 1fr); gap: 12px; }
+}
+
+/* --- LOG APERTO SU PC (redesign, richiesta dell'owner) ---
+   Su PC (sopra i 1100px, dove In corso e Prossimi al cinema sono affiancati)
+   con il Log aperto la Home è alta esattamente quanto lo schermo, con in fondo
+   lo stesso margine della barra laterale: il Log prende lo spazio che resta e
+   finisce alla base della barra, scorrendo al suo interno. Il Log si accorcia
+   fino a un minimo di 140px (un paio di righe): solo su schermi troppo bassi
+   anche per quello la pagina scorre. Con il Log chiuso la Home torna alta
+   quanto il suo contenuto.
+   Sul telefono il Log parte chiuso (main.js lo apre solo da PC). */
+@media (min-width: 1101px) {
+    #homeView:has(#systemLogWidget:not(.collapsed)) {
+        height: 100vh;
+        padding-bottom: var(--barra-margine);
+    }
+    #homeView:has(#systemLogWidget:not(.collapsed)) .home-bento {
+        flex: 1 1 auto;
+        min-height: 0;
+        grid-template-rows: auto auto auto minmax(140px, 1fr);
+    }
+    #homeView .bento-log:not(.collapsed) {
+        align-self: stretch;
+        min-height: 0;
+        display: flex;
+        flex-direction: column;
+    }
+    #homeView .bento-log:not(.collapsed) .system-log-body {
+        flex: 1 1 auto;
+        min-height: 0;
+        max-height: none;
+    }
+}
+
+/* =====================================================================
+   🧊 NUOVO STILE VETRO — VISTE LISTA (redesign, passo 3)
+   Vale per ogni vista con la classe .vista-vetro (Anime per prima; le altre
+   la ricevono una alla volta). Le parti sono comuni a tutte le liste:
+   - contatori (.stat-banner): una fila di riquadri di vetro;
+   - linguette (.subview-tabs): pillole, quella attiva in vetro;
+   - filtri (.filter-bar): pannello di vetro, sopra la tabella (z-index) così
+     il menu "Filtra Generi" non finisce sotto il riquadro della tabella, che
+     anch'esso ha backdrop-filter;
+   - tabella su PC: pannello di vetro, intestazione e righe trasparenti;
+   - schede su telefono: vetro senza sfocatura (con decine di schede la
+     sfocatura su ognuna rallenterebbe i telefoni).
+   ===================================================================== */
+.vista-vetro .stat-banner {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+    gap: 14px;
+    padding: 0;
+    background: transparent;
+    border: 0;
+    box-shadow: none;
+}
+.vista-vetro .stat-banner > div:not(.stat-block) { display: none; }
+.vista-vetro .stat-block {
+    gap: 6px;
+    min-width: 0;
+    padding: 14px 16px;
+    border-radius: 18px;
+    background: var(--vetro);
+    border: 1px solid var(--vetro-bordo);
+    box-shadow: inset 0 1px 0 var(--vetro-luce), var(--vetro-ombra);
+    backdrop-filter: var(--vetro-blur);
+    -webkit-backdrop-filter: var(--vetro-blur);
+}
+.vista-vetro .stat-label { font-size: 11px; font-weight: 700; letter-spacing: 0.6px; }
+.vista-vetro .stat-value { font-size: 22px; }
+
+.vista-vetro .subview-tabs { border-bottom: 0; gap: 8px; }
+.vista-vetro .subview-tab {
+    padding: 8px 14px;
+    margin-bottom: 0;
+    border: 1px solid transparent;
+    border-radius: 999px;
+}
+.vista-vetro .subview-tab.active {
+    color: var(--text);
+    text-shadow: none;
+    background: var(--vetro-forte);
+    border-color: var(--vetro-bordo);
+    box-shadow: inset 0 1px 0 var(--vetro-luce);
+}
+
+.vista-vetro .filter-bar {
+    position: relative;
+    z-index: 20;
+    border-radius: 18px;
+    background: var(--vetro);
+    border-color: var(--vetro-bordo);
+    box-shadow: inset 0 1px 0 var(--vetro-luce), var(--vetro-ombra);
+    backdrop-filter: var(--vetro-blur);
+    -webkit-backdrop-filter: var(--vetro-blur);
+}
+.vista-vetro .filter-bar input,
+.vista-vetro .filter-bar select,
+.vista-vetro .filter-group {
+    background: rgba(0, 0, 0, 0.22);
+    border-color: var(--vetro-bordo);
+}
+
+@media (min-width: 769px) {
+    .vista-vetro .table-container {
+        background: var(--vetro);
+        border-color: var(--vetro-bordo);
+        box-shadow: inset 0 1px 0 var(--vetro-luce), var(--vetro-ombra);
+        backdrop-filter: var(--vetro-blur);
+        -webkit-backdrop-filter: var(--vetro-blur);
+    }
+    .vista-vetro .table-container th {
+        background: rgba(255, 255, 255, 0.035);
+        border-bottom-color: var(--vetro-bordo);
+    }
+    .vista-vetro .table-container td { border-bottom-color: rgba(255, 255, 255, 0.06); }
+    .vista-vetro .table-container tr:hover td { background: rgba(255, 255, 255, 0.04); }
+}
+
+@media (max-width: 768px) {
+    .vista-vetro .stat-banner { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+    /* numero dispari di contatori (Libri, Cinema: 3): l'ultimo prende tutta la riga.
+       I contatori sono i figli in posizione dispari (in mezzo ci sono i separatori
+       nascosti), quindi con un numero dispari l'ultimo è il figlio 4n+1. */
+    .vista-vetro .stat-banner > .stat-block:last-child:nth-child(4n+1) { grid-column: 1 / -1; }
+    .vista-vetro .stat-value { font-size: 19px; }
+    .vista-vetro .contiene-schede tr {
+        background: rgba(20, 22, 34, 0.55);
+        border-color: var(--vetro-bordo);
+        box-shadow: inset 0 1px 0 var(--vetro-luce), 0 6px 18px rgba(0, 0, 0, 0.25);
+    }
+    .vista-vetro .contiene-schede .td-titolo { border-bottom-color: rgba(255, 255, 255, 0.07); }
+    .vista-vetro .contiene-schede .td-azioni { border-top-color: rgba(255, 255, 255, 0.07); }
+}
+
+/* --- CINEMA in vetro (redesign, passo 3) ---
+   Contatori e filtri vengono da .vista-vetro. I widget "Da Vedere" e "Visti"
+   (.cinema-widget) diventano pannelli di vetro con la sfocatura su ::before:
+   dentro ci sono lo slider Sala/Streaming e le aree con scorrimento interno
+   (.cinema-scroll-area), che restano trasparenti (niente secondo vetro dentro
+   il primo). L'intestazione della tabella, che resta ferma mentre i film
+   scorrono, è quasi opaca: altrimenti le righe si vedrebbero sotto di lei. */
+#cinemaView .cinema-widget {
+    position: relative;
+    isolation: isolate;
+    background: transparent;
+    border-color: var(--vetro-bordo);
+    box-shadow: inset 0 1px 0 var(--vetro-luce), var(--vetro-ombra);
+}
+#cinemaView .cinema-widget::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    border-radius: inherit;
+    background: var(--vetro);
+    backdrop-filter: var(--vetro-blur);
+    -webkit-backdrop-filter: var(--vetro-blur);
+}
+#cinemaView .cinema-scroll-area {
+    background: transparent;
+    border: 0;
+    box-shadow: none;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    border-radius: 14px;
+}
+#cinemaView .cinema-scroll-area thead th { background: rgba(20, 22, 34, 0.94); }
+#cinemaView .cinema-mode-switch { background: rgba(0, 0, 0, 0.22); border-color: var(--vetro-bordo); }
+/* colonna Azioni più larga (era 142px): i 4 bottoni ℹ️ 📺 💡 🗑️ stanno su una riga invece di andare a capo */
+@media (min-width: 761px) {
+    #cinemaView .cinema-table col:last-child { width: 184px !important; }
+}
+
+/* =====================================================================
+   🧊 NUOVO STILE VETRO — FINESTRE (redesign, passo 3b)
+   Tutte le finestre che si aprono sopra la pagina diventano pannelli di
+   vetro "spesso" (più opaco dei riquadri, perché ci si legge e scrive):
+   - .modal dentro .modal-overlay: moduli Anime/Manga/Serie TV/Libri/Cinema,
+     episodi, stagioni, volumi, voto, "Aggiorna tutte", dettaglio patch notes,
+     suggerimenti 💡 (anche lui usa .modal-overlay);
+   - finestre create dal JS con stile scritto nel codice (trama, ricerca
+     AniList, scheda film della ricerca globale, info film del Cinema): le
+     regole vanno per id e con !important per battere lo stile in linea;
+   - pannello patch notes, ingrandimento copertina, messaggi (toast), menu
+     dei generi e risultati delle ricerche.
+   Lo sfondo scuro dietro le finestre è più leggero e sfocato, così si
+   intravede la pagina.
+   ===================================================================== */
+:root {
+    --finestra-sfondo: rgba(22, 24, 38, 0.80);
+    --finestra-blur: blur(24px) saturate(150%);
+    --finestra-ombra: 0 30px 80px rgba(0, 0, 0, 0.55);
+    --velo-sfondo: rgba(6, 6, 12, 0.55);
+}
+
+/* sfondo dietro le finestre */
+.modal-overlay,
+#sinossiOverlay,
+#anilistOverlay,
+#globalSearchCinemaOverlay,
+#cinemaInfoOverlay,
+.patch-drawer-backdrop {
+    background: var(--velo-sfondo) !important;
+    backdrop-filter: blur(12px) !important;
+    -webkit-backdrop-filter: blur(12px) !important;
+}
+
+/* le finestre: la sfocatura la fa già lo sfondo qui sopra. Una seconda
+   sfocatura sulla finestra non si vedrebbe (sta dentro lo sfondo sfocato)
+   e renderebbe la finestra il riferimento degli elementi "fixed" interni. */
+.modal,
+#sinossiContent,
+#anilistContent,
+#globalSearchCinemaContent,
+#cinemaInfoContent {
+    background: var(--finestra-sfondo) !important;
+    border: 1px solid var(--vetro-bordo) !important;
+    border-radius: 22px !important;
+    box-shadow: inset 0 1px 0 var(--vetro-luce), var(--finestra-ombra) !important;
+}
+.modal .modal-header { padding-bottom: 14px; border-bottom: 1px solid rgba(255, 255, 255, 0.07); }
+
+/* campi dei moduli: scuri e trasparenti come i filtri */
+.modal .form-group input,
+.modal .form-group select,
+.modal .form-group textarea {
+    background: rgba(0, 0, 0, 0.25);
+    border-color: var(--vetro-bordo);
+}
+
+/* pannello patch notes (da sinistra, sopra la barra) */
+.patch-drawer {
+    background: var(--finestra-sfondo);
+    border-right: 1px solid var(--vetro-bordo);
+    backdrop-filter: var(--finestra-blur);
+    -webkit-backdrop-filter: var(--finestra-blur);
+}
+.patch-drawer-header { border-bottom-color: rgba(255, 255, 255, 0.07); }
+.patch-item { border-color: var(--vetro-bordo); }
+
+/* ingrandimento copertina: sfondo sfocato invece che quasi nero pieno */
+#lightboxOverlay {
+    background: rgba(5, 5, 8, 0.80) !important;
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+}
+
+/* menu dei generi e risultati delle ricerche */
+.dropdown-genres,
+.global-search-results,
+.widget-search-results {
+    background: rgba(20, 22, 34, 0.92);
+    border-color: var(--vetro-bordo);
+    backdrop-filter: var(--finestra-blur);
+    -webkit-backdrop-filter: var(--finestra-blur);
+}
+
+/* messaggi in basso: vetro, e non più sopra la barra di navigazione */
+.toast {
+    background: rgba(22, 24, 38, 0.85);
+    border-color: var(--vetro-bordo);
+    box-shadow: inset 0 1px 0 var(--vetro-luce), 0 12px 32px rgba(0, 0, 0, 0.45);
+    backdrop-filter: var(--finestra-blur);
+    -webkit-backdrop-filter: var(--finestra-blur);
+}
+@media (min-width: 769px) {
+    #toastContainer { left: calc(var(--barra-larghezza) + 2 * var(--barra-margine) + 10px); bottom: 24px; }
+}
+@media (max-width: 768px) {
+    #toastContainer { left: 12px; right: 12px; bottom: calc(92px + env(safe-area-inset-bottom, 0px)); }
+    #toastContainer .toast { max-width: none; }
+}
+
+/* =====================================================================
+   🧊 NUOVO STILE VETRO — PIANO B E RITOCCHI FINALI (redesign, passo 4)
+   ===================================================================== */
+
+/* Telefono: lo sfondo colorato con "background-attachment: fixed" obbliga il
+   browser a ridipingere tutta la pagina a ogni scorrimento (Safari lo ignora
+   proprio). Lo spostiamo su un livello fisso a parte (body::before), che il
+   telefono sposta senza ridipingerlo; e la sfocatura del vetro scende da 18
+   a 12px, che costa meno e a occhio non cambia quasi nulla. */
+@media (max-width: 768px) {
+    :root { --vetro-blur: blur(12px) saturate(140%); }
+    body {
+        background: var(--bg-dark);
+        background-attachment: scroll;
+    }
+    body::before {
+        content: "";
+        position: fixed;
+        inset: 0;
+        z-index: -1;
+        pointer-events: none;
+        background:
+            radial-gradient(700px 520px at 6% 4%, rgba(124, 108, 255, 0.40), transparent 70%),
+            radial-gradient(640px 480px at 96% 6%, rgba(255, 93, 162, 0.26), transparent 70%),
+            radial-gradient(760px 560px at 72% 100%, rgba(56, 189, 248, 0.20), transparent 70%),
+            radial-gradient(520px 400px at 20% 92%, rgba(52, 211, 153, 0.10), transparent 70%);
+    }
+}
+
+/* Browser senza sfocatura (vecchi o con le "trasparenze ridotte" attive nel
+   sistema): i pannelli diventano quasi pieni, così il testo resta leggibile
+   anche senza il vetro sfocato dietro. */
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+    :root {
+        --vetro: rgba(24, 26, 40, 0.92);
+        --vetro-forte: rgba(34, 36, 52, 0.95);
+        --finestra-sfondo: rgba(22, 24, 38, 0.97);
+    }
+}
+@media (prefers-reduced-transparency: reduce) {
+    :root {
+        --vetro: rgba(24, 26, 40, 0.92);
+        --vetro-forte: rgba(34, 36, 52, 0.95);
+        --finestra-sfondo: rgba(22, 24, 38, 0.97);
+        --vetro-blur: none;
+        --finestra-blur: none;
+    }
+}
+
+/* Manga su PC: con la barra laterale la tabella (9 colonne) superava di pochi
+   pixel lo spazio sugli schermi fino a ~1400px e compariva lo scorrimento
+   laterale. Celle un po' meno imbottite solo lì. */
+@media (min-width: 769px) and (max-width: 1400px) {
+    #mangaView .table-container th,
+    #mangaView .table-container td { padding-left: 13px; padding-right: 13px; }
 }

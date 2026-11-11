@@ -827,6 +827,13 @@ function statoBadgeLibro_(stato) {
         //   Nuove voci: aggiungere in CIMA all'array.
         // ==========================================
         const PATCH_NOTES = [
+            { v: '1.1.0', titolo: 'Nuovo stile vetro', data: '11/11/2026', punti: [
+                'Tutto il tracker ha un nuovo aspetto: pannelli di vetro semitrasparenti e sfocati su uno sfondo colorato.',
+                'Da PC il menu è una barra verticale di icone a sinistra (il nome compare passandoci sopra); in basso patch notes, database, esporta, utente ed esci.',
+                'Da telefono il menu è una barra fissa in basso con le sezioni; il bottone ⋯ apre gli strumenti.',
+                'La Home è a riquadri: ricerca, i cinque cataloghi con il numero di titoli, In corso, Prossimi al cinema e il registro attività (aperto di default da PC).',
+                'Contatori, filtri, tabelle, schede, finestre e messaggi sono tutti in vetro. Le funzioni sono le stesse di prima.'
+            ] },
             { v: '1.0.55', titolo: 'Esporta i miei dati', data: '11/11/2026', punti: [
                 'Nuovo bottone 💾 Esporta i miei dati: scarica un file con tutte le tue liste, episodi, trame e registri, da tenere come copia di sicurezza.',
                 'Esporta solo i dati di chi lo preme. Da PC è in Home in alto a destra, da telefono nel menu ☰.'

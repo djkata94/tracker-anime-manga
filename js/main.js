@@ -1590,6 +1590,10 @@ function escapeHtmlLog(str) {
         headerEl.addEventListener('click', function() {
             widgetEl.classList.toggle('collapsed');
         });
+        // Nuovo stile vetro: su PC il Log parte aperto e riempie la Home fino alla
+        // base della barra laterale (vedi CSS "LOG APERTO SU PC"); sul telefono resta
+        // chiuso come nella Home compatta.
+        if (window.matchMedia('(min-width: 769px)').matches) widgetEl.classList.remove('collapsed');
     }
 })();
 
@@ -2566,10 +2570,10 @@ function toggleStatsWidget(widgetId) {
 }
 
 // ==========================================
-//   ☰ MENU MOBILE (Richiesta 38)
-//   Sotto i 768px i link della navbar stanno in una barra laterale aperta
-//   dal bottone ☰. Su desktop la barra non esiste (vedi CSS) e queste
-//   funzioni non vengono mai chiamate.
+//   ⋯ FOGLIO STRUMENTI DEL TELEFONO (nuovo stile vetro; prima: menu ☰, R38)
+//   Sotto i 768px la barra di navigazione sta in basso e il bottone ⋯
+//   (#btnMenuMobile) apre il foglio con Patch notes, Apri Database, Esporta,
+//   email ed Esci (#navStrumenti). Su PC il bottone ⋯ non c'è (vedi CSS).
 // ==========================================
 function apriMenuMobile() {
     document.getElementById('navbar').classList.add('menu-open');
@@ -2590,9 +2594,11 @@ function toggleMenuMobile() {
     else apriMenuMobile();
 }
 
-// Ogni voce della barra (cambio vista, Patch notes, Esci) chiude il menu
-document.getElementById('navLinks').addEventListener('click', function (e) {
-    if (e.target.closest('button')) chiudiMenuMobile();
+// Ogni voce della barra (cambio sezione, Patch notes, Esporta, Apri Database,
+// Esci) chiude il foglio ⋯ del telefono; il bottone ⋯ stesso no.
+document.getElementById('navbar').addEventListener('click', function (e) {
+    const voce = e.target.closest('#navLinks button, #navStrumenti button, #navStrumenti a');
+    if (voce) chiudiMenuMobile();
 });
 document.addEventListener('keydown', function (e) {
     if (e.key === 'Escape') chiudiMenuMobile();
@@ -2716,3 +2722,36 @@ async function esportaDatiUtente() {
     }
 }
 window.esportaDatiUtente = esportaDatiUtente;
+
+
+// ============================================================================
+// 🧊 NUMERI SUI RIQUADRI DEI CATALOGHI (Home, nuovo stile vetro)
+// Cinque conteggi "head" (solo il numero, nessuna riga scaricata); la RLS fa
+// contare a ognuno solo le proprie righe. Chiamata al login (mostraApp_) e a
+// ogni ritorno in Home (switchView). Se un conteggio fallisce il riquadro
+// resta senza numero: è solo un'informazione in più.
+// ============================================================================
+const CATALOGHI_CONTEGGIO_ = [
+    { tabella: 'anime', id: 'catNumAnime', unita: ['titolo', 'titoli'] },
+    { tabella: 'serie_tv', id: 'catNumSerieTv', unita: ['serie', 'serie'] },
+    { tabella: 'manga', id: 'catNumManga', unita: ['opera', 'opere'] },
+    { tabella: 'libri', id: 'catNumLibri', unita: ['libro', 'libri'] },
+    { tabella: 'cinema', id: 'catNumCinema', unita: ['film', 'film'] }
+];
+
+async function caricaConteggiCataloghi() {
+    if (typeof supabaseClient === 'undefined') return;
+    await Promise.all(CATALOGHI_CONTEGGIO_.map(async function (c) {
+        const el = document.getElementById(c.id);
+        if (!el) return;
+        try {
+            const risposta = await supabaseClient.from(c.tabella).select('*', { count: 'exact', head: true });
+            if (risposta.error || typeof risposta.count !== 'number') return;
+            const n = risposta.count;
+            el.textContent = n.toLocaleString('it-IT') + ' ' + (n === 1 ? c.unita[0] : c.unita[1]);
+        } catch (err) {
+            console.warn('Conteggio catalogo non riuscito (' + c.tabella + '):', err);
+        }
+    }));
+}
+window.caricaConteggiCataloghi = caricaConteggiCataloghi;

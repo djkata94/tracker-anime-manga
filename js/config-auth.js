@@ -68,7 +68,21 @@
             const emailEl = document.getElementById('loggedUserEmail');
             if (emailEl) {
                 const email = (session && session.user && session.user.email) || '';
-                emailEl.innerText = email ? ('👤 ' + email) : '';
+                // Nuovo stile vetro: icona 👤 + email in uno span a parte, così la
+                // barra di sole icone (PC) mostra l'email solo al passaggio del mouse
+                // e il foglio ⋯ (telefono) la mostra per intero.
+                emailEl.textContent = '';
+                if (email) {
+                    const ico = document.createElement('span');
+                    ico.className = 'nav-ico';
+                    ico.textContent = '👤';
+                    const nome = document.createElement('span');
+                    nome.className = 'nav-nome';
+                    nome.textContent = email;
+                    emailEl.appendChild(ico);
+                    emailEl.appendChild(nome);
+                }
+                emailEl.title = email;
             }
             const driveBtnEl = document.getElementById('driveShortcutBtn');
             if (driveBtnEl) {
@@ -83,6 +97,7 @@
             caricaWidgetCinemaProssimi();
             caricaLogAttivita();
             aggiornaBadgePatchNotes();
+            if (typeof caricaConteggiCataloghi === 'function') caricaConteggiCataloghi(); // numeri sui riquadri dei cataloghi (Home)
         }
 		
         function mostraLogin_() {
