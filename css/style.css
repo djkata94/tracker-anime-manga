@@ -2235,11 +2235,31 @@ body {
     flex-shrink: 0;
 }
 #homeView .bento-cinema .progress-card-title { min-height: 0; }
-#homeView .bento-cinema:not(.collapsed) .home-progress-body { max-height: 560px; overflow-y: auto; }
+/* Su PC In corso e Prossimi al cinema hanno la stessa altezza, decisa da In corso:
+   contain: size fa sì che la lista dei film non allunghi la riga (niente vuoto
+   sotto In corso prima del Log); i film in più scorrono dentro il riquadro.
+   Da chiuso, Prossimi al cinema resta alto solo quanto la sua testata. */
+#homeView .bento-incorso { align-self: stretch; }
+#homeView .bento-cinema:not(.collapsed) {
+    align-self: stretch;
+    contain: size;
+    min-height: 300px;
+    display: flex;
+    flex-direction: column;
+}
+#homeView .bento-cinema:not(.collapsed) .home-progress-body {
+    flex: 1 1 auto;
+    min-height: 0;
+    max-height: none;
+    overflow-y: auto;
+}
 
 @media (max-width: 1100px) {
     #homeView .bento-incorso,
     #homeView .bento-cinema { grid-column: 1 / -1; }
+    /* uno sotto l'altro: Prossimi al cinema torna alto quanto i suoi film (max 560px) */
+    #homeView .bento-cinema:not(.collapsed) { contain: none; min-height: 0; }
+    #homeView .bento-cinema:not(.collapsed) .home-progress-body { max-height: 560px; }
     #homeView .bento-cataloghi { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 }
 @media (max-width: 768px) {
