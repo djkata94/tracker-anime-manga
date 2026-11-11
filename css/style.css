@@ -2537,3 +2537,60 @@ body {
     #toastContainer { left: 12px; right: 12px; bottom: calc(92px + env(safe-area-inset-bottom, 0px)); }
     #toastContainer .toast { max-width: none; }
 }
+
+/* =====================================================================
+   🧊 NUOVO STILE VETRO — PIANO B E RITOCCHI FINALI (redesign, passo 4)
+   ===================================================================== */
+
+/* Telefono: lo sfondo colorato con "background-attachment: fixed" obbliga il
+   browser a ridipingere tutta la pagina a ogni scorrimento (Safari lo ignora
+   proprio). Lo spostiamo su un livello fisso a parte (body::before), che il
+   telefono sposta senza ridipingerlo; e la sfocatura del vetro scende da 18
+   a 12px, che costa meno e a occhio non cambia quasi nulla. */
+@media (max-width: 768px) {
+    :root { --vetro-blur: blur(12px) saturate(140%); }
+    body {
+        background: var(--bg-dark);
+        background-attachment: scroll;
+    }
+    body::before {
+        content: "";
+        position: fixed;
+        inset: 0;
+        z-index: -1;
+        pointer-events: none;
+        background:
+            radial-gradient(700px 520px at 6% 4%, rgba(124, 108, 255, 0.40), transparent 70%),
+            radial-gradient(640px 480px at 96% 6%, rgba(255, 93, 162, 0.26), transparent 70%),
+            radial-gradient(760px 560px at 72% 100%, rgba(56, 189, 248, 0.20), transparent 70%),
+            radial-gradient(520px 400px at 20% 92%, rgba(52, 211, 153, 0.10), transparent 70%);
+    }
+}
+
+/* Browser senza sfocatura (vecchi o con le "trasparenze ridotte" attive nel
+   sistema): i pannelli diventano quasi pieni, così il testo resta leggibile
+   anche senza il vetro sfocato dietro. */
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+    :root {
+        --vetro: rgba(24, 26, 40, 0.92);
+        --vetro-forte: rgba(34, 36, 52, 0.95);
+        --finestra-sfondo: rgba(22, 24, 38, 0.97);
+    }
+}
+@media (prefers-reduced-transparency: reduce) {
+    :root {
+        --vetro: rgba(24, 26, 40, 0.92);
+        --vetro-forte: rgba(34, 36, 52, 0.95);
+        --finestra-sfondo: rgba(22, 24, 38, 0.97);
+        --vetro-blur: none;
+        --finestra-blur: none;
+    }
+}
+
+/* Manga su PC: con la barra laterale la tabella (9 colonne) superava di pochi
+   pixel lo spazio sugli schermi fino a ~1400px e compariva lo scorrimento
+   laterale. Celle un po' meno imbottite solo lì. */
+@media (min-width: 769px) and (max-width: 1400px) {
+    #mangaView .table-container th,
+    #mangaView .table-container td { padding-left: 13px; padding-right: 13px; }
+}

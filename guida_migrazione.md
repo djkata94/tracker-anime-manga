@@ -2083,3 +2083,14 @@ Stile comune a tutte le liste, nel blocco CSS "NUOVO STILE VETRO — VISTE LISTA
 - Niente `backdrop-filter` sulla finestra stessa: sta dentro uno sfondo già sfocato, quindi una seconda sfocatura non si vedrebbe e in più renderebbe la finestra il riferimento degli elementi `position: fixed` al suo interno.
 - Messaggi: su PC partono a destra della barra laterale; su telefono sono larghi quanto lo schermo e stanno sopra la barra in basso (prima finivano sotto la barra).
 - Provato su PC e telefono: modulo Anime e Manga, patch notes, scheda film, trama, ingrandimento, messaggi sopra la barra (bordo inferiore a 720 px, barra da 738), nessuno scorrimento orizzontale. Gli errori in console sono solo quelli della prova senza login (401 di Supabase).
+
+### Passo 4 — Prova completa (11/11/2026)
+Prova in locale con dati finti in tutte e cinque le liste (le funzioni `caricaDati*` sostituite da versioni che riempiono le liste a mano) e controlli misurati, non solo a occhio:
+- PC (1024 e 1280 px): ogni sezione parte 14 px a destra della barra laterale; nessuno scorrimento orizzontale della pagina; i 6 bottoni della barra aprono la sezione giusta e la illuminano; "+ Nuovo" apre il modulo di ogni sezione e la × lo chiude.
+- Telefono (375 px): nessuno scorrimento orizzontale; in fondo a ogni sezione l'ultimo elemento resta sopra la barra in basso (24 px di margine nelle liste); il foglio "⋯" mostra Patch notes, Apri Database, Esporta, email ed Esci.
+- Console: solo gli errori della prova senza login (401 di Supabase).
+
+Correzioni nate dalla prova, nel blocco CSS "PIANO B E RITOCCHI FINALI":
+- **Manga su PC**: con la barra laterale la tabella (9 colonne) superava di 9 px lo spazio a 1280 px e compariva lo scorrimento laterale della tabella. Fino a 1400 px le celle hanno 13 px di imbottitura ai lati invece di 18. Sotto i ~1150 px scorre ancora di lato, come già succedeva prima del redesign.
+- **Telefoni lenti**: lo sfondo colorato con `background-attachment: fixed` costringe a ridipingere tutta la pagina a ogni scorrimento; sul telefono ora sta su `body::before` fisso (stesso aspetto, il telefono lo sposta senza ridipingerlo). Sfocatura del vetro sul telefono da 18 a 12 px.
+- **Browser senza sfocatura** (`@supports not (backdrop-filter…)`) o con "trasparenze ridotte" attive nel sistema (`prefers-reduced-transparency`): pannelli quasi pieni, così il testo resta leggibile.
