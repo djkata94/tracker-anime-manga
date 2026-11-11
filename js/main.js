@@ -2718,3 +2718,36 @@ async function esportaDatiUtente() {
     }
 }
 window.esportaDatiUtente = esportaDatiUtente;
+
+
+// ============================================================================
+// 🧊 NUMERI SUI RIQUADRI DEI CATALOGHI (Home, nuovo stile vetro)
+// Cinque conteggi "head" (solo il numero, nessuna riga scaricata); la RLS fa
+// contare a ognuno solo le proprie righe. Chiamata al login (mostraApp_) e a
+// ogni ritorno in Home (switchView). Se un conteggio fallisce il riquadro
+// resta senza numero: è solo un'informazione in più.
+// ============================================================================
+const CATALOGHI_CONTEGGIO_ = [
+    { tabella: 'anime', id: 'catNumAnime', unita: ['titolo', 'titoli'] },
+    { tabella: 'serie_tv', id: 'catNumSerieTv', unita: ['serie', 'serie'] },
+    { tabella: 'manga', id: 'catNumManga', unita: ['opera', 'opere'] },
+    { tabella: 'libri', id: 'catNumLibri', unita: ['libro', 'libri'] },
+    { tabella: 'cinema', id: 'catNumCinema', unita: ['film', 'film'] }
+];
+
+async function caricaConteggiCataloghi() {
+    if (typeof supabaseClient === 'undefined') return;
+    await Promise.all(CATALOGHI_CONTEGGIO_.map(async function (c) {
+        const el = document.getElementById(c.id);
+        if (!el) return;
+        try {
+            const risposta = await supabaseClient.from(c.tabella).select('*', { count: 'exact', head: true });
+            if (risposta.error || typeof risposta.count !== 'number') return;
+            const n = risposta.count;
+            el.textContent = n.toLocaleString('it-IT') + ' ' + (n === 1 ? c.unita[0] : c.unita[1]);
+        } catch (err) {
+            console.warn('Conteggio catalogo non riuscito (' + c.tabella + '):', err);
+        }
+    }));
+}
+window.caricaConteggiCataloghi = caricaConteggiCataloghi;

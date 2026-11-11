@@ -25,6 +25,7 @@ function switchView(viewName) {
                 document.getElementById('nav-home').classList.add('active-view');
                 caricaWidgetInCorso(); // Ricarica il widget "In Corso" per riflettere eventuali modifiche fatte altrove
                 caricaWidgetCinemaProssimi(); // Ricarica il widget "Prossimi al Cinema" per lo stesso motivo
+                if (typeof caricaConteggiCataloghi === 'function') caricaConteggiCataloghi(); // numeri sui riquadri dei cataloghi
             } else if (viewName === 'anime') {
                 document.getElementById('animeView').style.display = 'block';
                 document.getElementById('nav-anime').classList.add('active-view');

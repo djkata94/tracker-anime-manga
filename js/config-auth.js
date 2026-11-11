@@ -97,6 +97,7 @@
             caricaWidgetCinemaProssimi();
             caricaLogAttivita();
             aggiornaBadgePatchNotes();
+            if (typeof caricaConteggiCataloghi === 'function') caricaConteggiCataloghi(); // numeri sui riquadri dei cataloghi (Home)
         }
 		
         function mostraLogin_() {
