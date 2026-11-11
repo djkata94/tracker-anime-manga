@@ -23,7 +23,7 @@
          cache 10 minuti, cambiando il valore il browser li riscarica subito.
          Non va toccato a mano: lo calcola tools/bump-version.js (qui e sugli
          script in fondo), lanciato in automatico prima di ogni commit. -->
-    <link rel="stylesheet" href="css/style.css?v=3f6aba43">
+    <link rel="stylesheet" href="css/style.css?v=5c534602">
 
 </head>
 <body>
@@ -31,26 +31,32 @@
     <!-- ===================================================================
          🔐 SCHERMATA DI LOGIN (Supabase Auth)
          Resta nel DOM sempre; viene mostrata/nascosta via JS a seconda che
-         ci sia o meno una sessione valida. Non tocca il resto della grafica.
+         ci sia o meno una sessione valida. Stile vetro (Richiesta 56): CSS
+         "NUOVO STILE VETRO — LOGIN"; i 5 riquadri con le icone delle sezioni
+         sono solo decorativi e galleggiano dietro il riquadro di accesso.
     ==================================================================== -->
-    <div id="loginOverlay" style="display:none; position:fixed; inset:0; z-index:100000; background:var(--bg-dark); align-items:center; justify-content:center; padding:20px;">
-        <div style="width:100%; max-width:360px; background:var(--surface-solid); border:1px solid var(--border-color); border-radius:var(--radius); padding:32px 28px; box-shadow:0 20px 60px rgba(0,0,0,0.5);">
-            <div style="text-align:center; margin-bottom:24px;">
-                <div style="font-family:monospace; font-weight:800; letter-spacing:1px; color:var(--primary); font-size:20px;">🎮 NERD.TRACKER</div>
-                <div style="color:var(--text-muted); font-size:13px; margin-top:4px;">Accedi per continuare</div>
+    <div id="loginOverlay" class="login-vetro" style="display:none;">
+        <div class="login-icona" style="--li-x: 12%; --li-y: 16%; --li-ritardo: 0s;" aria-hidden="true">📺</div>
+        <div class="login-icona" style="--li-x: 82%; --li-y: 12%; --li-ritardo: -4s;" aria-hidden="true">🎬</div>
+        <div class="login-icona" style="--li-x: 8%; --li-y: 62%; --li-xt: 72%; --li-yt: 85%; --li-ritardo: -8s;" aria-hidden="true">📡</div>
+        <div class="login-icona" style="--li-x: 86%; --li-y: 58%; --li-xt: 8%; --li-yt: 87%; --li-ritardo: -12s;" aria-hidden="true">📗</div>
+        <div class="login-icona" style="--li-x: 30%; --li-y: 84%; --li-ritardo: -6s;" aria-hidden="true">📚</div>
+        <div class="login-riquadro">
+            <div class="login-testata">
+                <div class="login-logo" aria-hidden="true">🎮</div>
+                <div class="login-nome">NERD.TRACKER</div>
+                <div class="login-sotto">Accedi per continuare</div>
             </div>
             <form id="loginForm">
-                <label style="display:block; font-size:13px; color:var(--text-muted); margin-bottom:6px;">Email</label>
-                <input type="email" id="loginEmail" required autocomplete="username"
-                       style="width:100%; padding:10px 12px; margin-bottom:16px; background:var(--surface); border:1px solid var(--border-color); border-radius:var(--radius-sm); color:var(--text); font-size:14px;">
-                <label style="display:block; font-size:13px; color:var(--text-muted); margin-bottom:6px;">Password</label>
-                <input type="password" id="loginPassword" required autocomplete="current-password"
-                       style="width:100%; padding:10px 12px; margin-bottom:8px; background:var(--surface); border:1px solid var(--border-color); border-radius:var(--radius-sm); color:var(--text); font-size:14px;">
-                <div id="loginError" style="color:var(--danger); font-size:13px; min-height:18px; margin-bottom:8px;"></div>
-                <button type="submit" id="loginSubmitBtn"
-                        style="width:100%; padding:11px; background:var(--primary); border:none; border-radius:var(--radius-sm); color:#fff; font-weight:600; font-size:14px; cursor:pointer;">
-                    Accedi
-                </button>
+                <label class="login-etichetta" for="loginEmail">Email</label>
+                <input type="email" id="loginEmail" class="login-campo" required autocomplete="username">
+                <label class="login-etichetta" for="loginPassword">Password</label>
+                <div class="login-pw">
+                    <input type="password" id="loginPassword" class="login-campo" required autocomplete="current-password">
+                    <button type="button" id="loginMostraPw" class="login-occhio" aria-label="Mostra la password" title="Mostra la password">👁️</button>
+                </div>
+                <div id="loginError" class="login-errore"></div>
+                <button type="submit" id="loginSubmitBtn" class="login-accedi">Accedi</button>
             </form>
         </div>
     </div>
@@ -1282,10 +1288,10 @@
     <script src="js/anime-all.js?v=9467ac9f"></script>
     <script src="js/serie-tv.js?v=e029bccc"></script>
     <script src="js/manga.js?v=15f97fab"></script>
-    <script src="js/libri-patch.js?v=4b154e30"></script>
+    <script src="js/libri-patch.js?v=ab8fb402"></script>
     <script src="js/cinema.js?v=c71d2743"></script>
     <script src="js/main.js?v=48d3d212"></script>
-    <script src="js/config-auth.js?v=7a094a2d"></script>
+    <script src="js/config-auth.js?v=f1d6b1cb"></script>
 
     <script>
     // PWA: registra il service worker (installabilità + cache immagini/librerie).

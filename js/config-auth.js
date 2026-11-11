@@ -126,9 +126,25 @@
             }
         });
 
+        // 👁️ mostra/nasconde la password mentre la si scrive (Richiesta 56)
+        const loginMostraPwEl = document.getElementById('loginMostraPw');
+        if (loginMostraPwEl) {
+            loginMostraPwEl.addEventListener('click', function() {
+                const campo = document.getElementById('loginPassword');
+                const mostra = campo.type === 'password';
+                campo.type = mostra ? 'text' : 'password';
+                loginMostraPwEl.setAttribute('aria-pressed', mostra ? 'true' : 'false');
+                loginMostraPwEl.setAttribute('aria-label', mostra ? 'Nascondi la password' : 'Mostra la password');
+                loginMostraPwEl.title = loginMostraPwEl.getAttribute('aria-label');
+                campo.focus();
+            });
+        }
+
         loginFormEl.addEventListener('submit', function(e) {
             e.preventDefault();
             loginErrorEl.textContent = '';
+            // la password torna nascosta all'invio (così il browser la può salvare)
+            if (loginMostraPwEl && document.getElementById('loginPassword').type === 'text') loginMostraPwEl.click();
             loginSubmitBtnEl.disabled = true;
             loginSubmitBtnEl.textContent = 'Accesso in corso...';
 

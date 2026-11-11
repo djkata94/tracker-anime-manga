@@ -2671,3 +2671,142 @@ body {
 @media (prefers-reduced-motion: reduce) {
     #navbar .nav-indicatore { transition: none; }
 }
+
+/* =====================================================================
+   🧊 NUOVO STILE VETRO — LOGIN (Richiesta 56)
+   Lo sfondo della schermata è trasparente: si vede lo sfondo colorato del
+   sito (body su PC, body::before sul telefono). Il riquadro di accesso è vetro
+   "spesso" come le finestre; dietro galleggiano piano 5 riquadri di vetro con
+   le icone delle sezioni (solo decorativi; fermi con "riduci movimento").
+   ===================================================================== */
+#loginOverlay.login-vetro {
+    position: fixed;
+    inset: 0;
+    z-index: 100000;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    overflow: hidden;
+    background: transparent;
+}
+.login-icona {
+    position: absolute;
+    left: var(--li-x);
+    top: var(--li-y);
+    width: 74px;
+    height: 74px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 34px;
+    border-radius: 22px;
+    background: var(--vetro);
+    border: 1px solid var(--vetro-bordo);
+    box-shadow: inset 0 1px 0 var(--vetro-luce), var(--vetro-ombra);
+    backdrop-filter: var(--vetro-blur);
+    -webkit-backdrop-filter: var(--vetro-blur);
+    pointer-events: none;
+    animation: login-galleggia 16s ease-in-out var(--li-ritardo) infinite;
+}
+@keyframes login-galleggia {
+    0%, 100% { transform: translate(0, 0) rotate(-6deg); }
+    25% { transform: translate(18px, -22px) rotate(3deg); }
+    50% { transform: translate(-10px, -38px) rotate(8deg); }
+    75% { transform: translate(-22px, -12px) rotate(-2deg); }
+}
+.login-riquadro {
+    position: relative;
+    z-index: 1;
+    width: 100%;
+    max-width: 380px;
+    padding: 34px 30px 30px;
+    border-radius: 26px;
+    background: var(--finestra-sfondo);
+    border: 1px solid var(--vetro-bordo);
+    box-shadow: inset 0 1px 0 var(--vetro-luce), var(--finestra-ombra);
+    backdrop-filter: var(--finestra-blur);
+    -webkit-backdrop-filter: var(--finestra-blur);
+}
+.login-testata { text-align: center; margin-bottom: 26px; }
+.login-logo {
+    width: 64px;
+    height: 64px;
+    margin: 0 auto 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 34px;
+    border-radius: 20px;
+    background: rgba(124, 108, 255, 0.18);
+    border: 1px solid rgba(124, 108, 255, 0.5);
+    box-shadow: 0 0 24px var(--primary-glow);
+}
+.login-nome {
+    font-family: 'Courier New', monospace;
+    font-weight: 800;
+    font-size: 22px;
+    letter-spacing: 1.5px;
+    color: var(--primary);
+    text-shadow: 0 0 14px var(--primary-glow);
+}
+.login-sotto { color: var(--text-muted); font-size: 13px; margin-top: 6px; }
+.login-etichetta { display: block; font-size: 13px; color: var(--text-muted); margin-bottom: 6px; }
+.login-campo {
+    width: 100%;
+    padding: 11px 13px;
+    margin-bottom: 16px;
+    border-radius: 12px;
+    background: rgba(0, 0, 0, 0.25);
+    border: 1px solid var(--vetro-bordo);
+    color: var(--text);
+    font-size: 15px;
+    outline: none;
+    transition: border-color 0.2s, box-shadow 0.2s;
+}
+.login-campo:focus { border-color: var(--primary); box-shadow: 0 0 0 3px var(--primary-glow); }
+.login-pw { position: relative; }
+.login-pw .login-campo { padding-right: 46px; margin-bottom: 8px; }
+.login-occhio {
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 44px;
+    height: calc(100% - 8px);
+    padding: 0;
+    border: 0;
+    background: transparent;
+    font-size: 17px;
+    cursor: pointer;
+    opacity: 0.55;
+    transition: opacity 0.2s;
+}
+.login-occhio:hover,
+.login-occhio[aria-pressed="true"] { opacity: 1; }
+.login-errore { color: var(--danger); font-size: 13px; min-height: 18px; margin-bottom: 10px; }
+.login-accedi {
+    width: 100%;
+    padding: 12px;
+    border: 0;
+    border-radius: 12px;
+    background: linear-gradient(135deg, #7c6cff, #a78bfa);
+    color: #fff;
+    font-weight: 700;
+    font-size: 15px;
+    cursor: pointer;
+    box-shadow: 0 8px 24px rgba(124, 108, 255, 0.35);
+    transition: transform 0.15s, box-shadow 0.2s, opacity 0.2s;
+}
+.login-accedi:hover { transform: translateY(-1px); box-shadow: 0 10px 30px rgba(124, 108, 255, 0.5); }
+.login-accedi:disabled { opacity: 0.6; cursor: default; transform: none; }
+.login-campo, .login-accedi { font-family: inherit; }
+
+/* telefono: icone più piccole e un po' più trasparenti, spinte verso i bordi */
+@media (max-width: 768px) {
+    .login-icona { width: 52px; height: 52px; font-size: 24px; border-radius: 16px; opacity: 0.8; }
+    /* le icone di lato finirebbero dietro il riquadro: sul telefono vanno sotto */
+    .login-icona { left: var(--li-xt, var(--li-x)); top: var(--li-yt, var(--li-y)); }
+    .login-riquadro { padding: 28px 22px 24px; }
+}
+@media (prefers-reduced-motion: reduce) {
+    .login-icona { animation: none; }
+}

@@ -827,6 +827,10 @@ function statoBadgeLibro_(stato) {
         //   Nuove voci: aggiungere in CIMA all'array.
         // ==========================================
         const PATCH_NOTES = [
+            { v: '1.1.3', titolo: 'Schermata di accesso in vetro', data: '11/11/2026', punti: [
+                'La schermata di accesso ha lo stile del resto del sito: sfondo colorato e riquadro di vetro, con dietro le icone delle sezioni che galleggiano piano.',
+                'Nel campo password c\'è il bottone 👁️ per vedere quello che scrivi; all\'invio la password torna nascosta.'
+            ] },
             { v: '1.1.2', titolo: 'Effetto genio tra le sezioni', data: '11/11/2026', punti: [
                 'Da PC, cambiando sezione, la pagina viene risucchiata a imbuto nella sua icona della barra e la nuova esce a imbuto dall\'icona cliccata, come le finestre nel Dock del Mac.',
                 'Da telefono versione leggera: la sezione si rimpicciolisce dentro la sua icona e la nuova si allarga da quella cliccata.',
