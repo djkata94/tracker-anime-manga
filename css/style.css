@@ -2265,3 +2265,35 @@ body {
 @media (max-width: 768px) {
     #homeView .home-bento { grid-template-columns: minmax(0, 1fr); gap: 12px; }
 }
+
+/* --- LOG APERTO SU PC (redesign, richiesta dell'owner) ---
+   Su PC (sopra i 1100px, dove In corso e Prossimi al cinema sono affiancati)
+   con il Log aperto la Home è alta esattamente quanto lo schermo, con in fondo
+   lo stesso margine della barra laterale: il Log prende lo spazio che resta e
+   finisce alla base della barra, scorrendo al suo interno. Il Log si accorcia
+   fino a un minimo di 140px (un paio di righe): solo su schermi troppo bassi
+   anche per quello la pagina scorre. Con il Log chiuso la Home torna alta
+   quanto il suo contenuto.
+   Sul telefono il Log parte chiuso (main.js lo apre solo da PC). */
+@media (min-width: 1101px) {
+    #homeView:has(#systemLogWidget:not(.collapsed)) {
+        height: 100vh;
+        padding-bottom: var(--barra-margine);
+    }
+    #homeView:has(#systemLogWidget:not(.collapsed)) .home-bento {
+        flex: 1 1 auto;
+        min-height: 0;
+        grid-template-rows: auto auto auto minmax(140px, 1fr);
+    }
+    #homeView .bento-log:not(.collapsed) {
+        align-self: stretch;
+        min-height: 0;
+        display: flex;
+        flex-direction: column;
+    }
+    #homeView .bento-log:not(.collapsed) .system-log-body {
+        flex: 1 1 auto;
+        min-height: 0;
+        max-height: none;
+    }
+}

@@ -1590,6 +1590,10 @@ function escapeHtmlLog(str) {
         headerEl.addEventListener('click', function() {
             widgetEl.classList.toggle('collapsed');
         });
+        // Nuovo stile vetro: su PC il Log parte aperto e riempie la Home fino alla
+        // base della barra laterale (vedi CSS "LOG APERTO SU PC"); sul telefono resta
+        // chiuso come nella Home compatta.
+        if (window.matchMedia('(min-width: 769px)').matches) widgetEl.classList.remove('collapsed');
     }
 })();
 

@@ -23,7 +23,7 @@
          cache 10 minuti, cambiando il valore il browser li riscarica subito.
          Non va toccato a mano: lo calcola tools/bump-version.js (qui e sugli
          script in fondo), lanciato in automatico prima di ogni commit. -->
-    <link rel="stylesheet" href="css/style.css?v=781bfc43">
+    <link rel="stylesheet" href="css/style.css?v=0473dde5">
 
 </head>
 <body>
@@ -193,9 +193,9 @@
              Mostra le ultime azioni compiute sulla dashboard, caricate in modo
              asincrono e non bloccante tramite ottieniUltimiLog().
              ================================================================ -->
-        <!-- Nel nuovo stile il Log parte aperto (richiesta dell'owner): riempie la
-             Home fino in fondo alla barra laterale. Si chiude come sempre dalla testata. -->
-        <div class="system-log-widget bento-log" id="systemLogWidget">
+        <!-- Il Log parte chiuso (telefono); su PC main.js lo apre all'avvio e il CSS
+             lo fa finire alla base della barra laterale (richiesta dell'owner). -->
+        <div class="system-log-widget bento-log collapsed" id="systemLogWidget">
             <div class="system-log-header" id="systemLogHeader">
                 <span class="system-log-title">⚙️ LOG DI SISTEMA — Ultime Azioni</span>
                 <div class="system-log-header-right">
@@ -1284,7 +1284,7 @@
     <script src="js/manga.js?v=15f97fab"></script>
     <script src="js/libri-patch.js?v=46f0075c"></script>
     <script src="js/cinema.js?v=c71d2743"></script>
-    <script src="js/main.js?v=ea2d51d8"></script>
+    <script src="js/main.js?v=5ba9b575"></script>
     <script src="js/config-auth.js?v=7a094a2d"></script>
 
     <script>
