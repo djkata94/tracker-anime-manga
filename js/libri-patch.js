@@ -827,6 +827,11 @@ function statoBadgeLibro_(stato) {
         //   Nuove voci: aggiungere in CIMA all'array.
         // ==========================================
         const PATCH_NOTES = [
+            { v: '1.1.2', titolo: 'Effetto genio tra le sezioni', data: '11/11/2026', punti: [
+                'Da PC, cambiando sezione, la pagina viene risucchiata a imbuto nella sua icona della barra e la nuova esce a imbuto dall\'icona cliccata, come le finestre nel Dock del Mac.',
+                'Da telefono versione leggera: la sezione si rimpicciolisce dentro la sua icona e la nuova si allarga da quella cliccata.',
+                'La sezione nuova esce quando i suoi dati sono pronti, così non si vede la scritta di caricamento. Sostituisce la dissolvenza della v1.1.1.'
+            ] },
             { v: '1.1.1', titolo: 'Passaggi fluidi tra le sezioni', data: '11/11/2026', punti: [
                 'Cambiando sezione la pagina vecchia svanisce e la nuova entra sfocata e si mette a fuoco, invece di comparire di colpo.',
                 'Il riquadro di selezione della barra scivola dall\'icona di prima a quella nuova (in verticale da PC, in orizzontale da telefono).',

@@ -2802,3 +2802,278 @@ function aggiornaIndicatoreNav_(idBottone, anima) {
     window.addEventListener('resize', riposiziona);
     riposiziona();
 })();
+
+// ==========================================================================
+//   🧞 CAMBIO SEZIONE A GENIO (Richiesta 55)
+// ==========================================================================
+// Da PC la sezione vecchia viene risucchiata a imbuto nella sua icona della
+// barra (come una finestra nel Dock del Mac) e la nuova esce a imbuto
+// dall'icona cliccata. Sul telefono versione leggera: la sezione si
+// rimpicciolisce dentro l'icona e la nuova si allarga dall'icona nuova.
+//
+// Come funziona: il browser non sa deformare una pagina a imbuto, quindi la
+// parte visibile della sezione viene copiata (solo le righe a schermo, le
+// liste lunghe vengono accorciate) in un "palco" fisso sopra la pagina e
+// tagliata in strisce verticali larghe ~80px. Ogni striscia scivola verso
+// l'icona e diventa un trapezio (matrix3d) alto quanto l'imbuto nei suoi due
+// bordi: le strisce vicine hanno i bordi in comune, quindi l'imbuto è liscio. Sul telefono la striscia è una sola.
+// Le copie non hanno la sfocatura del vetro (sarebbe da ricalcolare a ogni
+// fotogramma per ogni striscia): sullo sfondo sfumato non si nota.
+// La sezione vera intanto è già cambiata (nascosta finché l'animazione non
+// finisce), quindi i dati partono subito come prima.
+const GENIO_ = { attivo: null, striscia: 80 }; // larghezza delle strisce su PC (px): più strette = contenuto deformato più fedelmente ma più lavoro
+
+function genioLimita_(x) { return x < 0 ? 0 : (x > 1 ? 1 : x); }
+function genioLiscio_(x) { x = genioLimita_(x); return x * x * (3 - 2 * x); }
+function genioAccelera_(x) { x = genioLimita_(x); return x * x * x; }
+function genioRallenta_(x) { x = genioLimita_(x); return 1 - Math.pow(1 - x, 3); }
+
+function genioCentroIcona_(el) {
+    if (!el) return null;
+    const r = el.getBoundingClientRect();
+    if (!r.width || !r.height) return null;
+    return { x: r.left + r.width / 2, y: r.top + r.height / 2 };
+}
+
+function genioVistaVisibile_() {
+    const ids = ['homeView', 'animeView', 'serietvView', 'mangaView', 'libriView', 'cinemaView'];
+    for (const id of ids) {
+        const v = document.getElementById(id);
+        if (v && getComputedStyle(v).display !== 'none') return v;
+    }
+    return null;
+}
+
+// Copia la parte visibile di "vista" nel palco, tagliata in strisce.
+function genioPalco_(vista, icona, pc) {
+    const vr = vista.getBoundingClientRect();
+    const area = { left: Math.max(vr.left, 0), top: Math.max(vr.top, 0) };
+    area.width = Math.min(vr.right, window.innerWidth) - area.left;
+    area.height = Math.min(vr.bottom, window.innerHeight) - area.top;
+    if (area.width < 50 || area.height < 50) return null;
+
+    // 1) segna sull'originale: scorrimenti interni da rifare sulla copia, righe
+    //    fuori schermo da togliere. Togliendo quelle sopra il resto della copia
+    //    sale: la prima riga rimasta fa da riferimento ("rif", con la sua
+    //    posizione vera) e la copia viene riabbassata della differenza.
+    const segnati = [];
+    let rifMesso = false;
+    vista.querySelectorAll('*').forEach(function(el) {
+        if (el.scrollTop || el.scrollLeft) {
+            el.setAttribute('data-genio-st', el.scrollTop + ',' + el.scrollLeft);
+            segnati.push(el);
+        }
+        if (el.children.length < 13) return;
+        let toltiSopra = false, tenuto = false;
+        for (const c of el.children) {
+            const r = c.getBoundingClientRect();
+            if (!r.height) continue;
+            if ((r.bottom < -40 && !tenuto) || r.top > window.innerHeight + 40) {
+                c.setAttribute('data-genio', 'via');
+                segnati.push(c);
+                if (!tenuto) toltiSopra = true;
+            } else if (!tenuto) {
+                tenuto = true;
+                if (toltiSopra && !rifMesso) {
+                    rifMesso = true;
+                    c.setAttribute('data-genio-rif', String(r.top));
+                    segnati.push(c);
+                }
+            }
+        }
+    });
+
+    // 2) copia e pulizia
+    const modello = vista.cloneNode(true);
+    segnati.forEach(function(el) {
+        el.removeAttribute('data-genio');
+        el.removeAttribute('data-genio-rif');
+        el.removeAttribute('data-genio-st');
+    });
+    modello.querySelectorAll('[data-genio="via"]').forEach(function(el) { el.remove(); });
+    modello.style.position = 'absolute';
+    modello.style.margin = '0';
+    modello.style.maxWidth = 'none';
+    modello.style.width = vr.width + 'px';
+    modello.style.top = (vr.top - area.top) + 'px';
+    modello.style.display = getComputedStyle(vista).display;
+    modello.style.visibility = 'visible';
+    modello.style.opacity = '1';
+    modello.style.pointerEvents = 'none';
+
+    // 3) palco e strisce
+    const palco = document.createElement('div');
+    palco.className = 'genio-palco';
+    palco.setAttribute('aria-hidden', 'true');
+    palco.style.left = area.left + 'px';
+    palco.style.top = area.top + 'px';
+    palco.style.width = area.width + 'px';
+    palco.style.height = area.height + 'px';
+    document.body.appendChild(palco);
+
+    // riallineamento verticale dopo aver tolto le righe sopra lo schermo
+    if (modello.querySelector('[data-genio-rif]')) {
+        const prova = modello.cloneNode(true);
+        prova.style.left = (vr.left - area.left) + 'px';
+        palco.appendChild(prova);
+        const rif = prova.querySelector('[data-genio-rif]');
+        const scarto = Number(rif.getAttribute('data-genio-rif')) - rif.getBoundingClientRect().top;
+        modello.style.top = (vr.top - area.top + scarto) + 'px';
+        prova.remove();
+    }
+
+    const n = pc ? Math.max(8, Math.round(area.width / GENIO_.striscia)) : 1;
+    const w = area.width / n;
+    const strisce = [];
+    for (let i = 0; i < n; i++) {
+        // bordi su pixel interi: strisce vicine senza fessure né sovrapposizioni
+        const sx = Math.round(i * w), larga = Math.round((i + 1) * w) - sx;
+        const s = document.createElement('div');
+        s.className = 'genio-striscia';
+        s.style.left = sx + 'px';
+        s.style.width = larga + 'px';
+        const copia = modello.cloneNode(true);
+        copia.style.left = (vr.left - area.left - sx) + 'px';
+        s.appendChild(copia);
+        palco.appendChild(s);
+        copia.querySelectorAll('[data-genio-st]').forEach(function(el) {
+            const p = el.getAttribute('data-genio-st').split(',');
+            el.scrollTop = Number(p[0]);
+            el.scrollLeft = Number(p[1]);
+        });
+        strisce.push({ el: s, left: sx, larga: larga });
+    }
+    if (!pc) strisce[0].el.style.transformOrigin = (icona.x - area.left) + 'px ' + (icona.y - area.top) + 'px';
+
+    return {
+        palco: palco, strisce: strisce, area: area, w: w, pc: pc,
+        ix: icona.x, iy: icona.y,
+        yc0: area.top + area.height / 2,
+        imbuto: Math.min(area.width * 0.55, 720),   // lunghezza della parte che si stringe
+        sMin: Math.min(1, 26 / area.height)          // altezza finale ≈ quella dell'icona
+    };
+}
+
+// p = 0: sezione al suo posto; p = 1: tutta dentro l'icona.
+function genioApplica_(g, p) {
+    if (!g.pc) {
+        const e = genioAccelera_(p);
+        const st = g.strisce[0].el.style;
+        st.transform = 'scale(' + (1 - 0.95 * e) + ')';
+        st.opacity = String(1 - genioLiscio_((p - 0.3) / 0.7));
+        return;
+    }
+    const forma = genioRallenta_(p / 0.4);                    // l'imbuto si forma
+    const corsa = (g.area.left + g.area.width) - g.ix;       // strada fino all'icona
+    const scivola = genioAccelera_((p - 0.12) / 0.88) * corsa; // e la sezione ci scivola dentro
+    // altezza e centro dell'imbuto in un punto x dello schermo
+    const bordo = function(x) {
+        const k = forma * (1 - genioLiscio_((x - g.ix) / g.imbuto));
+        const h = g.area.height * (1 - k * (1 - g.sMin));
+        const c = g.yc0 + (g.iy - g.yc0) * k;
+        return { su: c - h / 2 - g.area.top, giu: c + h / 2 - g.area.top };
+    };
+    for (const s of g.strisce) {
+        const xs = g.area.left + s.left - scivola;     // bordo sinistro sullo schermo
+        const xd = xs + s.larga;                        // bordo destro
+        if (xd <= g.ix + 0.5) { s.el.style.opacity = '0'; continue; }
+        // i bordi che hanno già passato l'icona restano schiacciati su di lei
+        const xsC = Math.max(xs, g.ix), xdC = Math.max(xd, g.ix);
+        const bS = bordo(xsC), bD = bordo(xdC);
+        const l0 = g.area.left + s.left;                // la striscia "a riposo"
+        s.el.style.transform = genioQuadrilatero_(s.larga, g.area.height,
+            xsC - l0, bS.su, xdC - l0, bD.su, xdC - l0, bD.giu, xsC - l0, bS.giu);
+        s.el.style.opacity = String(genioLimita_((xd - g.ix) / g.w));
+    }
+}
+
+// matrix3d che porta un rettangolo w×h (angolo in alto a sinistra in 0,0) sul
+// quadrilatero dato in senso orario da in alto a sinistra: ogni striscia diventa
+// un trapezio e le strisce vicine hanno i bordi in comune, quindi l'imbuto ha i
+// fianchi lisci invece che a scalini.
+function genioQuadrilatero_(w, h, x0, y0, x1, y1, x2, y2, x3, y3) {
+    const dx1 = x1 - x2, dx2 = x3 - x2, dx3 = x0 - x1 + x2 - x3;
+    const dy1 = y1 - y2, dy2 = y3 - y2, dy3 = y0 - y1 + y2 - y3;
+    let a, b, c, d, e, f, gg, hh;
+    if (Math.abs(dx3) < 1e-6 && Math.abs(dy3) < 1e-6) {
+        gg = 0; hh = 0;
+        a = x1 - x0; b = x2 - x1; d = y1 - y0; e = y2 - y1;
+    } else {
+        const det = dx1 * dy2 - dx2 * dy1;
+        gg = (dx3 * dy2 - dx2 * dy3) / det;
+        hh = (dx1 * dy3 - dx3 * dy1) / det;
+        a = x1 - x0 + gg * x1; b = x3 - x0 + hh * x3;
+        d = y1 - y0 + gg * y1; e = y3 - y0 + hh * y3;
+    }
+    c = x0; f = y0;
+    return 'matrix3d(' + [a / w, d / w, 0, gg / w, b / h, e / h, 0, hh / h, 0, 0, 1, 0, c, f, 0, 1].join(',') + ')';
+}
+
+function genioChiudi_() {
+    const s = GENIO_.attivo;
+    if (!s) return;
+    cancelAnimationFrame(s.raf);
+    clearTimeout(s.sicurezza);
+    if (s.gV) s.gV.palco.remove();
+    if (s.gN) s.gN.palco.remove();
+    s.nuova.style.opacity = '';
+    s.nuova.style.pointerEvents = '';
+    GENIO_.attivo = null;
+}
+
+// Restituisce true se ha cambiato sezione lui (con l'animazione).
+function genioCambiaSezione_(viewName) {
+    genioChiudi_(); // un clic durante l'animazione la chiude subito
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return false;
+    if (document.getElementById('appRoot').style.display === 'none') return false;
+    const vecchia = genioVistaVisibile_();
+    const nuova = document.getElementById(viewName + 'View');
+    if (!vecchia || !nuova || vecchia === nuova) return false;
+    const pc = window.matchMedia('(min-width: 769px)').matches;
+    const cV = genioCentroIcona_(document.querySelector('#navLinks .btn-nav.active-view'));
+    const cN = genioCentroIcona_(document.getElementById('nav-' + viewName));
+    if (!cV || !cN) return false;
+
+    let gV = null;
+    try { gV = genioPalco_(vecchia, cV, pc); } catch (e) { console.warn('genio', e); }
+    if (gV) genioApplica_(gV, 0);
+    switchViewOra_(viewName);
+    // nascosta con l'opacità e non con visibility: alcuni elementi interni hanno
+    // visibility propria e resterebbero a vista
+    nuova.style.opacity = '0';
+    nuova.style.pointerEvents = 'none';
+
+    // Tempi in ms: risucchio, da quando può partire l'uscita, durata dell'uscita
+    // (PC 0,8 s in tutto). L'uscita aspetta che la sezione nuova abbia i dati
+    // (sparisce la scritta "Caricamento..."), al massimo "attesa" ms dopo la fine
+    // del risucchio: così dall'icona esce la lista vera e non la scritta di attesa.
+    const T = pc ? { esce: 500, daQuando: 300, entra: 500, attesa: 700 } : { esce: 340, daQuando: 240, entra: 360, attesa: 700 };
+    const caricamento = document.getElementById({ anime: 'loadingAnime', serietv: 'loadingSerieTv', manga: 'loadingManga', libri: 'loadingLibri', cinema: 'loadingCinema' }[viewName]);
+    const pronta = function() { return !caricamento || getComputedStyle(caricamento).display === 'none'; };
+    const stato = { gV: gV, gN: null, inizioUscita: 0, nuova: nuova, raf: 0, sicurezza: 0 };
+    GENIO_.attivo = stato;
+    // se l'animazione si inceppa (es. scheda del browser messa in secondo piano a
+    // metà) la sezione nuova ricompare comunque
+    stato.sicurezza = setTimeout(function() { if (GENIO_.attivo === stato) genioChiudi_(); }, 2500);
+    const t0 = performance.now();
+    const passo = function(ora) {
+        const t = ora - t0;
+        if (stato.gV) {
+            genioApplica_(stato.gV, Math.min(1, t / T.esce));
+            if (t >= T.esce) { stato.gV.palco.remove(); stato.gV = null; }
+        }
+        if (!stato.inizioUscita && t >= T.daQuando && (pronta() || t >= T.esce + T.attesa)) {
+            try { stato.gN = genioPalco_(nuova, cN, pc); } catch (e) { console.warn('genio', e); }
+            if (stato.gN) genioApplica_(stato.gN, 1);
+            stato.inizioUscita = performance.now(); // l'orologio dell'uscita parte dopo la copia
+        }
+        if (stato.inizioUscita) {
+            const q = Math.min(1, (performance.now() - stato.inizioUscita) / T.entra);
+            if (stato.gN) genioApplica_(stato.gN, 1 - q);
+            if (q >= 1 && !stato.gV) { genioChiudi_(); return; }
+        }
+        stato.raf = requestAnimationFrame(passo);
+    };
+    stato.raf = requestAnimationFrame(passo);
+    return true;
+}
