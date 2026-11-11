@@ -2385,6 +2385,10 @@ body {
 
 @media (max-width: 768px) {
     .vista-vetro .stat-banner { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+    /* numero dispari di contatori (Libri, Cinema: 3): l'ultimo prende tutta la riga.
+       I contatori sono i figli in posizione dispari (in mezzo ci sono i separatori
+       nascosti), quindi con un numero dispari l'ultimo è il figlio 4n+1. */
+    .vista-vetro .stat-banner > .stat-block:last-child:nth-child(4n+1) { grid-column: 1 / -1; }
     .vista-vetro .stat-value { font-size: 19px; }
     .vista-vetro .contiene-schede tr {
         background: rgba(20, 22, 34, 0.55);
@@ -2393,4 +2397,43 @@ body {
     }
     .vista-vetro .contiene-schede .td-titolo { border-bottom-color: rgba(255, 255, 255, 0.07); }
     .vista-vetro .contiene-schede .td-azioni { border-top-color: rgba(255, 255, 255, 0.07); }
+}
+
+/* --- CINEMA in vetro (redesign, passo 3) ---
+   Contatori e filtri vengono da .vista-vetro. I widget "Da Vedere" e "Visti"
+   (.cinema-widget) diventano pannelli di vetro con la sfocatura su ::before:
+   dentro ci sono lo slider Sala/Streaming e le aree con scorrimento interno
+   (.cinema-scroll-area), che restano trasparenti (niente secondo vetro dentro
+   il primo). L'intestazione della tabella, che resta ferma mentre i film
+   scorrono, è quasi opaca: altrimenti le righe si vedrebbero sotto di lei. */
+#cinemaView .cinema-widget {
+    position: relative;
+    isolation: isolate;
+    background: transparent;
+    border-color: var(--vetro-bordo);
+    box-shadow: inset 0 1px 0 var(--vetro-luce), var(--vetro-ombra);
+}
+#cinemaView .cinema-widget::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    border-radius: inherit;
+    background: var(--vetro);
+    backdrop-filter: var(--vetro-blur);
+    -webkit-backdrop-filter: var(--vetro-blur);
+}
+#cinemaView .cinema-scroll-area {
+    background: transparent;
+    border: 0;
+    box-shadow: none;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    border-radius: 14px;
+}
+#cinemaView .cinema-scroll-area thead th { background: rgba(20, 22, 34, 0.94); }
+#cinemaView .cinema-mode-switch { background: rgba(0, 0, 0, 0.22); border-color: var(--vetro-bordo); }
+/* colonna Azioni più larga (era 142px): i 4 bottoni ℹ️ 📺 💡 🗑️ stanno su una riga invece di andare a capo */
+@media (min-width: 761px) {
+    #cinemaView .cinema-table col:last-child { width: 184px !important; }
 }
