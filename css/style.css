@@ -1735,109 +1735,6 @@
 ::-webkit-scrollbar-thumb { background: var(--border-color); border-radius: 10px; }
 ::-webkit-scrollbar-thumb:hover { background: var(--primary); }
 
-/* --- MENU MOBILE ☰ (Richiesta 38) ---
-   Desktop: .nav-links non genera box (display: contents), i bottoni restano
-   figli diretti della navbar come prima; hamburger, sfondo e intestazione
-   della barra sono nascosti. Sotto i 768px la navbar mostra solo ☰ + logo
-   e i link diventano una barra laterale sinistra. */
-.nav-links { display: contents; }
-.btn-hamburger, .nav-backdrop, .nav-drawer-header { display: none; }
-
-@media (max-width: 768px) {
-    /* backdrop-filter renderebbe la navbar il riferimento dei figli
-       position: fixed, e la barra laterale resterebbe chiusa al suo interno */
-    .navbar {
-        flex-wrap: nowrap;
-        backdrop-filter: none;
-        -webkit-backdrop-filter: none;
-        background: rgba(14, 15, 26, 0.96);
-    }
-
-    .btn-hamburger {
-        display: inline-flex;
-        flex-direction: column;
-        justify-content: center;
-        gap: 5px;
-        width: 42px;
-        height: 42px;
-        padding: 0 10px;
-        flex-shrink: 0;
-        position: relative;
-        background: transparent;
-        border: 1px solid var(--border-color);
-        border-radius: 12px;
-        cursor: pointer;
-    }
-    .btn-hamburger span { display: block; height: 2px; width: 100%; background: var(--text); border-radius: 2px; }
-    .btn-hamburger:hover { background: var(--surface-hover); }
-    /* Pallino rosso se ci sono patch notes non lette (il conteggio e' nella barra) */
-    .hamburger-dot { position: absolute; top: 5px; right: 5px; width: 9px; height: 9px; border-radius: 50%; background: #ef4444; box-shadow: 0 0 6px rgba(239, 68, 68, 0.6); }
-
-    .nav-backdrop {
-        display: block;
-        position: fixed;
-        inset: 0;
-        background: rgba(6, 6, 12, 0.6);
-        opacity: 0;
-        pointer-events: none;
-        transition: opacity 0.3s ease;
-        z-index: 1;
-    }
-    .navbar.menu-open .nav-backdrop { opacity: 1; pointer-events: auto; }
-
-    .nav-links {
-        display: flex;
-        flex-direction: column;
-        align-items: stretch;
-        gap: 4px;
-        position: fixed;
-        top: 0;
-        left: 0;
-        bottom: 0;
-        width: min(300px, 82vw);
-        padding: 0 12px 20px 12px;
-        box-sizing: border-box;
-        overflow-y: auto;
-        background: #14162a;
-        border-right: 1px solid var(--border-color);
-        box-shadow: 24px 0 60px rgba(0, 0, 0, 0.5);
-        transform: translateX(-105%);
-        visibility: hidden;
-        transition: transform 0.3s ease, visibility 0.3s;
-        z-index: 2;
-    }
-    .navbar.menu-open .nav-links { transform: translateX(0); visibility: visible; }
-
-    .nav-drawer-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        padding: calc(14px + env(safe-area-inset-top, 0px)) 4px 12px 8px;
-        margin-bottom: 8px;
-        border-bottom: 1px solid var(--border-color);
-        font-weight: 800;
-        color: var(--primary);
-        font-family: monospace;
-        letter-spacing: 1px;
-    }
-    .nav-drawer-close { background: transparent; border: none; color: var(--text-muted); font-size: 20px; cursor: pointer; padding: 6px 10px; }
-    .nav-drawer-close:hover { color: var(--text); }
-
-    /* Voci una sotto l'altra, allineate a sinistra; Esci in fondo alla barra */
-    .nav-links .btn-nav {
-        justify-content: flex-start;
-        width: 100%;
-        padding: 12px 16px;
-        font-size: 15px;
-        margin-left: 0 !important;
-    }
-    /* Nella barra la mail ha spazio: torna visibile anche sotto i 640px
-       (in navbar era nascosta perche' allargava la pagina) */
-    .nav-links #loggedUserEmail { display: flex !important; padding: 12px 16px 4px 16px; margin-top: auto; overflow-wrap: anywhere; }
-
-    body.menu-mobile-aperto { overflow: hidden; }
-}
-
 /* --- HOME COMPATTA MOBILE (Richiesta 40) ---
    Sotto i 768px i 5 bottoni catalogo sono nascosti (si naviga dal menu ☰),
    intestazione più piccola e sottotitolo nascosto per guadagnare spazio.
@@ -1992,22 +1889,222 @@
     }
 }
 
-/* --- ESPORTA I MIEI DATI (Richiesta 52) ---
-   PC: colonna di bottoni in alto a destra nella Home, "Apri Database" (solo
-   owner) e sotto "Esporta i miei dati"; per l'altro utente Esporta resta da
-   solo nella stessa posizione. Telefono: il bottone della Home sparisce e
-   Esporta compare come voce della barra laterale ☰ (#btnEsportaMenu). */
-.home-azioni-utente {
-    display: flex;
-    flex-direction: column;
-    align-items: stretch;
-    gap: 8px;
-    flex-shrink: 0;
+/* =====================================================================
+   🧊 NUOVO STILE VETRO — STRUTTURA (redesign, ramo redesign-vetro)
+   Variabili del vetro (riusate da tutti i blocchi del redesign), sfondo
+   aurora più acceso perché il vetro si veda, barra di navigazione:
+   - PC: barra verticale di sole icone fissata a sinistra; il nome compare
+     al passaggio del mouse (.nav-nome come etichetta a destra).
+   - Telefono (sotto i 768px): barra fissa in basso con le 6 sezioni e il
+     bottone ⋯ che apre il foglio degli strumenti (Patch notes, Apri
+     Database, Esporta, email, Esci). Il foglio usa le funzioni di sempre
+     apriMenuMobile / chiudiMenuMobile (classe .menu-open sulla barra).
+   La sfocatura sta su uno pseudo-elemento (::before) e non sulla barra:
+   backdrop-filter sulla barra la renderebbe il riferimento dei figli
+   position: fixed (lo sfondo scuro del foglio resterebbe chiuso dentro).
+   ===================================================================== */
+:root {
+    --vetro: rgba(255, 255, 255, 0.045);
+    --vetro-forte: rgba(255, 255, 255, 0.075);
+    --vetro-bordo: rgba(255, 255, 255, 0.10);
+    --vetro-luce: rgba(255, 255, 255, 0.14);
+    --vetro-blur: blur(18px) saturate(150%);
+    --vetro-ombra: 0 10px 30px rgba(0, 0, 0, 0.30);
+    --barra-larghezza: 76px;
+    --barra-margine: 14px;
 }
-button.drive-shortcut-btn { font-family: inherit; cursor: pointer; }
-button.drive-shortcut-btn:disabled { opacity: 0.55; cursor: wait; transform: none; }
-.nav-links .solo-menu-mobile { display: none; }
+
+body {
+    background:
+        radial-gradient(700px 520px at 6% 4%, rgba(124, 108, 255, 0.40), transparent 70%),
+        radial-gradient(640px 480px at 96% 6%, rgba(255, 93, 162, 0.26), transparent 70%),
+        radial-gradient(760px 560px at 72% 100%, rgba(56, 189, 248, 0.20), transparent 70%),
+        radial-gradient(520px 400px at 20% 92%, rgba(52, 211, 153, 0.10), transparent 70%),
+        var(--bg-dark);
+    background-attachment: fixed;
+}
+
+/* ---------- barra (comune) ---------- */
+#navbar {
+    position: fixed;
+    z-index: 500;
+    display: flex;
+    flex-wrap: nowrap;
+    gap: 6px;
+    padding: 14px 0;
+    background: transparent;
+    border: 1px solid var(--vetro-bordo);
+    border-radius: 24px;
+    box-shadow: inset 0 1px 0 var(--vetro-luce), var(--vetro-ombra);
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    isolation: isolate;
+}
+#navbar::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    border-radius: inherit;
+    background: rgba(14, 15, 26, 0.55);
+    backdrop-filter: var(--vetro-blur);
+    -webkit-backdrop-filter: var(--vetro-blur);
+}
+#navbar .nav-logo { font-size: 24px; line-height: 1; }
+#navbar .nav-links,
+#navbar .nav-strumenti { display: flex; gap: 6px; }
+
+#navbar .btn-nav {
+    position: relative;
+    padding: 0;
+    border: 1px solid transparent;
+    border-radius: 14px;
+    background: transparent;
+    color: var(--text);
+    font-size: 20px;
+    text-decoration: none;
+    justify-content: center;
+    gap: 10px;
+}
+#navbar .btn-nav:hover { background: var(--vetro-forte); }
+#navbar .btn-nav.active-view {
+    background: rgba(124, 108, 255, 0.22);
+    border-color: rgba(124, 108, 255, 0.55);
+    box-shadow: 0 0 18px var(--primary-glow);
+    color: var(--text);
+}
+#navbar .nav-ico { line-height: 1; }
+#driveShortcutBtn.is-loading { opacity: 0.55; pointer-events: none; }
+#navbar .nav-utente {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    color: var(--text-muted);
+    font-size: 20px;
+}
+#navbar .nav-utente:empty { display: none; }
+#navbar .nav-altro { display: none; }
+#navbar .nav-backdrop { display: none; }
+/* pallino rosso delle patch notes non lette (il numero resta nel badge) */
+#navbar .hamburger-dot {
+    position: absolute; top: 8px; right: 10px; width: 9px; height: 9px; border-radius: 50%;
+    background: #ef4444; box-shadow: 0 0 6px rgba(239, 68, 68, 0.7);
+}
+
+/* ---------- PC: barra verticale a sinistra ---------- */
+@media (min-width: 769px) {
+    #appRoot { padding-left: calc(var(--barra-larghezza) + 2 * var(--barra-margine)); }
+    #navbar {
+        top: var(--barra-margine);
+        bottom: var(--barra-margine);
+        left: var(--barra-margine);
+        width: var(--barra-larghezza);
+        flex-direction: column;
+        align-items: center;
+    }
+    #navbar .nav-logo { margin-bottom: 12px; }
+    #navbar .nav-links,
+    #navbar .nav-strumenti { flex-direction: column; align-items: center; }
+    #navbar .nav-strumenti { margin-top: auto; }
+    #navbar .btn-nav,
+    #navbar .nav-utente { width: 48px; height: 48px; }
+    /* il nome compare a destra dell'icona, al passaggio del mouse o col tasto Tab */
+    #navbar .nav-nome {
+        position: absolute;
+        left: calc(100% + 14px);
+        top: 50%;
+        transform: translate(-4px, -50%);
+        white-space: nowrap;
+        font-size: 13px;
+        font-weight: 700;
+        color: var(--text);
+        padding: 6px 10px;
+        border-radius: 8px;
+        background: rgba(20, 22, 34, 0.95);
+        border: 1px solid var(--vetro-bordo);
+        box-shadow: 0 6px 18px rgba(0, 0, 0, 0.4);
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 0.15s ease, transform 0.15s ease;
+    }
+    #navbar .btn-nav:hover .nav-nome,
+    #navbar .btn-nav:focus-visible .nav-nome,
+    #navbar .nav-utente:hover .nav-nome { opacity: 1; transform: translate(0, -50%); }
+    /* il numero delle patch non lette diventa un bollino sull'icona */
+    #navbar .patch-badge {
+        position: absolute; top: 2px; right: 0; margin: 0;
+        min-width: 18px; height: 18px; font-size: 10px; padding: 0 5px;
+    }
+}
+
+/* ---------- telefono: barra in basso + foglio ⋯ ---------- */
 @media (max-width: 768px) {
-    .btn-esporta-home { display: none; }
-    .nav-links .solo-menu-mobile { display: inline-flex; }
+    #appRoot { padding-bottom: calc(86px + env(safe-area-inset-bottom, 0px)); }
+    #navbar {
+        top: auto;
+        left: 10px;
+        right: 10px;
+        bottom: calc(10px + env(safe-area-inset-bottom, 0px));
+        flex-direction: row;
+        align-items: center;
+        padding: 6px;
+        border-radius: 22px;
+    }
+    #navbar .nav-logo { display: none; }
+    #navbar .nav-links { flex: 6; min-width: 0; justify-content: space-between; }
+    #navbar .nav-links .btn-nav,
+    #navbar .nav-altro { flex: 1; min-width: 0; height: 50px; border-radius: 16px; }
+    #navbar .nav-links .nav-nome { display: none; }
+    #navbar .nav-altro { display: inline-flex; flex: 1; font-size: 22px; font-weight: 800; }
+
+    /* foglio degli strumenti, sopra la barra */
+    #navbar .nav-strumenti {
+        display: none;
+        position: absolute;
+        left: 0;
+        right: 0;
+        bottom: calc(100% + 10px);
+        flex-direction: column;
+        align-items: stretch;
+        gap: 2px;
+        padding: 8px;
+        border-radius: 22px;
+        background: rgba(20, 22, 34, 0.94);
+        border: 1px solid var(--vetro-bordo);
+        box-shadow: inset 0 1px 0 var(--vetro-luce), 0 -10px 40px rgba(0, 0, 0, 0.45);
+    }
+    #navbar.menu-open .nav-strumenti { display: flex; }
+    #navbar.menu-open .nav-backdrop {
+        display: block;
+        position: fixed;
+        inset: 0;
+        z-index: -2;
+        background: rgba(6, 6, 12, 0.55);
+    }
+    #navbar.menu-open .nav-altro { background: rgba(124, 108, 255, 0.22); border-color: rgba(124, 108, 255, 0.55); }
+    #navbar .nav-strumenti .btn-nav {
+        width: 100%;
+        height: auto;
+        justify-content: flex-start;
+        padding: 12px 14px;
+        font-size: 15px;
+        font-weight: 600;
+    }
+    #navbar .nav-strumenti .nav-ico { font-size: 19px; }
+    #navbar .nav-strumenti .patch-badge { margin-left: auto; }
+    /* email: nel foglio si legge per intera (sotto i 640px era nascosta in navbar) */
+    #navbar #loggedUserEmail {
+        display: flex !important;
+        justify-content: flex-start;
+        padding: 8px 14px 4px;
+        font-size: 13px;
+        overflow-wrap: anywhere;
+    }
+    #navbar #loggedUserEmail:empty { display: none !important; }
+    #navbar #loggedUserEmail .nav-ico { font-size: 16px; }
+
+    /* il bottone ↑ sale sopra la barra in basso */
+    #backToTop { bottom: calc(86px + env(safe-area-inset-bottom, 0px)); }
 }

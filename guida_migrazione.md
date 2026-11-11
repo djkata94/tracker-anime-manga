@@ -2040,3 +2040,17 @@ Fatta l'11/11/2026, chiesta dall'owner (era la proposta 4 dopo le liste a schede
 - `js/libri-patch.js`: voce v1.0.55 in `PATCH_NOTES`.
 
 Provato in locale: posizioni da PC per owner e altro utente, voce nel menu da telefono (che si chiude al tocco). La funzione è stata provata con un database simulato: 2500 righe lette in 3 pagine, tutte le richieste filtrate per utente, file JSON con 14 tabelle; in caso di errore niente file e messaggio chiaro; senza login chiede di accedere. Nessun errore in console. L'esportazione con i dati veri va provata dall'owner dopo la pubblicazione.
+
+## Richiesta 53 — Nuovo stile vetro con barra verticale (IN CORSO sul ramo redesign-vetro)
+
+Iniziata l'11/11/2026. L'owner vuole tutto il sito in stile "vetro" (pannelli semitrasparenti sfocati) con layout da app: barra di icone verticale a sinistra che cambia la sezione, Home a riquadri (bento), mantenendo tutte le funzioni e i widget di oggi. Anteprima approvata: https://claude.ai/artifact/PvLNoXZjkQbbtxcmRHfUZm (dati di esempio). Si lavora sul ramo git `redesign-vetro`: il sito online resta invariato finché il nuovo stile non è completo su PC e telefono, poi si pubblica tutto insieme (merge su `main`) con una sola voce nelle patch notes.
+
+### Passo 1 — Struttura e navigazione (11/11/2026)
+- `index.html`: la navbar orizzontale diventa `<nav id="navbar">` con tre parti: `#navLinks` (le 6 sezioni), `#navStrumenti` (Patch notes, Apri Database, Esporta, email, Esci) e il bottone ⋯ `#btnMenuMobile` (solo telefono). Ogni bottone ha icona (`.nav-ico`) e nome (`.nav-nome`) separati; gli `id` sono quelli di sempre, quindi `switchView`, il pallino delle patch notes, Apri Database (solo owner) ed Esporta funzionano senza cambiare la loro logica. Apri Database ed Esporta escono dalla Home (colonna `.home-azioni-utente` tolta) e vanno nella barra.
+- **PC**: barra verticale di sole icone fissata a sinistra (76px, margine 14px), sezioni in alto e strumenti in basso; il nome compare a destra dell'icona al passaggio del mouse o col tasto Tab; il numero delle patch non lette è un bollino sull'icona 📝. Il contenuto (`#appRoot`) parte dopo la barra.
+- **Telefono** (sotto i 768px): barra fissa in basso con le 6 sezioni e ⋯; ⋯ apre sopra la barra il foglio degli strumenti con sfondo scuro dietro (si chiude toccando fuori, con Esc o scegliendo una voce). Usa le funzioni di sempre `apriMenuMobile` / `chiudiMenuMobile`. Il bottone ↑ sale sopra la barra. Sostituisce il menu ☰ della Richiesta 38.
+- `js/config-auth.js`: l'email dell'utente è un'icona 👤 con l'email in `.nav-nome` (al passaggio del mouse su PC, per intero nel foglio del telefono).
+- `js/main.js`: il foglio si chiude al clic su qualsiasi voce delle sezioni o degli strumenti.
+- `css/style.css`: tolti il blocco "MENU MOBILE ☰ (Richiesta 38)" e quello di Esporta in Home (Richiesta 52); nuovo blocco "NUOVO STILE VETRO — STRUTTURA" in fondo con le variabili del vetro (`--vetro`, `--vetro-forte`, `--vetro-bordo`, `--vetro-luce`, `--vetro-blur`, `--vetro-ombra`), lo sfondo aurora più acceso e la barra. La sfocatura sta su `#navbar::before` e non sulla barra, perché `backdrop-filter` sulla barra la renderebbe il riferimento dei figli `position: fixed`.
+
+Provato in locale (dati e login simulati): PC 1366px, telefono 375px, cambio sezione con evidenza dell'icona attiva, foglio ⋯ (apertura, chiusura con sfondo / Esc / voce, Esporta e Patch notes chiamati), nessuno scorrimento orizzontale, nessun errore in console.

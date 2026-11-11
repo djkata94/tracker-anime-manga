@@ -23,7 +23,7 @@
          cache 10 minuti, cambiando il valore il browser li riscarica subito.
          Non va toccato a mano: lo calcola tools/bump-version.js (qui e sugli
          script in fondo), lanciato in automatico prima di ogni commit. -->
-    <link rel="stylesheet" href="css/style.css?v=11af3da5">
+    <link rel="stylesheet" href="css/style.css?v=8dd18630">
 
 </head>
 <body>
@@ -62,27 +62,37 @@
     ==================================================================== -->
     <div id="appRoot" style="display:none;">
 
-    <!-- Su desktop .nav-links e' "trasparente" (display: contents) e la navbar
-         resta identica; sotto i 768px i link finiscono in una barra laterale
-         aperta dal bottone ☰ (Richiesta 38). -->
-    <div class="navbar" id="navbar">
-        <button type="button" id="btnMenuMobile" class="btn-hamburger" onclick="toggleMenuMobile()" title="Menu" aria-label="Apri menu" aria-controls="navLinks" aria-expanded="false"><span></span><span></span><span></span><i id="menuMobileBadge" class="hamburger-dot" style="display:none;"></i></button>
-        <span style="font-weight: 800; color: var(--primary); margin-right: 20px; font-family: monospace; letter-spacing: 1px;">🎮 NERD.TRACKER</span>
-        <div id="navBackdrop" class="nav-backdrop" onclick="chiudiMenuMobile()"></div>
+    <!-- ===================================================================
+         🧭 BARRA DI NAVIGAZIONE (nuovo stile vetro)
+         PC: barra verticale di sole icone fissata a sinistra; il nome di ogni
+         voce compare al passaggio del mouse (.nav-nome). In alto le sezioni
+         (#navLinks), in basso gli strumenti (#navStrumenti).
+         Telefono (sotto i 768px): barra fissa in basso con le sezioni e il
+         bottone ⋯ (#btnMenuMobile) che apre il foglio con gli strumenti.
+         Gli id dei bottoni sono quelli di sempre: switchView, il pallino delle
+         patch notes, Apri Database ed Esporta li usano dal JS.
+    ==================================================================== -->
+    <nav class="navbar" id="navbar" aria-label="Sezioni">
+        <span class="nav-logo" title="NERD.TRACKER">🎮</span>
         <div id="navLinks" class="nav-links">
-        <div class="nav-drawer-header"><span>🎮 NERD.TRACKER</span><button type="button" class="nav-drawer-close" onclick="chiudiMenuMobile()" aria-label="Chiudi menu">✕</button></div>
-        <button id="nav-home" class="btn btn-nav active-view" onclick="switchView('home')">🏠 Home</button>
-        <button id="nav-anime" class="btn btn-nav" onclick="switchView('anime')">📺 Anime</button>
-        <button id="nav-serietv" class="btn btn-nav" onclick="switchView('serietv')">📡 Serie TV</button>
-        <button id="nav-manga" class="btn btn-nav" onclick="switchView('manga')">📚 Manga</button>
-        <button id="nav-libri" class="btn btn-nav" onclick="switchView('libri')">📗 Libri</button>
-        <button id="nav-cinema" class="btn btn-nav" onclick="switchView('cinema')">🎬 Cinema</button>
-        <button type="button" id="btnEsportaMenu" class="btn btn-nav solo-menu-mobile" onclick="esportaDatiUtente()" title="Scarica un file con tutti i tuoi dati (backup)" style="gap:0;">💾&nbsp;<span class="esporta-testo">Esporta i miei dati</span></button>
-        <button id="btnPatchNotes" class="btn btn-nav" style="margin-left:auto;" onclick="apriPatchNotes()" title="Note di versione">📝 Patch notes<span id="patchNotesBadge" class="patch-badge" style="display:none;">0</span></button>
-        <span id="loggedUserEmail" style="color: var(--text-muted); font-size:13px; display:flex; align-items:center; gap:6px;"></span>
-        <button id="btnLogout" class="btn btn-nav" onclick="handleLogout()" title="Esci">🚪 Esci</button>
+            <button id="nav-home" class="btn btn-nav active-view" onclick="switchView('home')"><span class="nav-ico">🏠</span><span class="nav-nome">Home</span></button>
+            <button id="nav-anime" class="btn btn-nav" onclick="switchView('anime')"><span class="nav-ico">📺</span><span class="nav-nome">Anime</span></button>
+            <button id="nav-serietv" class="btn btn-nav" onclick="switchView('serietv')"><span class="nav-ico">📡</span><span class="nav-nome">Serie TV</span></button>
+            <button id="nav-manga" class="btn btn-nav" onclick="switchView('manga')"><span class="nav-ico">📚</span><span class="nav-nome">Manga</span></button>
+            <button id="nav-libri" class="btn btn-nav" onclick="switchView('libri')"><span class="nav-ico">📗</span><span class="nav-nome">Libri</span></button>
+            <button id="nav-cinema" class="btn btn-nav" onclick="switchView('cinema')"><span class="nav-ico">🎬</span><span class="nav-nome">Cinema</span></button>
         </div>
-    </div>
+        <div id="navBackdrop" class="nav-backdrop" onclick="chiudiMenuMobile()"></div>
+        <div id="navStrumenti" class="nav-strumenti">
+            <button id="btnPatchNotes" class="btn btn-nav" onclick="apriPatchNotes()"><span class="nav-ico">📝</span><span class="nav-nome">Patch notes</span><span id="patchNotesBadge" class="patch-badge" style="display:none;">0</span></button>
+            <!-- 🗄️ Apri Database: solo per l'owner (config-auth.js); l'href lo imposta cinema.js -->
+            <a id="driveShortcutBtn" href="#" target="_blank" rel="noopener noreferrer" class="btn btn-nav is-loading" title="Apri le tabelle su Supabase" style="display:none;"><span class="nav-ico">🗄️</span><span class="nav-nome">Apri Database</span></a>
+            <button type="button" id="btnEsportaMenu" class="btn btn-nav" onclick="esportaDatiUtente()" title="Scarica un file con tutti i tuoi dati (backup)"><span class="nav-ico">💾</span><span class="nav-nome esporta-testo">Esporta i miei dati</span></button>
+            <span id="loggedUserEmail" class="nav-utente"></span>
+            <button id="btnLogout" class="btn btn-nav" onclick="handleLogout()"><span class="nav-ico">🚪</span><span class="nav-nome">Esci</span></button>
+        </div>
+        <button type="button" id="btnMenuMobile" class="btn btn-nav nav-altro" onclick="toggleMenuMobile()" title="Altro" aria-label="Altro: patch notes, esporta, esci" aria-controls="navStrumenti" aria-expanded="false"><span class="nav-ico">⋯</span><i id="menuMobileBadge" class="hamburger-dot" style="display:none;"></i></button>
+    </nav>
 
     <div id="homeView" class="view-container home-dashboard">
         <div style="display:flex; align-items:flex-start; justify-content:space-between; gap:16px; flex-wrap:wrap;">
@@ -96,20 +106,8 @@
                  scheda del browser dell'editor Supabase. L'href viene
                  valorizzato via JS all'avvio (vedi js/cinema.js).
                  ============================================================ -->
-            <!-- Colonna di bottoni a destra: "Apri Database" solo per l'owner,
-                 sotto "Esporta i miei dati" per tutti (Richiesta 52). Per l'altro
-                 utente Esporta prende il posto di Apri Database. Su telefono
-                 Esporta sta nella barra laterale ☰ (#btnEsportaMenu). -->
-            <div class="home-azioni-utente">
-            <a id="driveShortcutBtn" href="#" target="_blank" rel="noopener noreferrer" class="drive-shortcut-btn is-loading" title="Apri le tabelle su Supabase" style="display:none;">
-                <span style="font-size:18px;">🗄️</span>
-                <span>Apri Database</span>
-            </a>
-            <button type="button" id="btnEsportaHome" class="drive-shortcut-btn btn-esporta-home" onclick="esportaDatiUtente()" title="Scarica un file con tutti i tuoi dati (backup)">
-                <span style="font-size:18px;">💾</span>
-                <span class="esporta-testo">Esporta i miei dati</span>
-            </button>
-            </div>
+            <!-- Apri Database ed Esporta stanno ora nella barra di navigazione
+                 (gruppo strumenti in basso), nel nuovo stile vetro. -->
         </div>
 
         <!-- ================================================================
@@ -1277,8 +1275,8 @@
     <script src="js/manga.js?v=15f97fab"></script>
     <script src="js/libri-patch.js?v=46f0075c"></script>
     <script src="js/cinema.js?v=c71d2743"></script>
-    <script src="js/main.js?v=acb8f745"></script>
-    <script src="js/config-auth.js?v=73ba4f06"></script>
+    <script src="js/main.js?v=c1629eac"></script>
+    <script src="js/config-auth.js?v=770b139d"></script>
 
     <script>
     // PWA: registra il service worker (installabilità + cache immagini/librerie).

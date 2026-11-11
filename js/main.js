@@ -2566,10 +2566,10 @@ function toggleStatsWidget(widgetId) {
 }
 
 // ==========================================
-//   ☰ MENU MOBILE (Richiesta 38)
-//   Sotto i 768px i link della navbar stanno in una barra laterale aperta
-//   dal bottone ☰. Su desktop la barra non esiste (vedi CSS) e queste
-//   funzioni non vengono mai chiamate.
+//   ⋯ FOGLIO STRUMENTI DEL TELEFONO (nuovo stile vetro; prima: menu ☰, R38)
+//   Sotto i 768px la barra di navigazione sta in basso e il bottone ⋯
+//   (#btnMenuMobile) apre il foglio con Patch notes, Apri Database, Esporta,
+//   email ed Esci (#navStrumenti). Su PC il bottone ⋯ non c'è (vedi CSS).
 // ==========================================
 function apriMenuMobile() {
     document.getElementById('navbar').classList.add('menu-open');
@@ -2590,9 +2590,11 @@ function toggleMenuMobile() {
     else apriMenuMobile();
 }
 
-// Ogni voce della barra (cambio vista, Patch notes, Esci) chiude il menu
-document.getElementById('navLinks').addEventListener('click', function (e) {
-    if (e.target.closest('button')) chiudiMenuMobile();
+// Ogni voce della barra (cambio sezione, Patch notes, Esporta, Apri Database,
+// Esci) chiude il foglio ⋯ del telefono; il bottone ⋯ stesso no.
+document.getElementById('navbar').addEventListener('click', function (e) {
+    const voce = e.target.closest('#navLinks button, #navStrumenti button, #navStrumenti a');
+    if (voce) chiudiMenuMobile();
 });
 document.addEventListener('keydown', function (e) {
     if (e.key === 'Escape') chiudiMenuMobile();
