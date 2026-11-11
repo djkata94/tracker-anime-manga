@@ -2073,3 +2073,5 @@ Stile comune a tutte le liste, nel blocco CSS "NUOVO STILE VETRO — VISTE LISTA
 - schede su telefono: sfondo semitrasparente senza sfocatura (con decine di schede la sfocatura su ognuna rallenterebbe i telefoni).
 
 **Anime** (11/11/2026): `vista-vetro` su `#animeView`. Provato con dati finti: contatori, filtri con il menu dei generi aperto sopra la tabella, lista su PC, registro episodi (linguetta Log Episodi), schede su telefono; nessuno scorrimento orizzontale, nessun errore in console.
+
+**Serie TV, Manga e Libri** (11/11/2026): `vista-vetro` su `#serietvView`, `#mangaView` e `#libriView`, senza regole in più: le parti sono le stesse delle altre liste. Provato con dati finti su PC (contatori, "Aggiorna tutte", filtri compreso il filtro saga dei Libri, liste, registro stagioni delle Serie TV) e su telefono (contatori 2 colonne, schede semitrasparenti, nessuno scorrimento orizzontale); nessun errore in console.
