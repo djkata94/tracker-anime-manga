@@ -3043,11 +3043,13 @@ function genioCambiaSezione_(viewName) {
     nuova.style.opacity = '0';
     nuova.style.pointerEvents = 'none';
 
-    // Tempi in ms: risucchio, da quando può partire l'uscita, durata dell'uscita
-    // (PC 0,8 s in tutto). L'uscita aspetta che la sezione nuova abbia i dati
-    // (sparisce la scritta "Caricamento..."), al massimo "attesa" ms dopo la fine
-    // del risucchio: così dall'icona esce la lista vera e non la scritta di attesa.
-    const T = pc ? { esce: 500, daQuando: 300, entra: 500, attesa: 700 } : { esce: 340, daQuando: 240, entra: 360, attesa: 700 };
+    // Tempi in ms: risucchio, da quando può partire l'uscita, durata dell'uscita.
+    // Su PC l'uscita parte solo a risucchio finito (i due imbuti non si
+    // sovrappongono, scelta dell'owner): 1 s in tutto. Sul telefono le due fasi
+    // si accavallano un poco (0,6 s). L'uscita aspetta anche che la sezione nuova
+    // abbia i dati (sparisce la scritta "Caricamento..."), al massimo "attesa" ms
+    // dopo la fine del risucchio: così dall'icona esce la lista vera.
+    const T = pc ? { esce: 500, daQuando: 500, entra: 500, attesa: 700 } : { esce: 340, daQuando: 240, entra: 360, attesa: 700 };
     const caricamento = document.getElementById({ anime: 'loadingAnime', serietv: 'loadingSerieTv', manga: 'loadingManga', libri: 'loadingLibri', cinema: 'loadingCinema' }[viewName]);
     const pronta = function() { return !caricamento || getComputedStyle(caricamento).display === 'none'; };
     const stato = { gV: gV, gN: null, inizioUscita: 0, nuova: nuova, raf: 0, sicurezza: 0 };
