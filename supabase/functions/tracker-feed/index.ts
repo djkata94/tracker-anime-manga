@@ -60,7 +60,8 @@ Deno.serve(async (req) => {
       db.from('episodi_anime').select('anime_titolo').eq('user_id', OWNER_USER_ID).gt('episodi_visti', 0),
       db
         .from('serie_tv')
-        .select('titolo, stato, stagioni_totali, stagioni_viste, abbandonata, immagine, priorita')
+        // serie_tv non ha la colonna priorita: chiederla fa fallire la lettura (errore 500).
+        .select('titolo, stato, stagioni_totali, stagioni_viste, abbandonata, immagine')
         .eq('user_id', OWNER_USER_ID),
       db.from('episodi_serie_tv').select('serie_titolo').eq('user_id', OWNER_USER_ID).gt('episodi_visti', 0),
       db

@@ -28,7 +28,8 @@ export interface SerieRow {
   stagioni_viste: number | null;
   abbandonata: boolean | null;
   immagine: string | null;
-  priorita: boolean | null;
+  /** La tabella serie_tv NON ha la colonna priorita (anime e manga sì). */
+  priorita?: boolean | null;
 }
 
 export interface MangaRow {
@@ -127,7 +128,7 @@ const MAX_RECENT = 6;
  * Ordina per attività più recente (dal registro), poi per priorità, poi per titolo:
  * così in cima c'è quello che stai davvero seguendo.
  */
-function byActivity<T extends { titolo: string; priorita: boolean | null }>(
+function byActivity<T extends { titolo: string; priorita?: boolean | null }>(
   rows: T[],
   lastActivity: Map<string, string>,
 ): T[] {

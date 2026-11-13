@@ -28,6 +28,7 @@ const anime = (o: Partial<AnimeRow>): AnimeRow => ({
   priorita: false,
   ...o,
 });
+// Come arriva dal database: serie_tv non ha la colonna priorita.
 const serie = (o: Partial<SerieRow>): SerieRow => ({
   titolo: 'Serie',
   stato: 'In corso',
@@ -35,7 +36,6 @@ const serie = (o: Partial<SerieRow>): SerieRow => ({
   stagioni_viste: 1,
   abbandonata: false,
   immagine: '',
-  priorita: false,
   ...o,
 });
 const manga = (o: Partial<MangaRow>): MangaRow => ({
@@ -127,6 +127,20 @@ describe('buildTrackerFeed', () => {
     });
     assert.equal(feed.recent.length, 2);
     assert.equal(feed.recent[0]?.title, 'Recente');
+  });
+
+  it('ordina le serie anche senza la colonna priorita', () => {
+    const feed = buildTrackerFeed({
+      ...base,
+      anime: [],
+      series: [serie({ titolo: 'B' }), serie({ titolo: 'A' })],
+      logs: [log({ id_titolo: 'B', tipo_media: 'SERIE_TV' })],
+    });
+    assert.deepEqual(
+      feed.series.map((s) => s.title),
+      ['B', 'A'],
+    );
+    assert.equal(feed.counts.series_watching, 2);
   });
 
   it('limita gli elenchi e accorcia i testi', () => {
