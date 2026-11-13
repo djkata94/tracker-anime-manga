@@ -2135,3 +2135,14 @@ Richiesta dell'owner dell'11/11/2026: rifare la schermata di login, rimasta nell
 - CSS "NUOVO STILE VETRO — LOGIN": sfondo trasparente (si vede quello colorato del sito), riquadro in vetro spesso come le finestre, logo 🎮 in un riquadro viola con bagliore, campi scuri trasparenti con bordo viola al focus, bottone Accedi a sfumatura viola. Cinque riquadri di vetro con 📺 🎬 📡 📗 📚 galleggiano piano (animazione di 16 s sfasata, solo transform; ferma con "riduci movimento"). Posizioni nel markup con variabili `--li-x/--li-y`; sul telefono `--li-xt/--li-yt` spostano 📡 e 📗 sotto il riquadro (di lato finivano dietro e se ne vedeva uno spicchio).
 - `js/config-auth.js`: il 👁️ alterna `type` password/text e aggiorna `aria-pressed`/`aria-label`; all'invio del modulo la password torna nascosta (così il browser può salvarla).
 - Provato in locale (senza login) a 1440×900 e 375×812: riquadro centrato, icone fuori dal riquadro, nessuno scorrimento orizzontale, occhio che mostra/nasconde, messaggio d'errore leggibile, nessun errore in console. Il login vero non è provato (la password la inserisce solo l'owner).
+
+## Richiesta 57 — Edge Function `tracker-feed` per la Dashboard personale (nessuna patch: invisibile nel sito)
+Richiesta dell'owner del 13/11/2026 (milestone M4 di personal-life-manager): mostrare nella Dashboard personale cosa sta guardando e leggendo, senza toccare il tracker.
+
+- Nuova cartella `supabase/functions/tracker-feed/` (nessun file del sito modificato, nessuna modifica al database, alle tabelle o alle RLS):
+  - `build.ts`: logica pura. Anime e serie "in visione" = colore celeste (stesse regole di `calcolaColoreVisioneAnime_` e `calcolaColoreVisioneSerieTv_`), "in pari" = giallo; manga "in lettura" = volumi letti > 0 e < volumi. Ordine per ultima attività in `log_attivita`, poi priorità. Accorcia i testi ai limiti del contratto e accetta solo copertine `https`.
+  - `index.ts`: Edge Function (Deno), solo GET, header `X-Feed-Token` confrontato in SHA-256 con l'impronta in `config.ts`; legge con la chiave di servizio fornita da Supabase e **filtra ogni query sull'utente proprietario** (il tracker ha due utenti: i dati dell'amico non escono mai).
+  - `config.ts`: id del proprietario e impronta del token. **Nessun segreto** (il repository è pubblico): il token vero sta solo tra i segreti del Worker della Dashboard.
+  - `build.test.ts`: 7 test, si lanciano con `node --test supabase/functions/tracker-feed/build.test.ts` (Node 22.6+ esegue i .ts, nessuna dipendenza aggiunta).
+- Pubblicata con `verify_jwt: false` (l'autenticazione è il token). Senza token risponde 401.
+- La forma dei dati è il contratto `trackerFeedData` in personal-life-manager/packages/shared/src/feeds/tracker.ts: se cambia qui, va cambiata anche là.
