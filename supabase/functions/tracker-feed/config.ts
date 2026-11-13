@@ -10,7 +10,7 @@
  * poi scrivere qui la nuova impronta e ripubblicare la funzione.
  */
 export const OWNER_USER_ID = 'c2fcedfa-a2ff-4112-a0e1-7ed9f2053e34';
-export const FEED_TOKEN_SHA256 = 'DA-IMPOSTARE';
+export const FEED_TOKEN_SHA256 = '2f890d1b429b3812e5d63802a5903192210c94a9db93d7ee4bab54b7080404a0';
 
 /** Indirizzo del tracker, per i collegamenti dal riquadro. */
 export const APP_URL = 'https://djkata94.github.io/tracker-anime-manga/';
