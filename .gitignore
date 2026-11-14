@@ -1,0 +1,4 @@
+# File di prova di Claude Code (server, dati finti): restano solo sul PC.
+# La skill del progetto invece va nel repository.
+.claude/*
+!.claude/skills/
