@@ -121,7 +121,8 @@ export function safeImage(url: string | null): string | null {
   return /^https:\/\/\S+$/.test(value) && value.length <= 500 ? value : null;
 }
 
-const MAX_ITEMS = 8;
+/** Voci per elenco: la Dashboard le mostra tutte con lo scorrimento interno del riquadro. */
+const MAX_ITEMS = 20;
 const MAX_RECENT = 6;
 
 /**

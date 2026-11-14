@@ -144,15 +144,15 @@ describe('buildTrackerFeed', () => {
   });
 
   it('limita gli elenchi e accorcia i testi', () => {
-    const molti = Array.from({ length: 12 }, (_, i) => anime({ titolo: `A${i}` }));
+    const molti = Array.from({ length: 25 }, (_, i) => anime({ titolo: `A${i}` }));
     const lungo = 'x'.repeat(300);
     const feed = buildTrackerFeed({
       ...base,
       anime: molti,
       logs: Array.from({ length: 10 }, () => log({ id_titolo: lungo, valore_nuovo: lungo })),
     });
-    assert.equal(feed.anime.length, 8);
-    assert.equal(feed.counts.anime_watching, 12);
+    assert.equal(feed.anime.length, 20);
+    assert.equal(feed.counts.anime_watching, 25);
     assert.equal(feed.recent.length, 6);
     assert.equal(feed.recent[0]?.title.length, 200);
     assert.equal(feed.recent[0]?.value?.length, 40);
