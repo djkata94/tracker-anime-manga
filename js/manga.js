@@ -125,7 +125,11 @@ function calcolaColoreLetturaManga_(volumiTotali, volumiLetti, stato) {
             if (errUpd) throw errUpd;
 
             try {
-                if (volumiLetti !== volumiLettiPrecedenti) {
+                if (volumiLetti < volumiLettiPrecedenti) {
+                    // passo indietro (Richiesta 58): annulla il volume segnato per sbaglio
+                    // o scrive una correzione, invece di un finto "Letto il volume N"
+                    await registraPassoIndietroSB_(titolo, 'MANGA', volumiLettiPrecedenti, volumiLetti);
+                } else if (volumiLetti !== volumiLettiPrecedenti) {
                     await registraLogSB_(titolo, 'MANGA', 'AVANZAMENTO', volumiLettiPrecedenti, volumiLetti);
                     if (coloreCalcolato === 'verde' && volumiTotali > 0 && volumiLettiPrecedenti < volumiTotali) {
                         await registraLogSB_(titolo, 'MANGA', 'COMPLETAMENTO',

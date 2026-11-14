@@ -157,13 +157,16 @@ function haProgressoStagioniParzialeSerieTv(titolo) {
                 valPrec = vecchieStagioniViste + ' stagioni';
                 valNuovo = risultato.stagioniViste + ' stagioni';
                 eventoDaLoggare = (tuttoVisto && statoConclusoOra) ? 'COMPLETAMENTO' : (tuttoVisto ? 'IN_PARI' : 'AVANZAMENTO');
-                risultato.eventoLoggato = eventoDaLoggare;
+                // passo indietro (Richiesta 58): annulla l'avanzamento appena scritto o scrive una correzione
+                if (risultato.stagioniViste < vecchieStagioniViste) eventoDaLoggare = 'INDIETRO';
+                risultato.eventoLoggato = (eventoDaLoggare === 'INDIETRO') ? 'CORREZIONE' : eventoDaLoggare;
             }
 
             const scritture = [
                 supabaseClient.from('serie_tv').update({ stagioni_viste: risultato.stagioniViste }).eq('titolo', titoloTrim)
             ];
-            if (eventoDaLoggare) scritture.push(registraLogSB_(titoloTrim, 'SERIE_TV', eventoDaLoggare, valPrec, valNuovo));
+            if (eventoDaLoggare === 'INDIETRO') scritture.push(registraPassoIndietroSB_(titoloTrim, 'SERIE_TV', valPrec, valNuovo));
+            else if (eventoDaLoggare) scritture.push(registraLogSB_(titoloTrim, 'SERIE_TV', eventoDaLoggare, valPrec, valNuovo));
             await Promise.all(scritture);
 
             return risultato;
@@ -1034,7 +1037,11 @@ function haProgressoStagioniParzialeSerieTv(titolo) {
 
             const risultatoSync = await ricalcolaSincronizzaELoggaSerieTvSB_(titoloTrim);
 
-            if (nuovoValore !== episodiVistiAttuale && !senzaLogEpisodio) {
+            // togliendo un episodio appena segnato per sbaglio si cancella la sua voce
+            // invece di aggiungere "rimosso" (Richiesta 58)
+            const episodioAnnullato = (nuovoValore < episodiVistiAttuale && !senzaLogEpisodio)
+                && await annullaUltimoEpisodioSB_(titoloTrim, 'Stagione', numeroInt, episodiVistiAttuale, nuovoValore, 'SERIE_TV');
+            if (nuovoValore !== episodiVistiAttuale && !senzaLogEpisodio && !episodioAnnullato) {
                 await registraLogEpisodioSB_(
                     titoloTrim, 'Stagione', numeroInt, episodiVistiAttuale, nuovoValore, episodiTotali,
                     (nuovoValore > episodiVistiAttuale) ? 'VISTO' : 'RIMOSSO',

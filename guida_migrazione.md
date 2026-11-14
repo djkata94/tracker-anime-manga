@@ -2146,3 +2146,17 @@ Richiesta dell'owner del 13/11/2026 (milestone M4 di personal-life-manager): mos
   - `build.test.ts`: 7 test, si lanciano con `node --test supabase/functions/tracker-feed/build.test.ts` (Node 22.6+ esegue i .ts, nessuna dipendenza aggiunta).
 - Pubblicata con `verify_jwt: false` (l'autenticazione è il token). Senza token risponde 401.
 - La forma dei dati è il contratto `trackerFeedData` in personal-life-manager/packages/shared/src/feeds/tracker.ts: se cambia qui, va cambiata anche là.
+
+## Richiesta 58 — Log senza doppioni quando si corregge (patch v1.1.4)
+Segnalazione dell'owner del 14/11/2026: segnando per sbaglio un volume in più e tornando indietro, il log mostrava "Letto il volume 4", "Letto il volume 5", "Letto il volume 4", come se la lettura si duplicasse. Stesso problema con le stagioni di anime e serie TV ("Avanzamento: ora a 1 stagioni" anche tornando indietro); con gli episodi il Log Episodi scriveva già "rimosso", ma restava la coppia visto + rimosso.
+**Causa**: ogni cambio di volumi/stagioni veniva scritto come `AVANZAMENTO` anche quando il numero scendeva, e il log lo leggeva come una lettura nuova.
+
+Scelte dell'owner: "annulla + correzione" e vecchie voci "mostrate come correzioni" (nessuna modifica al database).
+- `js/anime-all.js`, accanto a `registraLogSB_`:
+  - `registraPassoIndietroSB_(idTitolo, tipoMedia, valPrec, valNuovo)`: legge le ultime 2 voci di `log_attivita` di quel titolo; se l'ultima è il passo avanti che si sta annullando (AVANZAMENTO/IN_PARI/COMPLETAMENTO con i valori invertiti) ed è di meno di 10 minuti fa (`FINESTRA_ANNULLA_MS_`), la cancella. Per i manga, arrivando all'ultimo volume c'è anche la voce COMPLETAMENTO "4/5 → 5/5": vengono cancellate tutte e due. Altrimenti scrive una voce `CORREZIONE`.
+  - `annullaUltimoEpisodioSB_`: stessa cosa sul `log_episodi` (ultima voce di quella stagione/film, "VISTO" con i numeri invertiti, < 10 minuti): la cancella invece di aggiungere "RIMOSSO". Oltre i 10 minuti resta il "RIMOSSO" di prima.
+- Collegati in: `updateMangaVolumiLettiSB_` (js/manga.js, ➕/➖ dei volumi), ricalcolo stagioni di anime (`ricalcolaSincronizzaELoggaSB_`) e serie TV (js/serie-tv.js), aggiornamento episodi di anime e serie TV.
+- `js/main.js`, `renderLogAttivita`: nuova frase per `CORREZIONE` ("↩️ Correzione: X tornato al volume 4", "riportato a nessun volume letto", "↩️ Correzione su X: tornato a 1 stagioni"); le vecchie voci `AVANZAMENTO` con i numeri più bassi del precedente (`logEPassoIndietro_`) si leggono allo stesso modo. Nel database c'erano 19 voci così (3 manga, 16 stagioni): restano come sono.
+- `index.html`: filtro del log con la nuova azione "↩️ Correzione" (trova solo le voci nuove: le vecchie restano sotto "Avanzamento", mostrate come correzioni).
+- La cancellazione è permessa dalle RLS già esistenti ("solo le proprie righe", tutte le operazioni): nessuna modifica al database. La Edge Function `tracker-feed` (Richiesta 57) passa `tipo_evento` così com'è, quindi vedrà anche `CORREZIONE`.
+- Provato in locale con un database finto in memoria: ➕➕➖ sui volumi lascia solo il primo avanzamento; dopo 20 minuti il ➖ scrive una correzione; ultimo volume + ➖ cancella avanzamento e completamento; due ➖ di fila (il secondo senza avanzamento da annullare) scrivono una correzione; stagioni anime annullate; episodio annullato solo con i numeri giusti e solo entro 10 minuti. Frasi del log controllate a schermo.

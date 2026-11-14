@@ -152,6 +152,78 @@ function switchViewOra_(viewName) {
             }
         }
 
+        // ↩️ PASSI INDIETRO NEI LOG (Richiesta 58)
+        // Prima un passo indietro (volume, stagioni) veniva scritto come un
+        // avanzamento ("Letto il volume 4" anche togliendo il 5): un clic sbagliato
+        // e corretto lasciava doppioni. Ora, tornando indietro:
+        // - se l'ultima voce di quel titolo è proprio il passo avanti che si sta
+        //   annullando (stessi valori invertiti) ed è di meno di 10 minuti fa, la
+        //   voce viene cancellata, come se il clic sbagliato non ci fosse mai stato;
+        // - altrimenti resta scritta una CORREZIONE ("↩️ tornato al volume 4").
+        const FINESTRA_ANNULLA_MS_ = 10 * 60 * 1000;
+        function logRecente_(riga) {
+            return !!riga && (Date.now() - new Date(riga.timestamp).getTime()) < FINESTRA_ANNULLA_MS_;
+        }
+
+        async function registraPassoIndietroSB_(idTitolo, tipoMedia, valPrec, valNuovo) {
+            try {
+                const { data: ultime, error } = await supabaseClient.from('log_attivita')
+                    .select('id,timestamp,tipo_evento,valore_precedente,valore_nuovo')
+                    .eq('id_titolo', idTitolo || '').eq('tipo_media', tipoMedia)
+                    .order('timestamp', { ascending: false }).limit(2);
+                if (error) throw error;
+                const righe = ultime || [];
+                const daCancellare = [];
+                let i = 0;
+                // manga: arrivando all'ultimo volume si scrive anche COMPLETAMENTO "4/5 → 5/5"
+                const r0 = righe[0];
+                if (tipoMedia === 'MANGA' && logRecente_(r0) && r0.tipo_evento === 'COMPLETAMENTO'
+                    && String(r0.valore_precedente).split('/')[0] === String(valNuovo)
+                    && String(r0.valore_nuovo).split('/')[0] === String(valPrec)) {
+                    daCancellare.push(r0.id);
+                    i = 1;
+                }
+                const r = righe[i];
+                if (logRecente_(r) && ['AVANZAMENTO', 'IN_PARI', 'COMPLETAMENTO'].indexOf(r.tipo_evento) !== -1
+                    && String(r.valore_precedente) === String(valNuovo) && String(r.valore_nuovo) === String(valPrec)) {
+                    daCancellare.push(r.id);
+                    const { error: errDel } = await supabaseClient.from('log_attivita').delete().in('id', daCancellare);
+                    if (errDel) throw errDel;
+                    return 'ANNULLATO';
+                }
+            } catch (err) {
+                console.error("Errore nell'annullare l'ultimo avanzamento di '" + idTitolo + "': " + err);
+            }
+            await registraLogSB_(idTitolo, tipoMedia, 'CORREZIONE', valPrec, valNuovo);
+            return 'CORREZIONE';
+        }
+
+        // Episodi: togliendo un episodio appena segnato per sbaglio (ultima voce del
+        // log episodi per quella stagione/film, "visto" da meno di 10 minuti con gli
+        // stessi numeri invertiti) la voce viene cancellata invece di aggiungere
+        // "rimosso". Restituisce true se l'ha cancellata.
+        async function annullaUltimoEpisodioSB_(titolo, tipo, numero, daValore, aValore, tipoMedia) {
+            try {
+                const { data, error } = await supabaseClient.from('log_episodi')
+                    .select('id,timestamp,azione,episodio_precedente,episodio_nuovo')
+                    .eq('titolo', titolo).eq('tipo', tipo).eq('numero', parseInt(numero) || 0)
+                    .eq('tipo_media', tipoMedia)
+                    .order('timestamp', { ascending: false }).limit(1);
+                if (error) throw error;
+                const r = data && data[0];
+                if (logRecente_(r) && r.azione === 'VISTO'
+                    && (parseInt(r.episodio_precedente) || 0) === (parseInt(aValore) || 0)
+                    && (parseInt(r.episodio_nuovo) || 0) === (parseInt(daValore) || 0)) {
+                    const { error: errDel } = await supabaseClient.from('log_episodi').delete().eq('id', r.id);
+                    if (errDel) throw errDel;
+                    return true;
+                }
+            } catch (err) {
+                console.error("Errore nell'annullare l'ultimo episodio di '" + titolo + "': " + err);
+            }
+            return false;
+        }
+
         async function aggiungiRigheEpisodiSB_(titolo, tipo, daNumero, aNumero, mappaTotaliEpisodi) {
             if (daNumero > aNumero) return;
             const titoloTrim = String(titolo).trim();
@@ -261,13 +333,16 @@ function switchViewOra_(viewName) {
                 valPrec = vecchieStagioniViste + ' stagioni / ' + vecchiFilmVisti + ' film';
                 valNuovo = risultato.stagioniViste + ' stagioni / ' + risultato.filmVisti + ' film';
                 eventoDaLoggare = (tuttoVisto && statoConclusoOra) ? 'COMPLETAMENTO' : (tuttoVisto ? 'IN_PARI' : 'AVANZAMENTO');
-                risultato.eventoLoggato = eventoDaLoggare;
+                // passo indietro (Richiesta 58): annulla l'avanzamento appena scritto o scrive una correzione
+                if (risultato.stagioniViste <= vecchieStagioniViste && risultato.filmVisti <= vecchiFilmVisti) eventoDaLoggare = 'INDIETRO';
+                risultato.eventoLoggato = (eventoDaLoggare === 'INDIETRO') ? 'CORREZIONE' : eventoDaLoggare;
             }
 
             const scritture = [
                 supabaseClient.from('anime').update({ stagioni_viste: risultato.stagioniViste, film_visti: risultato.filmVisti }).eq('titolo', titoloTrim)
             ];
-            if (eventoDaLoggare) scritture.push(registraLogSB_(titoloTrim, 'ANIME', eventoDaLoggare, valPrec, valNuovo));
+            if (eventoDaLoggare === 'INDIETRO') scritture.push(registraPassoIndietroSB_(titoloTrim, 'ANIME', valPrec, valNuovo));
+            else if (eventoDaLoggare) scritture.push(registraLogSB_(titoloTrim, 'ANIME', eventoDaLoggare, valPrec, valNuovo));
             await Promise.all(scritture);
 
             return risultato;
@@ -1405,7 +1480,11 @@ function switchViewOra_(viewName) {
 
             const risultatoSync = await ricalcolaSincronizzaELoggaSB_(titoloTrim);
 
-            if (nuovoValore !== episodiVistiAttuale && !senzaLogEpisodio) {
+            // togliendo un episodio appena segnato per sbaglio si cancella la sua voce
+            // invece di aggiungere "rimosso" (Richiesta 58)
+            const episodioAnnullato = (nuovoValore < episodiVistiAttuale && !senzaLogEpisodio)
+                && await annullaUltimoEpisodioSB_(titoloTrim, tipo, numeroInt, episodiVistiAttuale, nuovoValore, 'ANIME');
+            if (nuovoValore !== episodiVistiAttuale && !senzaLogEpisodio && !episodioAnnullato) {
                 await registraLogEpisodioSB_(
                     titoloTrim, tipo, numeroInt, episodiVistiAttuale, nuovoValore, episodiTotali,
                     (nuovoValore > episodiVistiAttuale) ? 'VISTO' : 'RIMOSSO',

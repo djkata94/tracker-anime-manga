@@ -1491,8 +1491,23 @@ function renderLogAttivita(logs, filtriAttivi) {
         const titoloHtml = '<span class="log-title-highlight">' + escapeHtmlLog(log.idTitolo || 'Titolo sconosciuto') + '</span>';
         const valoreNuovoHtml = '<span class="log-value-highlight">' + escapeHtmlLog(log.valoreNuovo) + '</span>';
 
+        // ↩️ passi indietro (Richiesta 58): le voci CORREZIONE e i vecchi
+        // "avanzamenti" con il numero più basso del precedente (scritti così prima
+        // della Richiesta 58) si leggono come correzioni
+        let eventoLog = String(log.tipoEvento || '').toUpperCase();
+        if (eventoLog === 'AVANZAMENTO' && logEPassoIndietro_(log)) eventoLog = 'CORREZIONE';
+
         let frase = '';
-        switch (String(log.tipoEvento || '').toUpperCase()) {
+        switch (eventoLog) {
+            case 'CORREZIONE':
+                if (isAnime || isSerieTv) {
+                    frase = '↩️ Correzione su ' + titoloHtml + ': tornato a ' + valoreNuovoHtml;
+                } else if ((parseInt(log.valoreNuovo) || 0) > 0) {
+                    frase = '↩️ Correzione: ' + titoloHtml + ' tornato al volume ' + valoreNuovoHtml;
+                } else {
+                    frase = '↩️ Correzione: ' + titoloHtml + ' riportato a nessun volume letto';
+                }
+                break;
             case 'CREAZIONE':
                 frase = isCinema
                     ? '🎬 Nuovo film aggiunto: ' + titoloHtml + ' è stato inserito nel tracker!'
@@ -1555,6 +1570,22 @@ function renderLogAttivita(logs, filtriAttivi) {
 
         listEl.appendChild(li);
     });
+}
+
+// true se una voce di avanzamento in realtà torna indietro: tutti i numeri del
+// valore nuovo ("4", "1 stagioni / 0 film") sono <= di quelli del precedente e
+// almeno uno è più basso (Richiesta 58)
+function logEPassoIndietro_(log) {
+    const prima = String(log.valorePrecedente || '').match(/\d+/g);
+    const dopo = String(log.valoreNuovo || '').match(/\d+/g);
+    if (!prima || !dopo || prima.length !== dopo.length) return false;
+    let calato = false;
+    for (let i = 0; i < prima.length; i++) {
+        const p = Number(prima[i]), d = Number(dopo[i]);
+        if (d > p) return false;
+        if (d < p) calato = true;
+    }
+    return calato;
 }
 
 // Formatta il timestamp ISO restituito dal backend in un formato leggibile (gg/mm - hh:mm)

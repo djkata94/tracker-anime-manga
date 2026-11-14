@@ -827,6 +827,11 @@ function statoBadgeLibro_(stato) {
         //   Nuove voci: aggiungere in CIMA all'array.
         // ==========================================
         const PATCH_NOTES = [
+            { v: '1.1.4', titolo: 'Log senza doppioni quando correggi', data: '14/11/2026', punti: [
+                'Se segni per sbaglio un volume, un episodio o una stagione in più e torni subito indietro (entro 10 minuti), la voce sbagliata sparisce dal log invece di restare con un doppione.',
+                'Se torni indietro più tardi, nel log resta scritto chiaramente "↩️ Correzione: tornato al volume 4" invece di un finto "Letto il volume 4".',
+                'Anche le vecchie voci di questo tipo ora si leggono come correzioni. Nei filtri del log c\'è la nuova azione ↩️ Correzione.'
+            ] },
             { v: '1.1.3', titolo: 'Schermata di accesso in vetro', data: '11/11/2026', punti: [
                 'La schermata di accesso ha lo stile del resto del sito: sfondo colorato e riquadro di vetro, con dietro le icone delle sezioni che galleggiano piano.',
                 'Nel campo password c\'è il bottone 👁️ per vedere quello che scrivi; all\'invio la password torna nascosta.'
