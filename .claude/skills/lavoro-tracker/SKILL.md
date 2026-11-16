@@ -38,7 +38,7 @@ Se una regola qui è in conflitto con una richiesta esplicita di Gabriele, vale 
 - Niente refactor non richiesti; resta nello stile del codice esistente (nomi e commenti in italiano).
 - **Non riproporre**: restyle di hero/tabs/timeline, giardino, recap, Stats/Consigliami,
   leaked password protection. I TODO rimandati (Aggiorna tutti da AniList, prossimi episodi,
-  Hardcover per i libri) si riprendono solo quando li richiama lui.
+  suggerimenti 💡) si riprendono solo quando li richiama lui.
 
 ## 3. Modificare i file
 
@@ -65,6 +65,17 @@ Se una regola qui è in conflitto con una richiesta esplicita di Gabriele, vale 
   PC `{esce:500, daQuando:500, entra:500, attesa:700}` (prima finisce il risucchio, poi esce
   la nuova), telefono `{esce:340, daQuando:240, entra:360, attesa:700}`. Non cambiarli senza
   chiederglielo.
+
+## 4b. Fonti esterne
+
+- Libri: Wikidata + Wikipedia italiana + Hardcover (Richiesta 59), chiamati dal browser senza
+  chiavi. Google Books senza chiave risponde sempre 429: non riproporlo senza una chiave in una
+  Edge Function. Fonti a pagamento escluse (tassativo).
+- Wikidata salva molti nomi solo nella lingua `mul`: chiedere sempre `languages=it|en|mul`.
+- Wikimedia limita le richieste ravvicinate (429): nelle prove fare poche chiamate e distanziate.
+- `supabaseClient.functions` restituisce un oggetto nuovo a ogni lettura: per simulare una Edge
+  Function nelle prove sostituire la funzione JS che la chiama (es. `cercaCandidatiLibriHC_`),
+  non `supabaseClient.functions.invoke`.
 
 ## 5. Database Supabase
 

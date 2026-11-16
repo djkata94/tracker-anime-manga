@@ -477,7 +477,15 @@ function statoBadgeLibro_(stato) {
         window.togglePinLibri = togglePinLibri;
 
         // ------------------------------------------
-        // 🔎 GOOGLE BOOKS (chiamata diretta, nessuna chiave)
+        // 🔎 RICERCA LIBRI IN ITALIANO (Richiesta 59)
+        // Tre fonti gratuite, interrogate dal browser e unite:
+        //  - Wikidata: trova il libro dal titolo italiano (anche a metà),
+        //    dà titolo italiano e inglese, autore, anno e saga + numero;
+        //  - Wikipedia italiana: l'inizio della sezione "Trama";
+        //  - Hardcover (Edge Function `hardcover-proxy`, Richiesta 38):
+        //    copertina, generi, saga e trama quando Wikidata non le ha.
+        // Ogni fonte ha il suo tempo massimo: se una non risponde, le altre
+        // bastano e la ricerca non si blocca.
         // ------------------------------------------
 
         // Euristica lingua trama (Richiesta 38): Hardcover non dichiara la
@@ -494,10 +502,30 @@ function statoBadgeLibro_(stato) {
             return trovate >= 3;
         }
 
+        // Frase segnaposto delle versioni vecchie: salvata come trama per
+        // errore, va trattata come "trama vuota" (Richiesta 59).
+        const TRAMA_SEGNAPOSTO_LIBRI_ = ['Nessuna trama disponibile per questo libro.', 'Nessuna informazione su questa opera!'];
+        function tramaVuota_(testo) {
+            const t = String(testo || '').trim();
+            return !t || TRAMA_SEGNAPOSTO_LIBRI_.indexOf(t) !== -1;
+        }
+
+        // fetch con tempo massimo: oltre i millisecondi indicati si arrende.
+        async function fetchJsonConLimite_(url, ms) {
+            const ctrl = new AbortController();
+            const timer = setTimeout(function() { ctrl.abort(); }, ms || 6000);
+            try {
+                const resp = await fetch(url, { signal: ctrl.signal });
+                if (!resp.ok) throw new Error('HTTP ' + resp.status);
+                return await resp.json();
+            } finally {
+                clearTimeout(timer);
+            }
+        }
+
         // Ricerca libri via Hardcover (Richiesta 38): il browser chiama solo
         // la Edge Function `hardcover-proxy` (stesso schema di `tmdb-proxy`
-        // per TMDB) — il token resta secret lato server. Un'unica chiamata dà
-        // già tutto (trama, generi, copertina, saga): niente secondo dettaglio.
+        // per TMDB) — il token resta secret lato server.
         async function cercaCandidatiLibriHC_(query) {
             const q = String(query || '').trim();
             if (!q) throw new Error('Inserisci prima un titolo da cercare.');
@@ -535,6 +563,218 @@ function statoBadgeLibro_(stato) {
             }).filter(function(c) { return !!c.id; });
         }
 
+        // Wikidata (Richiesta 59): ricerca a testo libero limitata alle opere
+        // con un autore (haswbstatement:P50 = libri, romanzi, fumetti; esclude
+        // i film), poi i dettagli degli elementi trovati e, in una terza
+        // chiamata, i nomi di autori e saghe in italiano.
+        const WD_API_ = 'https://www.wikidata.org/w/api.php?format=json&formatversion=2&origin=*&';
+        const WD_TIPI_SAGA_ = ['Q277759', 'Q1667921', 'Q7725310', 'Q13593966']; // serie di libri/romanzi: non sono un singolo libro
+
+        async function cercaLibriWikidata_(query) {
+            const q = String(query || '').trim();
+            if (!q) return [];
+            const ricerca = await fetchJsonConLimite_(WD_API_ + 'action=query&list=search&srprop=&srlimit=8&srsearch=' + encodeURIComponent(q + ' haswbstatement:P50'), 6000);
+            const ids = ((ricerca.query && ricerca.query.search) || []).map(function(r) { return r.title; }).filter(function(id) { return /^Q\d+$/.test(id); });
+            if (ids.length === 0) return [];
+            const ent = await fetchJsonConLimite_(WD_API_ + 'action=wbgetentities&props=labels|claims|sitelinks&languages=it|en|mul&sitefilter=itwiki&ids=' + ids.join('|'), 6000);
+            const valoreId = function(claim) {
+                const dv = claim && claim.mainsnak && claim.mainsnak.datavalue;
+                return (dv && dv.value && dv.value.id) ? dv.value.id : null;
+            };
+            const libri = [];
+            ids.forEach(function(id) {
+                const e = ent.entities && ent.entities[id];
+                if (!e || !e.claims) return;
+                const tipi = (e.claims.P31 || []).map(valoreId);
+                if (tipi.some(function(t) { return WD_TIPI_SAGA_.indexOf(t) !== -1; })) return;
+                // Edizioni e traduzioni (P629 "edizione di"): doppioni dell'opera
+                if (e.claims.P629) return;
+                // Senza titolo italiano né pagina su Wikipedia italiana non aggiunge
+                // niente a Hardcover (e spesso è un articolo o un'edizione straniera)
+                const haTitoloIt = !!(e.labels && e.labels.it);
+                const haPaginaIt = !!(e.sitelinks && e.sitelinks.itwiki);
+                if (!haTitoloIt && !haPaginaIt) return;
+                const autoriIds = (e.claims.P50 || []).map(valoreId).filter(function(x) { return x; });
+                // Anno: la data di pubblicazione più vecchia (prima edizione)
+                let anno = '';
+                (e.claims.P577 || []).forEach(function(c) {
+                    const dv = c.mainsnak && c.mainsnak.datavalue;
+                    const m = dv && dv.value && dv.value.time ? String(dv.value.time).match(/^[+-]?(\d{4})/) : null;
+                    if (m && (!anno || m[1] < anno)) anno = m[1];
+                });
+                // Saga: preferisco quella che ha il numero (qualificatore P1545)
+                const saghe = (e.claims.P179 || []).map(function(c) {
+                    const num = c.qualifiers && c.qualifiers.P1545 && c.qualifiers.P1545[0].datavalue
+                        ? parseFloat(String(c.qualifiers.P1545[0].datavalue.value).replace(',', '.')) : NaN;
+                    return { id: valoreId(c), numero: isNaN(num) ? null : num };
+                }).filter(function(s) { return s.id; });
+                saghe.sort(function(a, b) { return (b.numero !== null ? 1 : 0) - (a.numero !== null ? 1 : 0); });
+                libri.push({
+                    qid: id,
+                    titoloIt: (e.labels && e.labels.it) ? e.labels.it.value : '',
+                    titoloEn: (e.labels && (e.labels.en || e.labels.mul)) ? (e.labels.en || e.labels.mul).value : '',
+                    autoriIds: autoriIds, anno: anno,
+                    sagaId: saghe.length ? saghe[0].id : null,
+                    sagaNumero: saghe.length ? saghe[0].numero : null,
+                    paginaWikipedia: (e.sitelinks && e.sitelinks.itwiki) ? e.sitelinks.itwiki.title : ''
+                });
+            });
+            // Nomi di autori e saghe in una sola chiamata. Wikidata salva molti
+            // nomi una volta sola nella lingua "mul" (uguale in tutte le lingue,
+            // es. "Harry Potter"): se manca l'italiano si usa quella.
+            const altri = [];
+            libri.forEach(function(l) {
+                l.autoriIds.forEach(function(a) { if (altri.indexOf(a) === -1) altri.push(a); });
+                if (l.sagaId && altri.indexOf(l.sagaId) === -1) altri.push(l.sagaId);
+            });
+            let etichette = {};
+            if (altri.length > 0) {
+                try {
+                    const lab = await fetchJsonConLimite_(WD_API_ + 'action=wbgetentities&props=labels&languages=it|en|mul&ids=' + altri.slice(0, 50).join('|'), 6000);
+                    Object.keys(lab.entities || {}).forEach(function(k) {
+                        const L = lab.entities[k].labels || {};
+                        etichette[k] = { it: L.it ? L.it.value : (L.mul ? L.mul.value : ''), en: L.en ? L.en.value : (L.mul ? L.mul.value : '') };
+                    });
+                } catch (errLab) {
+                    console.error('Wikidata: nomi di autori e saghe non disponibili: ' + errLab);
+                }
+            }
+            return libri.map(function(l) {
+                const sagaLab = l.sagaId ? (etichette[l.sagaId] || {}) : {};
+                return {
+                    qid: l.qid, titoloIt: l.titoloIt, titoloEn: l.titoloEn,
+                    autori: l.autoriIds.map(function(a) { const x = etichette[a] || {}; return x.it || x.en || ''; }).filter(function(x) { return x; }).join(', '),
+                    anno: l.anno,
+                    sagaNomeIt: sagaLab.it || '', sagaNomeEn: sagaLab.en || '',
+                    sagaNumero: l.sagaNumero,
+                    paginaWikipedia: l.paginaWikipedia
+                };
+            });
+        }
+
+        // Taglia un testo ai primi paragrafi, fino a circa `max` caratteri e
+        // sempre a fine frase (Richiesta 59: "solo l'inizio", niente finale).
+        function tagliaTramaInizio_(testo, max) {
+            const limite = max || 700;
+            const paragrafi = String(testo || '').split(/\n+/).map(function(p) { return p.trim(); }).filter(function(p) { return p; });
+            let out = '';
+            for (let i = 0; i < paragrafi.length; i++) {
+                const prossimo = out ? out + '\n\n' + paragrafi[i] : paragrafi[i];
+                if (prossimo.length <= limite) { out = prossimo; continue; }
+                // Il paragrafo non ci sta tutto: aggiungo le sue frasi intere
+                // finché c'è posto (se il testo è ancora corto)
+                if (out.length < limite * 0.65) {
+                    const frasi = paragrafi[i].match(/[^.!?…]+[.!?…]+[»"”)]*\s*/g) || [];
+                    let pezzo = '';
+                    for (let f = 0; f < frasi.length; f++) {
+                        const prova = pezzo + frasi[f];
+                        if ((out ? out.length + 2 : 0) + prova.trim().length > limite) break;
+                        pezzo = prova;
+                    }
+                    pezzo = pezzo.trim();
+                    if (pezzo) out = out ? out + '\n\n' + pezzo : pezzo;
+                    else if (!out) out = paragrafi[i].slice(0, limite).replace(/\s+\S*$/, '') + '…';
+                }
+                break;
+            }
+            return out;
+        }
+
+        // Wikipedia italiana (Richiesta 59): testo semplice della pagina
+        // collegata all'elemento Wikidata (così mai la pagina del film).
+        // Restituisce l'inizio della sezione "Trama" e l'introduzione.
+        async function tramaDaWikipedia_(pagina) {
+            if (!pagina) return { trama: '', intro: '' };
+            const url = 'https://it.wikipedia.org/w/api.php?format=json&formatversion=2&origin=*&action=query&prop=extracts&explaintext=1&exsectionformat=wiki&redirects=1&titles=' + encodeURIComponent(pagina);
+            const j = await fetchJsonConLimite_(url, 6000);
+            const p = j.query && j.query.pages && j.query.pages[0];
+            const testo = String((p && p.extract) || '');
+            if (!testo) return { trama: '', intro: '' };
+            const intro = testo.split(/\n==[^=]/)[0];
+            // Sezioni di primo livello "== Titolo =="
+            const blocchi = testo.split(/\n(?===[^=].*?==\s*\n)/);
+            let trama = '';
+            for (let i = 0; i < blocchi.length; i++) {
+                const m = blocchi[i].match(/^==\s*([^=].*?)\s*==\s*\n/);
+                if (m && /^trama\b/i.test(m[1])) {
+                    trama = blocchi[i].slice(m[0].length)
+                        .replace(/^=+.*=+\s*$/gm, '') // via i sottotitoli === ... ===
+                        .trim();
+                    break;
+                }
+            }
+            return { trama: tagliaTramaInizio_(trama, 700), intro: tagliaTramaInizio_(intro, 700) };
+        }
+
+        function normalizzaTesto_(s) {
+            return String(s || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9]+/g, ' ').trim();
+        }
+
+        // Un risultato Hardcover è lo stesso libro di Wikidata se il titolo
+        // (italiano o inglese) coincide o è contenuto, e se almeno un
+        // cognome dell'autore compare in entrambi.
+        function stessoLibro_(wd, hc) {
+            const th = normalizzaTesto_(hc.titolo);
+            if (!th) return false;
+            const titoli = [wd.titoloIt, wd.titoloEn].map(normalizzaTesto_).filter(function(t) { return t; });
+            const titoloOk = titoli.some(function(t) { return t === th || (t.length > 4 && th.indexOf(t) === 0) || (th.length > 4 && t.indexOf(th) === 0); });
+            if (!titoloOk) return false;
+            const aw = normalizzaTesto_(wd.autori).split(' ').filter(function(w) { return w.length > 3; });
+            const ah = normalizzaTesto_(hc.autori);
+            if (aw.length === 0 || !ah) return true;
+            return aw.some(function(w) { return ah.indexOf(w) !== -1; });
+        }
+
+        // Ricerca completa: Wikidata e Hardcover in parallelo; se Wikidata
+        // trova il libro ma Hardcover no, Hardcover viene interrogato di nuovo
+        // con il titolo inglese (+ autore) dei primi due libri di Wikidata.
+        async function cercaLibriTutteLeFonti_(query) {
+            const esiti = await Promise.allSettled([cercaLibriWikidata_(query), cercaCandidatiLibriHC_(query)]);
+            const wd = esiti[0].status === 'fulfilled' ? esiti[0].value : [];
+            let hc = esiti[1].status === 'fulfilled' ? esiti[1].value : [];
+            if (esiti[0].status === 'rejected') console.error('Wikidata non disponibile: ' + esiti[0].reason);
+            const erroreHC = esiti[1].status === 'rejected' ? esiti[1].reason : null;
+            if (erroreHC) console.error('Hardcover non disponibile: ' + erroreHC);
+            if (wd.length === 0 && erroreHC) throw erroreHC;
+
+            const daRicercare = wd.slice(0, 2).filter(function(w) {
+                return w.titoloEn && !hc.some(function(h) { return stessoLibro_(w, h); });
+            });
+            if (!erroreHC && daRicercare.length > 0) {
+                const extra = await Promise.allSettled(daRicercare.map(function(w) {
+                    const cognome = String(w.autori.split(',')[0] || '').trim().split(' ').pop();
+                    return cercaCandidatiLibriHC_(w.titoloEn + (cognome ? ' ' + cognome : ''));
+                }));
+                extra.forEach(function(x) {
+                    if (x.status !== 'fulfilled') return;
+                    x.value.forEach(function(h) {
+                        if (!hc.some(function(g) { return g.id === h.id; })) hc.push(h);
+                    });
+                });
+            }
+
+            // Unione: ogni libro di Wikidata prende il suo gemello Hardcover
+            // (copertina, generi, trama di riserva); gli Hardcover rimasti
+            // restano candidati da soli come prima.
+            const usati = {};
+            const candidati = wd.map(function(w) {
+                const gemello = hc.find(function(h) { return !usati[h.id] && stessoLibro_(w, h); }) || null;
+                if (gemello) usati[gemello.id] = true;
+                return {
+                    id: 'wd:' + w.qid, wd: w, hc: gemello,
+                    titolo: w.titoloIt || w.titoloEn || (gemello ? gemello.titolo : ''),
+                    autori: w.autori || (gemello ? gemello.autori : ''),
+                    anno: w.anno || (gemello ? gemello.anno : ''),
+                    immagine: gemello ? gemello.immagine : ''
+                };
+            });
+            hc.forEach(function(h) {
+                if (usati[h.id]) return;
+                candidati.push({ id: 'hc:' + h.id, wd: null, hc: h, titolo: h.titolo, autori: h.autori, anno: h.anno, immagine: h.immagine });
+            });
+            return candidati;
+        }
+
         function apriRicercaHardcover() {
             const titolo = document.getElementById('inpTitoloLibri').value.trim();
             if (!titolo) {
@@ -542,23 +782,14 @@ function statoBadgeLibro_(stato) {
                 return;
             }
             const wrap = document.getElementById('libriCandidatiWrapper');
-            wrap.innerHTML = `<div style="color:var(--success); font-weight:600; font-size:13px; margin-bottom:12px;">⏳ Ricerca su Hardcover in corso...</div>`;
-            cercaCandidatiLibriHC_(titolo)
+            wrap.innerHTML = `<div style="color:var(--success); font-weight:600; font-size:13px; margin-bottom:12px;">⏳ Ricerca su Wikidata e Hardcover in corso...</div>`;
+            cercaLibriTutteLeFonti_(titolo)
                 .then(function(candidati) { renderCandidatiLibriHC_(candidati, titolo); })
                 .catch(function(err) {
-                    wrap.innerHTML = `<div style="color:var(--danger); font-size:13px; margin-bottom:12px;">❌ ${String(err && err.message ? err.message : err)}</div>`;
+                    wrap.innerHTML = `<div style="color:var(--danger); font-size:13px; margin-bottom:12px;">❌ ${escapeHtmlLog(String(err && err.message ? err.message : err))}</div>`;
                 });
         }
         window.apriRicercaHardcover = apriRicercaHardcover;
-
-        // ------------------------------------------
-        // 📚 DETTAGLIO LIBRO: nessun secondo giro di rete (Richiesta 38).
-        // La search Hardcover restituisce già trama/generi/saga per ogni
-        // candidato: la selezione li prende dai dati in memoria
-        // (ultimiCandidatiLibri_), traduce la trama se serve e apre
-        // direttamente l'anteprima. Euristica titolo solo se Hardcover non
-        // conosce la saga.
-        // ------------------------------------------
 
         // Euristica sul titolo: becca "(Dune, #2)", "Dune #2", "Vol. 3".
         // Ritorna { nome, numero } o null. Meglio un suggerimento da
@@ -583,13 +814,11 @@ function statoBadgeLibro_(stato) {
             return null;
         }
 
-        // Ultimi candidati mostrati nel picker (Richiesta 38): la search
-        // Hardcover restituisce già i dati completi, la selezione li riusa
-        // da qui senza altre chiamate di rete.
+        // Ultimi candidati mostrati nel picker: la selezione li riusa da qui.
         let ultimiCandidatiLibri_ = [];
         // Ultima query digitata (Richiesta 39): se è un titolo intero in
-        // italiano la riuso come titolo proposto, così la biblioteca non si
-        // riempie di titoli inglesi da correggere a mano.
+        // italiano la riuso come titolo proposto quando Wikidata non dà il
+        // titolo italiano.
         let ultimaQueryLibri_ = '';
 
         // Titolo da proporre nella scheda (Richiesta 39): query lunga (3+
@@ -616,52 +845,98 @@ function statoBadgeLibro_(stato) {
             }).join(' ');
         }
 
-        function selezionaCandidatoLibroHC_(idLibro, titoloCandidato) {
+        // Scelta di un candidato (Richiesta 59): ogni campo dalla fonte
+        // migliore disponibile, con la fonte accanto.
+        //  - titolo, autore, anno: Wikidata → Hardcover
+        //  - trama: inizio Trama di Wikipedia → Hardcover (tradotta) →
+        //    introduzione di Wikipedia → vuota
+        //  - saga: Wikidata con nome italiano e numero → Hardcover (nome
+        //    italiano di Wikidata se c'è) → solo nome → euristica sul titolo
+        async function selezionaCandidatoLibroHC_(idLibro) {
             const wrap = document.getElementById('libriCandidatiWrapper');
             const cand = (ultimiCandidatiLibri_ || []).find(function(x) { return x.id === idLibro; });
             if (!cand) {
                 wrap.innerHTML = `<div style="color:var(--danger); font-size:13px; margin-bottom:12px;">❌ Candidato non più disponibile: cerca di nuovo il libro.</div>`;
                 return;
             }
-            const sinossiPulita = String(cand.descrizione || '').replace(/\n{3,}/g, '\n\n').trim();
-            const completaAnteprima = function(testoFinale) {
-                const sagaEur = (!cand.sagaNome) ? suggerisciSagaDaTitolo_(cand.titolo, cand.sottotitolo) : null;
-                renderDettaglioLibriHC_({
-                    id: cand.id, titolo: cand.titolo, sottotitolo: cand.sottotitolo,
-                    titoloProposto: scegliTitoloDaProporre_(ultimaQueryLibri_, cand.titolo),
-                    autori: cand.autori, anno: cand.anno,
-                    sinossi: testoFinale || 'Nessuna trama disponibile per questo libro.',
-                    immagine: cand.immagine, categorie: cand.categorie || [],
-                    sagaNome: cand.sagaNome || ((sagaEur && sagaEur.nome) ? sagaEur.nome : ''),
-                    sagaNumero: (cand.sagaNumero !== null && cand.sagaNumero !== undefined)
-                        ? cand.sagaNumero
-                        : ((sagaEur && sagaEur.numero !== null) ? sagaEur.numero : null),
-                    sagaFonte: cand.sagaNome ? 'hardcover' : ((sagaEur && sagaEur.nome) ? 'euristica' : 'nessuna')
-                });
-            };
-            // Trama non italiana → traduzione automatica (stesso di AniList).
-            if (sinossiPulita && !sembraItaliano_(sinossiPulita)) {
-                wrap.innerHTML = `<div style="color:var(--success); font-weight:600; font-size:13px; margin-bottom:12px;">⏳ Traduzione della trama in corso...</div>`;
-                tradurreTestoGoogleFree_(sinossiPulita, 'en', 'it').then(completaAnteprima);
+            const wd = cand.wd, hc = cand.hc;
+            wrap.innerHTML = `<div style="color:var(--success); font-weight:600; font-size:13px; margin-bottom:12px;">⏳ Raccolgo trama e saga...</div>`;
+
+            // In modifica servono anche i valori attuali, trama compresa
+            const libroAttuale = targetEditTitleLibri
+                ? (libriList || []).find(function(l) { return l.titolo === targetEditTitleLibri; }) || null
+                : null;
+            const lavori = [
+                (wd && wd.paginaWikipedia) ? tramaDaWikipedia_(wd.paginaWikipedia) : Promise.resolve({ trama: '', intro: '' }),
+                libroAttuale ? getSinossiSB_(libroAttuale.titolo, 'libri') : Promise.resolve('')
+            ];
+            const esiti = await Promise.allSettled(lavori);
+            const wp = esiti[0].status === 'fulfilled' ? esiti[0].value : { trama: '', intro: '' };
+            if (esiti[0].status === 'rejected') console.error('Wikipedia non disponibile: ' + esiti[0].reason);
+            const tramaAttuale = (esiti[1].status === 'fulfilled' && !tramaVuota_(esiti[1].value)) ? String(esiti[1].value) : '';
+
+            // Trama
+            let trama = '', fonteTrama = '';
+            const descrHC = hc ? String(hc.descrizione || '').replace(/\n{3,}/g, '\n\n').trim() : '';
+            if (wp.trama) { trama = wp.trama; fonteTrama = 'Wikipedia'; }
+            else if (descrHC) {
+                if (sembraItaliano_(descrHC)) { trama = descrHC; fonteTrama = 'Hardcover'; }
+                else {
+                    wrap.innerHTML = `<div style="color:var(--success); font-weight:600; font-size:13px; margin-bottom:12px;">⏳ Traduzione della trama in corso...</div>`;
+                    trama = await tradurreTestoGoogleFree_(descrHC, 'en', 'it');
+                    fonteTrama = 'Hardcover, tradotta';
+                }
+            } else if (wp.intro) { trama = wp.intro; fonteTrama = 'Wikipedia, introduzione'; }
+
+            // Saga
+            let sagaNome = '', sagaNumero = null, fonteSaga = '';
+            const hcSagaNome = hc ? hc.sagaNome : '';
+            const hcSagaNum = (hc && hc.sagaNumero !== null && hc.sagaNumero !== undefined) ? hc.sagaNumero : null;
+            if (wd && wd.sagaNomeIt && wd.sagaNumero !== null) {
+                sagaNome = wd.sagaNomeIt; sagaNumero = wd.sagaNumero; fonteSaga = 'Wikidata';
+            } else if (hcSagaNome && hcSagaNum !== null) {
+                sagaNome = (wd && wd.sagaNomeIt) ? wd.sagaNomeIt : hcSagaNome;
+                sagaNumero = hcSagaNum;
+                fonteSaga = (wd && wd.sagaNomeIt) ? 'Wikidata + Hardcover' : 'Hardcover';
+            } else if (wd && (wd.sagaNomeIt || wd.sagaNomeEn)) {
+                sagaNome = wd.sagaNomeIt || wd.sagaNomeEn; sagaNumero = wd.sagaNumero; fonteSaga = 'Wikidata';
+            } else if (hcSagaNome) {
+                sagaNome = hcSagaNome; sagaNumero = hcSagaNum; fonteSaga = 'Hardcover';
             } else {
-                completaAnteprima(sinossiPulita);
+                const eur = suggerisciSagaDaTitolo_(hc ? hc.titolo : cand.titolo, hc ? hc.sottotitolo : '');
+                if (eur && eur.nome) { sagaNome = eur.nome; sagaNumero = eur.numero; fonteSaga = 'dal titolo'; }
             }
+
+            const titolo = (wd && wd.titoloIt) ? wd.titoloIt : scegliTitoloDaProporre_(ultimaQueryLibri_, cand.titolo);
+            renderDettaglioLibriHC_({
+                titolo: titolo, fonteTitolo: (wd && wd.titoloIt) ? 'Wikidata' : (hc ? 'Hardcover' : ''),
+                autori: (wd && wd.autori) ? wd.autori : (hc ? hc.autori : ''),
+                fonteAutori: (wd && wd.autori) ? 'Wikidata' : (hc && hc.autori ? 'Hardcover' : ''),
+                anno: (wd && wd.anno) ? wd.anno : (hc ? hc.anno : ''),
+                fonteAnno: (wd && wd.anno) ? 'Wikidata' : (hc && hc.anno ? 'Hardcover' : ''),
+                sinossi: trama, fonteTrama: fonteTrama,
+                immagine: hc ? hc.immagine : '',
+                categorie: hc ? (hc.categorie || []) : [],
+                sagaNome: sagaNome, sagaNumero: sagaNumero, fonteSaga: fonteSaga,
+                attuale: libroAttuale ? {
+                    titolo: libroAttuale.titolo, autori: libroAttuale.autore || '', anno: libroAttuale.anno || '',
+                    sagaNome: libroAttuale.sagaNome || '', sagaNumero: libroAttuale.sagaNumero,
+                    sinossi: tramaAttuale, immagine: libroAttuale.immagine || ''
+                } : null
+            });
         }
         window.selezionaCandidatoLibroHC_ = selezionaCandidatoLibroHC_;
 
-        // Pertinenza client-side (Richiesta 37, tenuta anche con Hardcover):
-        // Typesense ordina già bene, ma qui vince comunque chi contiene tutta
-        // la query, poi chi inizia con essa, poi chi condivide più parole
-        // (il titolo pesa doppio dell'autore). Rete di sicurezza a costo zero.
+        // Pertinenza client-side (Richiesta 37): vince chi contiene tutta la
+        // query, poi chi inizia con essa, poi chi condivide più parole (il
+        // titolo pesa doppio dell'autore). Con Wikidata (Richiesta 59) i
+        // libri riconosciuti da Wikidata hanno un piccolo vantaggio.
         function ordinaCandidatiPerPertinenza_(candidati, query) {
-            const normalizza = function(s) {
-                return String(s || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
-            };
-            const qn = normalizza(query);
-            const parole = qn.split(/[^a-z0-9]+/).filter(function(w) { return w.length > 2; });
+            const qn = normalizzaTesto_(query);
+            const parole = qn.split(' ').filter(function(w) { return w.length > 2; });
             (candidati || []).forEach(function(c) {
-                const tn = normalizza(c.titolo);
-                const an = normalizza(c.autori);
+                const tn = normalizzaTesto_(c.titolo);
+                const an = normalizzaTesto_(c.autori);
                 let punti = 0;
                 if (tn && qn && tn.indexOf(qn) !== -1) punti += 10;
                 if (tn && qn && tn.indexOf(qn) === 0) punti += 5;
@@ -669,6 +944,7 @@ function statoBadgeLibro_(stato) {
                     if (tn.indexOf(w) !== -1) punti += 2;
                     if (an.indexOf(w) !== -1) punti += 1;
                 });
+                if (c.wd) punti += 1;
                 c._pertinenza = punti;
             });
             (candidati || []).sort(function(a, b) { return (b._pertinenza || 0) - (a._pertinenza || 0); });
@@ -681,56 +957,91 @@ function statoBadgeLibro_(stato) {
             ordinaCandidatiPerPertinenza_(ultimiCandidatiLibri_, queryTitolo || '');
             const wrap = document.getElementById('libriCandidatiWrapper');
             if (!candidati || candidati.length === 0) {
-                wrap.innerHTML = `<div style="color:var(--text-muted); font-size:13px; margin-bottom:12px;">Nessun risultato su Hardcover: procedi pure a mano.</div>`;
+                wrap.innerHTML = `<div style="color:var(--text-muted); font-size:13px; margin-bottom:12px;">Nessun risultato su Wikidata e Hardcover: procedi pure a mano.</div>`;
                 return;
             }
             wrap.innerHTML = '';
             const label = document.createElement('div');
             label.style = 'font-size:12px; color:var(--text-muted); font-weight:600; margin-bottom:8px;';
-            label.innerText = '🔎 Scegli il libro corretto (' + candidati.length + ' risultati — via Hardcover):';
+            label.innerText = '🔎 Scegli il libro corretto (' + candidati.length + ' risultati):';
             wrap.appendChild(label);
 
             const grid = document.createElement('div');
             grid.style = 'display:grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap:10px; margin-bottom:12px;';
-            candidati.forEach(function(c) {
+            ultimiCandidatiLibri_.slice(0, 12).forEach(function(c) {
                 const card = document.createElement('div');
                 card.style = 'cursor:pointer; border:1px solid var(--border-color); border-radius:8px; overflow:hidden; background:rgba(255,255,255,0.03); transition: transform 0.15s, border-color 0.15s;';
                 card.onmouseover = function() { card.style.transform = 'translateY(-2px)'; card.style.borderColor = 'var(--success)'; };
                 card.onmouseout = function() { card.style.transform = 'translateY(0)'; card.style.borderColor = 'var(--border-color)'; };
                 const imgHtml = c.immagine
-                    ? `<img src="${c.immagine}" style="width:100%; height:170px; object-fit:cover; display:block; background:#222;">`
+                    ? `<img src="${escapeHtmlLog(c.immagine)}" style="width:100%; height:170px; object-fit:cover; display:block; background:#222;">`
                     : `<div style="width:100%; height:170px; display:flex; align-items:center; justify-content:center; background:#222; font-size:28px;">📗</div>`;
                 const sub = (c.autori ? c.autori : '') + (c.anno ? ' (' + c.anno + ')' : '');
-                card.innerHTML = imgHtml + `<div style="padding:6px; font-size:11px; line-height:1.3;"><div style="font-weight:700;">${c.titolo}</div><div style="color:var(--text-muted); margin-top:2px;">${sub}</div></div>`;
-                card.onclick = function() { selezionaCandidatoLibroHC_(c.id, c.titolo); };
+                const fonti = (c.wd ? 'Wikidata' : '') + (c.wd && c.hc ? ' + ' : '') + (c.hc ? 'Hardcover' : '');
+                card.innerHTML = imgHtml + `<div style="padding:6px; font-size:11px; line-height:1.3;"><div style="font-weight:700;">${escapeHtmlLog(c.titolo)}</div><div style="color:var(--text-muted); margin-top:2px;">${escapeHtmlLog(sub)}</div><div style="color:var(--text-muted); margin-top:2px; font-size:10px; opacity:.8;">${fonti}</div></div>`;
+                card.onclick = function() { selezionaCandidatoLibroHC_(c.id); };
                 grid.appendChild(card);
             });
             wrap.appendChild(grid);
         }
 
+        // Anteprima del libro scelto (Richiesta 59). Per ogni campo: valore
+        // trovato (modificabile per titolo e trama) e fonte. In modifica di un
+        // libro già salvato c'è anche il valore attuale con la casella
+        // "Sostituisci", già spuntata se il campo attuale è vuoto.
         function renderDettaglioLibriHC_(dettaglio) {
             ultimoDettaglioHardcover = dettaglio;
             const wrap = document.getElementById('libriCandidatiWrapper');
             wrap.innerHTML = '';
+            const att = dettaglio.attuale;
+            const esc = escapeHtmlLog;
+            const fonte = function(f) { return f ? ` <span style="font-weight:400; color:var(--text-muted); font-size:11px;">(${esc(f)})</span>` : ''; };
+            const sagaTesto = function(nome, numero) {
+                return (nome || '—') + ((numero !== null && numero !== undefined && numero !== '') ? ' #' + numero : '');
+            };
+            // Riga "attuale" + casella, solo in modifica
+            const confronto = function(campo, testoAttuale, vuoto, uguale) {
+                if (!att) return '';
+                if (uguale) return `<div style="font-size:11.5px; color:var(--text-muted);">Uguale a quello salvato.</div>`;
+                return `<div style="display:flex; gap:8px; align-items:baseline; flex-wrap:wrap; font-size:11.5px; color:var(--text-muted);">
+                        <span>${campo === 'immagine' ? 'Copertina attuale' : 'Attuale'}: ${vuoto ? '<i>' + (campo === 'immagine' ? 'nessuna' : 'vuoto') + '</i>' : esc(testoAttuale)}</span>
+                        <label style="display:inline-flex; gap:4px; align-items:center; color:var(--text); cursor:pointer;"><input type="checkbox" class="hc_sostituisci" data-campo="${campo}"${vuoto ? ' checked' : ''}> Sostituisci</label>
+                    </div>`;
+            };
+            const stessoTesto = function(a, b) { return normalizzaTesto_(a) === normalizzaTesto_(b); };
 
             const box = document.createElement('div');
             box.style = 'display:flex; gap:14px; align-items:flex-start; flex-wrap:wrap; background:rgba(52,211,153,0.06); border:1px solid var(--border-color); border-radius:10px; padding:12px; margin-bottom:12px;';
             const imgHtml = dettaglio.immagine
-                ? `<img src="${dettaglio.immagine}" style="width:110px; border-radius:8px; flex-shrink:0; background:#222;">`
+                ? `<img src="${esc(dettaglio.immagine)}" style="width:110px; border-radius:8px; flex-shrink:0; background:#222;">`
                 : `<div style="width:110px; height:160px; border-radius:8px; flex-shrink:0; background:#222; display:flex; align-items:center; justify-content:center; font-size:32px;">📗</div>`;
-            box.innerHTML = imgHtml + `
+            const copertinaConfronto = (att && dettaglio.immagine)
+                ? confronto('immagine', att.immagine ? 'già presente' : '', !att.immagine, att.immagine === dettaglio.immagine)
+                : '';
+            box.innerHTML = `<div style="display:flex; flex-direction:column; gap:6px; width:110px; flex-shrink:0;">${imgHtml}${copertinaConfronto}</div>
                 <div style="flex:1; min-width:220px; display:flex; flex-direction:column; gap:8px;">
-                    <label style="font-size:12px; color:var(--text-muted); font-weight:600;">Titolo (modificabile — verrà riportato nella scheda)</label>
-                    <input type="text" id="hcTitoloInput" style="width:100%; background:rgba(255,255,255,0.04); border:1px solid var(--border-color); border-radius:8px; color:var(--text); padding:8px; font-size:13px;">
-                    <label style="font-size:12px; color:var(--text-muted); font-weight:600;">Trama (modificabile prima di confermare)</label>
-                    <textarea id="hcSinossiTextarea" rows="6" style="width:100%; background:rgba(255,255,255,0.04); border:1px solid var(--border-color); border-radius:8px; color:var(--text); padding:8px; font-size:13px; line-height:1.5; resize:vertical;"></textarea>
-                    <div style="font-size:12.5px; color:var(--text);">✍️ <b>Autore:</b> ${dettaglio.autori || 'sconosciuto'} &nbsp;·&nbsp; 📅 <b>Anno:</b> ${dettaglio.anno || 'sconosciuto'}</div>
-                    <div style="font-size:12.5px; color:var(--text);">📚 <b>Saga suggerita:</b> ${(dettaglio.sagaNome || '—') + ((dettaglio.sagaNumero !== null && dettaglio.sagaNumero !== undefined) ? ' #' + dettaglio.sagaNumero : '')}
-                        <span style="color:var(--text-muted);">${dettaglio.sagaFonte === 'nessuna' ? '(non rilevata: compila a mano)' : '(da verificare, resta modificabile)'}</span>
+                    <div>
+                        <label style="font-size:12px; color:var(--text-muted); font-weight:600;">Titolo${fonte(dettaglio.fonteTitolo)}</label>
+                        <input type="text" id="hcTitoloInput" style="width:100%; font-family:inherit; background:rgba(255,255,255,0.04); border:1px solid var(--border-color); border-radius:8px; color:var(--text); padding:8px; font-size:13px;">
+                        ${att ? confronto('titolo', att.titolo, false, stessoTesto(att.titolo, dettaglio.titolo)) : ''}
+                    </div>
+                    <div>
+                        <label style="font-size:12px; color:var(--text-muted); font-weight:600;">Trama${fonte(dettaglio.fonteTrama)}</label>
+                        <textarea id="hcSinossiTextarea" rows="6" placeholder="Nessuna trama trovata: scrivila tu se vuoi." style="width:100%; font-family:inherit; background:rgba(255,255,255,0.04); border:1px solid var(--border-color); border-radius:8px; color:var(--text); padding:8px; font-size:13px; line-height:1.5; resize:vertical;"></textarea>
+                        ${(att && dettaglio.sinossi) ? confronto('sinossi', att.sinossi ? (att.sinossi.length > 90 ? att.sinossi.slice(0, 90) + '…' : att.sinossi) : '', !att.sinossi, stessoTesto(att.sinossi, dettaglio.sinossi)) : ''}
+                    </div>
+                    <div style="font-size:12.5px; color:var(--text);">✍️ <b>Autore:</b> ${esc(dettaglio.autori || 'sconosciuto')}${fonte(dettaglio.fonteAutori)}
+                        ${(att && dettaglio.autori) ? confronto('autori', att.autori, !att.autori, stessoTesto(att.autori, dettaglio.autori)) : ''}
+                    </div>
+                    <div style="font-size:12.5px; color:var(--text);">📅 <b>Anno:</b> ${esc(dettaglio.anno || 'sconosciuto')}${fonte(dettaglio.fonteAnno)}
+                        ${(att && dettaglio.anno) ? confronto('anno', att.anno, !att.anno, String(att.anno) === String(dettaglio.anno)) : ''}
+                    </div>
+                    <div style="font-size:12.5px; color:var(--text);">📚 <b>Saga:</b> ${esc(sagaTesto(dettaglio.sagaNome, dettaglio.sagaNumero))}${dettaglio.fonteSaga ? fonte(dettaglio.fonteSaga + ', da verificare') : ' <span style="color:var(--text-muted);">(non trovata: compila a mano se fa parte di una serie)</span>'}
+                        ${(att && dettaglio.sagaNome) ? confronto('saga', sagaTesto(att.sagaNome, att.sagaNumero), !att.sagaNome, stessoTesto(att.sagaNome, dettaglio.sagaNome) && String(att.sagaNumero) === String(dettaglio.sagaNumero)) : ''}
                     </div>
                 </div>`;
             wrap.appendChild(box);
-            document.getElementById('hcTitoloInput').value = dettaglio.titoloProposto || dettaglio.titolo || '';
+            document.getElementById('hcTitoloInput').value = dettaglio.titolo || '';
             document.getElementById('hcSinossiTextarea').value = dettaglio.sinossi || '';
 
             const suggeritiLower = (dettaglio.categorie || []).map(function(g) { return String(g).trim().toLowerCase(); });
@@ -747,11 +1058,11 @@ function statoBadgeLibro_(stato) {
                     </label>
                     <div id="hcGenresPicker" class="genres-grid-container">
                         ${generiCorrispondenti.map(function(g) {
-                            return `<label><input type="checkbox" class="hc_genre_cb" value="${g}" checked> ${g}</label>`;
+                            return `<label><input type="checkbox" class="hc_genre_cb" value="${esc(g)}" checked> ${esc(g)}</label>`;
                         }).join('')}
                     </div>`;
-            } else {
-                genreSection.innerHTML = `<div style="color:var(--text-muted); font-size:12px;">Nessun genere della tua lista tra quelli di Hardcover (${(dettaglio.categorie || []).join(', ') || 'nessuno'}).</div>`;
+            } else if ((dettaglio.categorie || []).length > 0) {
+                genreSection.innerHTML = `<div style="color:var(--text-muted); font-size:12px;">Nessun genere della tua lista tra quelli di Hardcover (${esc(dettaglio.categorie.join(', '))}).</div>`;
             }
             wrap.appendChild(genreSection);
 
@@ -768,39 +1079,48 @@ function statoBadgeLibro_(stato) {
             document.getElementById('hcConfermaBtn').onclick = confermaDatiHardcover_;
         }
 
+        // Porta i dati dell'anteprima nel modulo. Libro nuovo: riempie i campi
+        // ancora vuoti (mai sovrascrivere quello che hai scritto a mano).
+        // Modifica: sostituisce solo i campi con la casella spuntata; i campi
+        // uguali o senza casella restano come sono.
         function applicaDatiPrincipaliLibriHC_() {
             if (!ultimoDettaglioHardcover) return false;
             const d = ultimoDettaglioHardcover;
+            const inModifica = !!d.attuale;
+            const spuntati = {};
+            document.querySelectorAll('#libriCandidatiWrapper .hc_sostituisci').forEach(function(cb) {
+                spuntati[cb.getAttribute('data-campo')] = cb.checked;
+            });
+            const puoiScrivere = function(campo, idInput) {
+                if (inModifica) return spuntati[campo] === true;
+                return !String(document.getElementById(idInput).value).trim();
+            };
             const titoloInput = document.getElementById('hcTitoloInput');
             const titoloFinale = titoloInput ? titoloInput.value.trim() : d.titolo;
             const sinossiEl = document.getElementById('hcSinossiTextarea');
-            const sinossiFinale = sinossiEl ? sinossiEl.value : d.sinossi;
+            const sinossiFinale = sinossiEl ? sinossiEl.value.trim() : String(d.sinossi || '');
 
-            if (titoloFinale) document.getElementById('inpTitoloLibri').value = titoloFinale;
-            // Autore/anno: li porto dentro solo se il campo scheda è vuoto,
-            // mai sovrascrivere ciò che hai già scritto a mano.
-            if (d.autori && !document.getElementById('inpAutoreLibri').value.trim()) {
-                document.getElementById('inpAutoreLibri').value = d.autori;
+            // Titolo: libro nuovo sempre (è quello cercato); in modifica solo se spuntato
+            if (titoloFinale && (!inModifica || spuntati.titolo === true)) {
+                document.getElementById('inpTitoloLibri').value = titoloFinale;
             }
-            if (d.anno && !String(document.getElementById('inpAnnoLibri').value).trim()) {
-                document.getElementById('inpAnnoLibri').value = d.anno;
-            }
-            document.getElementById('inpImmagineLibri').value = d.immagine || '';
+            if (d.autori && puoiScrivere('autori', 'inpAutoreLibri')) document.getElementById('inpAutoreLibri').value = d.autori;
+            if (d.anno && puoiScrivere('anno', 'inpAnnoLibri')) document.getElementById('inpAnnoLibri').value = d.anno;
+            if (d.immagine && (!inModifica || spuntati.immagine === true)) document.getElementById('inpImmagineLibri').value = d.immagine;
 
-            // Saga: stesso principio, non sovrascrivere il manuale.
-            if (d.sagaNome && !document.getElementById('inpSagaNomeLibri').value.trim()) {
-                document.getElementById('inpSagaNomeLibri').value = d.sagaNome;
-            }
-            if ((d.sagaNumero !== null && d.sagaNumero !== undefined) && !String(document.getElementById('inpSagaNumeroLibri').value).trim()) {
-                document.getElementById('inpSagaNumeroLibri').value = d.sagaNumero;
-            }
-            if (!d.sagaNome && (d.sagaNumero === null || d.sagaNumero === undefined)) {
-                showToast('Hardcover non conosce la saga: compilala a mano se fa parte di una serie.', 'error');
-            } else {
-                showToast('Saga suggerita da verificare: correggila pure a mano.', 'success');
+            if (d.sagaNome) {
+                const scriviSaga = inModifica ? spuntati.saga === true
+                    : !document.getElementById('inpSagaNomeLibri').value.trim();
+                if (scriviSaga) {
+                    document.getElementById('inpSagaNomeLibri').value = d.sagaNome;
+                    document.getElementById('inpSagaNumeroLibri').value = (d.sagaNumero !== null && d.sagaNumero !== undefined) ? d.sagaNumero : '';
+                }
             }
 
-            sinossiPendenteLibri = sinossiFinale;
+            // Trama: salvata insieme al libro (sinossiPendenteLibri)
+            if (sinossiFinale && !tramaVuota_(sinossiFinale) && (!inModifica || spuntati.sinossi === true)) {
+                sinossiPendenteLibri = sinossiFinale;
+            }
 
             const picker = document.getElementById('hcGenresPicker');
             if (picker) {
@@ -809,13 +1129,14 @@ function statoBadgeLibro_(stato) {
                     if (daAggiungere.indexOf(cb.value) !== -1) cb.checked = true;
                 });
             }
+            if (!d.sagaNome) showToast('Saga non trovata: compilala a mano se il libro fa parte di una serie.', 'error');
             return true;
         }
 
         function confermaDatiHardcover_() {
             if (!applicaDatiPrincipaliLibriHC_()) return;
             document.getElementById('libriCandidatiWrapper').innerHTML = '';
-            showToast('Titolo, copertina, trama e generi applicati: premi "Salva" per confermare', 'success');
+            showToast('Dati applicati al modulo: premi "Salva" per confermare', 'success');
         }
         window.confermaDatiHardcover_ = confermaDatiHardcover_;
 
@@ -827,6 +1148,11 @@ function statoBadgeLibro_(stato) {
         //   Nuove voci: aggiungere in CIMA all'array.
         // ==========================================
         const PATCH_NOTES = [
+            { v: '1.1.5', titolo: 'Libri cercati in italiano', data: '16/11/2026', punti: [
+                'Nella finestra del libro il bottone ora si chiama 🔎 Cerca e trova i libri anche dal titolo italiano, scritto pure a metà.',
+                'Titolo, autore, anno e saga arrivano da Wikidata con il nome della saga in italiano (es. Cronache del Mondo Emerso #1); la trama è l\'inizio di quella di Wikipedia, senza finale. Hardcover resta per copertina, generi e quando le altre fonti non sanno nulla.',
+                'Accanto a ogni campo vedi da dove arriva. Se modifichi un libro già salvato vedi il valore attuale e scegli tu cosa sostituire.'
+            ] },
             { v: '1.1.4', titolo: 'Log senza doppioni quando correggi', data: '14/11/2026', punti: [
                 'Se segni per sbaglio un volume, un episodio o una stagione in più e torni subito indietro (entro 10 minuti), la voce sbagliata sparisce dal log invece di restare con un doppione.',
                 'Se torni indietro più tardi, nel log resta scritto chiaramente "↩️ Correzione: tornato al volume 4" invece di un finto "Letto il volume 4".',
