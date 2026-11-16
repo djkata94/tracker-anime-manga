@@ -1154,10 +1154,6 @@ function statoBadgeLibro_(stato) {
         //   Nuove voci: aggiungere in CIMA all'array.
         // ==========================================
         const PATCH_NOTES = [
-            { v: '1.1.6', titolo: 'Saghe in ordine', data: '16/11/2026', punti: [
-                'Nei Libri, se scrivi qualcosa in "Filtra saga", i libri compaiono in ordine di saga e di numero: 1, 2, 3...',
-                'Senza filtro la lista resta in ordine alfabetico; se scegli tu un altro ordine dal menu, resta quello.'
-            ] },
             { v: '1.1.5', titolo: 'Libri cercati in italiano', data: '16/11/2026', punti: [
                 'Nella finestra del libro il bottone ora si chiama 🔎 Cerca e trova i libri anche dal titolo italiano, scritto pure a metà.',
                 'Titolo, autore, anno e saga arrivano da Wikidata con il nome della saga in italiano (es. Cronache del Mondo Emerso #1); la trama è l\'inizio di quella di Wikipedia, senza finale. Hardcover resta per copertina, generi e quando le altre fonti non sanno nulla.',

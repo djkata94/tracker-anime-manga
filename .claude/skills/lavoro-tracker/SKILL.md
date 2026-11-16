@@ -119,6 +119,11 @@ Se una regola qui è in conflitto con una richiesta esplicita di Gabriele, vale 
   ```
   Apostrofi scritti `\'`. La versione sale di una patch per ogni pubblicazione con novità;
   il numero di versione non coincide con il numero della richiesta.
+- **Niente patch notes per i ritocchi piccoli** (regola di Gabriele del 16/11/2026): ordinamenti,
+  piccoli fix estetici o di comodità non hanno voce in `PATCH_NOTES` né aumento di versione. La
+  patch notes è solo per novità che Gabriele nota davvero (funzioni nuove, cambi visibili
+  importanti). La "Richiesta N" nella guida si scrive comunque, con "(nessuna patch notes:
+  ritocco minore)" nel titolo. Nel dubbio, chiedi.
 
 ## 8. Commit e pubblicazione
 
