@@ -2180,3 +2180,11 @@ Scelte dell'owner: della trama di Wikipedia **solo l'inizio** (niente finale); i
 - `index.html`: il bottone "🔎 Hardcover" diventa "🔎 Cerca"; nuovo testo d'aiuto sotto la saga.
 - Nessuna modifica al database né a `hardcover-proxy`; nessuna chiave nuova.
 - Provato in locale con Hardcover finto (la funzione chiede il login) e chiamate vere a Wikidata e Wikipedia: Il destino di Adhara (trovato col titolo italiano, Hardcover ricercato con "Adhara's Destiny"), Nihal (saga "Cronache del Mondo Emerso #1"), Eldest ("Ciclo dell'Eredità #2"), Postmortem ("Kay Scarpetta #1"), Il segno dei quattro (saga da Hardcover, trama da Wikipedia), Dimentica il mio nome (Zerocalcare, nessuna saga), Harry Potter e la camera dei segreti ("Harry Potter #2"); libro sconosciuto a tutte le fonti → messaggio "procedi a mano". Modifica: caselle e campi scritti controllati. Screenshot PC e telefono.
+
+
+## Richiesta 60 — Libri in ordine di saga quando filtri per saga (patch v1.1.6)
+Richiesta dell'owner del 16/11/2026: la lista Libri resta in ordine alfabetico per titolo, ma filtrando per saga i libri devono comparire in ordine di numero di saga crescente.
+- `js/libri-patch.js`, `renderListLibri`: se il campo "Filtra saga" non è vuoto e il menu d'ordine è sul valore standard "Titolo A-Z", si usa l'ordine "Saga (nome + n.)" già esistente: prima il nome della saga, poi il numero crescente, poi il titolo. Con un filtro che prende più saghe (es. "mondo emerso") i libri sono raggruppati per saga e numerati dentro ciascuna.
+- In questo caso i libri 📌 prioritari non salgono in cima, altrimenti romperebbero la sequenza 1, 2, 3; senza filtro saga restano in cima come prima.
+- Se nel menu è scelto a mano un altro ordine (anno, autore, Z-A), resta quello scelto.
+- Provato in locale con dati finti (3 saghe del Mondo Emerso, un libro prioritario, un libro senza saga): senza filtro ordine alfabetico con il prioritario in cima; con "mondo emerso" ordine per saga e numero; con "Anno più recente" scelto a mano ordine per anno. Controllato su PC e telefono.

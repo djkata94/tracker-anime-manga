@@ -180,11 +180,17 @@ function statoBadgeLibro_(stato) {
                 return matchesSearch && matchesStato && matchesSaga && matchesGenres && matchesPreferito;
             });
 
-            const sortVal = document.getElementById('sortSelLibri').value;
+            // Richiesta 60: con il filtro saga attivo e l'ordine standard
+            // (Titolo A-Z) i libri vanno in ordine di saga e numero crescente,
+            // senza far salire prima i 📌 prioritari (romperebbero la sequenza).
+            // Un ordine scelto a mano nel menu resta quello scelto.
+            const sortScelto = document.getElementById('sortSelLibri').value;
+            const ordinePerSaga = !!(currentSearchSagaLibri || '').trim() && sortScelto === 'title-asc';
+            const sortVal = ordinePerSaga ? 'saga-asc' : sortScelto;
             filtered.sort(function(a, b) {
                 const pA = a.priorita ? 1 : 0;
                 const pB = b.priorita ? 1 : 0;
-                if (pA !== pB) return pB - pA;
+                if (!ordinePerSaga && pA !== pB) return pB - pA;
                 if (sortVal === 'title-desc') return (b.titolo || '').localeCompare(a.titolo || '');
                 if (sortVal === 'autore-asc') {
                     const c = (a.autore || '').localeCompare(b.autore || '');
@@ -1148,6 +1154,10 @@ function statoBadgeLibro_(stato) {
         //   Nuove voci: aggiungere in CIMA all'array.
         // ==========================================
         const PATCH_NOTES = [
+            { v: '1.1.6', titolo: 'Saghe in ordine', data: '16/11/2026', punti: [
+                'Nei Libri, se scrivi qualcosa in "Filtra saga", i libri compaiono in ordine di saga e di numero: 1, 2, 3...',
+                'Senza filtro la lista resta in ordine alfabetico; se scegli tu un altro ordine dal menu, resta quello.'
+            ] },
             { v: '1.1.5', titolo: 'Libri cercati in italiano', data: '16/11/2026', punti: [
                 'Nella finestra del libro il bottone ora si chiama 🔎 Cerca e trova i libri anche dal titolo italiano, scritto pure a metà.',
                 'Titolo, autore, anno e saga arrivano da Wikidata con il nome della saga in italiano (es. Cronache del Mondo Emerso #1); la trama è l\'inizio di quella di Wikipedia, senza finale. Hardcover resta per copertina, generi e quando le altre fonti non sanno nulla.',
