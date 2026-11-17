@@ -85,6 +85,8 @@ Se una regola qui è in conflitto con una richiesta esplicita di Gabriele, vale 
   PREQUEL solo tra serie TV/web (un OVA o un film "prequel" non è l'inizio).
 - AniList limita le richieste (circa 30 al minuto): nelle prove lasciare qualche secondo tra un
   💡 e l'altro, altrimenti i risultati sono falsati da errori 429.
+- **Suggerimenti 💡 sempre ordinati per voto decrescente** (regola di Gabriele del 17/11/2026,
+  Richiesta 63): usare `ordinaPerVotoSugg_` anche per serie TV, film e ogni sezione futura.
 - Niente bandierine emoji (🇮🇹): su Windows compaiono come lettere ("IT").
 - Nelle prove senza login il sito, finito il caricamento, svuota le liste (`mangaList = []`):
   assegnare i dati finti dopo qualche secondo, altrimenti i risultati sono falsati.

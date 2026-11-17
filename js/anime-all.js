@@ -836,6 +836,7 @@ function switchViewOra_(viewName) {
                     visti[r.id] = true;
                     lista.push(r);
                 });
+                ordinaPerVotoSugg_(lista); // Richiesta 63: valutazione decrescente
                 mostraSuggAnimeOverlay_(item.titolo, lista.slice(0, 10), lista.slice(10));
             } catch (err) {
                 showToast(err.message || 'Suggerimenti non disponibili.', 'error');
@@ -937,6 +938,15 @@ function switchViewOra_(viewName) {
         //      "editore italiano" / "volumi in italiano". Fino a 10 confermati
         //      in vista, gli altri in una riga chiusa.
         // ==========================================
+
+        // Richiesta 63: i suggerimenti si mostrano dal voto più alto al più basso
+        // (voto AniList); quelli senza voto in fondo, a parità resta l'ordine di
+        // AniList (sort stabile). Vale per tutte le sezioni con il 💡.
+        function ordinaPerVotoSugg_(lista) {
+            const voto = function(c) { return (c && c.voto !== null && c.voto !== undefined) ? c.voto : -1; };
+            lista.sort(function(a, b) { return voto(b) - voto(a); });
+            return lista;
+        }
 
         // Titolo compatto per i confronti: niente accenti, spazi né simboli.
         function compattaTitoloSugg_(s) {
@@ -1251,6 +1261,7 @@ function switchViewOra_(viewName) {
                     return !titoloGiaPosseduto_([c.titolo, c.titoloAlt, ed ? ed.titoloIt : ''], possedutiC);
                 });
                 nuovi.forEach(function(c) { c.edizione = edizioni[c.id] || null; });
+                ordinaPerVotoSugg_(nuovi); // Richiesta 63: valutazione decrescente
                 const confermati = nuovi.filter(function(c) { return c.edizione; }).slice(0, 10);
                 const altri = nuovi.filter(function(c) { return !c.edizione; });
                 mostraSuggMangaOverlay_(item.titolo, confermati, altri);
