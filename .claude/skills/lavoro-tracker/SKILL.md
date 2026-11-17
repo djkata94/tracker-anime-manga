@@ -98,6 +98,7 @@ Se una regola qui è in conflitto con una richiesta esplicita di Gabriele, vale 
   abbonamento/gratis; TMDB non ha lo storico, si mostra sempre la situazione di oggi
   ("rimpiazza"), ricontrollata ogni 7 giorni. Citare sempre JustWatch ("Piattaforme: dati
   JustWatch"): è una condizione dei termini TMDB. `cinema.tmdb_id` esiste dalla Richiesta 66.
+  Solo i servizi principali (elenco `principali` nel proxy), massimo 3 piattaforme in riga + "+N".
 - La tabella `cinema` non ha l'ID TMDB: per ritrovare un film su TMDB si cerca il titolo e si
   sceglie il risultato con l'anno di `data_uscita` (±1), mai il primo a occhi chiusi (remake).
   Per riconoscere un film già posseduto servono titolo **e** anno.

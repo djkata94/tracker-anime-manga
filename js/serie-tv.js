@@ -1948,13 +1948,22 @@ function haProgressoStagioniParzialeSerieTv(titolo) {
         const GIORNI_AGGIORNA_PIATTAFORME_ = 7;
 
         // Riga sotto il titolo: loghi 16 px + nomi. Vuota se non c'è niente.
+        // Al massimo 3 piattaforme, le altre in un "+N" (scelta dell'owner):
+        // passandoci sopra si leggono, toccandolo compare l'elenco.
         function htmlPiattaforme_(piattaforme) {
             if (!Array.isArray(piattaforme) || piattaforme.length === 0) return '';
             const esc = function(s) { return String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); };
-            return '<div class="riga-piattaforme">' + piattaforme.map(function(p) {
+            const prime = piattaforme.slice(0, 3);
+            const altre = piattaforme.slice(3).map(function(p) { return p.nome; });
+            let html = '<div class="riga-piattaforme">' + prime.map(function(p) {
                 return '<span class="piattaforma" title="Disponibile su ' + esc(p.nome) + ' (dati JustWatch)">' +
                     (p.logo ? '<img src="' + esc(p.logo) + '" alt="" loading="lazy">' : '') + esc(p.nome) + '</span>';
-            }).join('') + '</div>';
+            }).join('');
+            if (altre.length > 0) {
+                const elenco = esc(altre.join(', '));
+                html += '<span class="piattaforma piattaforme-altre" title="Anche su: ' + elenco + '" onclick="event.stopPropagation(); showToast(\'Anche su: ' + elenco.replace(/'/g, '&#39;') + '\', \'success\')">+' + altre.length + '</span>';
+            }
+            return html + '</div>';
         }
 
         function piattaformeDaAggiornare_(item) {

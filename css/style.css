@@ -2843,6 +2843,16 @@ body {
     opacity: 0.75;
     white-space: nowrap;
 }
+.riga-piattaforme .piattaforme-altre {
+    cursor: pointer;
+    padding: 0 6px;
+    border-radius: 8px;
+    background: rgba(255,255,255,0.08);
+}
 #filterPiattaformaSerieTv, #filterPiattaformaCinema {
     max-width: 210px;
+}
+@media (max-width: 768px) {
+    /* sul telefono a tutta riga, come il menu dell ordinamento */
+    #filterPiattaformaSerieTv, #filterPiattaformaCinema { max-width: none; width: 100%; }
 }

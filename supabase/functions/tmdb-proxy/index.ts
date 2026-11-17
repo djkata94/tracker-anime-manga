@@ -254,10 +254,14 @@ Deno.serve(async (req) => {
       const ids = (Array.isArray(body.ids) ? body.ids : []).map((x: any) => parseInt(x)).filter((x: number) => x > 0).slice(0, 25);
       const nomi: Record<string, string> = {
         'Amazon Prime Video': 'Prime Video', 'Disney Plus': 'Disney+', 'Paramount Plus': 'Paramount+',
-        'Paramount Plus Premium': 'Paramount+', 'Apple TV Plus': 'Apple TV+', 'MGM Plus': 'MGM+',
+        'Paramount Plus Premium': 'Paramount+', 'MGM Plus': 'MGM+',
         'Lionsgate Plus': 'Lionsgate+', 'Now TV': 'NOW', 'Rai Play': 'RaiPlay', 'Mediaset Infinity': 'Infinity',
-        'Infinity Selection': 'Infinity+'
+        'Infinity Selection': 'Infinity+', 'Apple TV Plus': 'Apple TV', 'Apple TV+': 'Apple TV'
       };
+      // Solo i servizi principali (scelta dell'owner): niente canali minori
+      // gratuiti o di nicchia (Eagle Magic, Anni Duemila, Superfresh...)
+      const principali = new Set(['Netflix', 'Prime Video', 'Disney+', 'HBO Max', 'NOW', 'Sky Go', 'Paramount+',
+        'Apple TV', 'Timvision', 'Infinity', 'Infinity+', 'RaiPlay', 'Rakuten TV', 'MGM+', 'Lionsgate+']);
       const pulisci = (n: string) => {
         const base = String(n || '')
           .replace(/\s+(Standard|Basic|Essential)?\s*with Ads$/i, '')
@@ -282,7 +286,7 @@ Deno.serve(async (req) => {
           const out: any[] = [];
           elenco.forEach((p: any) => {
             const nome = pulisci(p.provider_name);
-            if (!nome || visti.has(nome)) return;
+            if (!nome || visti.has(nome) || !principali.has(nome)) return;
             visti.add(nome);
             out.push({ nome, logo: p.logo_path ? ('https://image.tmdb.org/t/p/w45' + p.logo_path) : '', priorita: p.display_priority || 99 });
           });
