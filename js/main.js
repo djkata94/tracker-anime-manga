@@ -694,6 +694,7 @@ function chiudiSinossi() {
 
 let sinossiPendenteAnime = null;
 let sinossiPendenteManga = null;
+let anilistIdPendenteManga = null; // Richiesta 61: ID AniList dell'opera scelta, salvato col manga
 let sinossiPendenteLibri = null; // View Libri (Richiesta 35): trama Hardcover in sospeso
 let ultimoDettaglioHardcover = null; // dettaglio volume GB in anteprima nel picker
 let ultimoDettaglioAniList = null; // { immagine, sinossi } del candidato attualmente in anteprima
@@ -1253,7 +1254,10 @@ function applicaDatiPrincipaliAniList_(tipo) {
     }
 
     if (tipo === 'anime') sinossiPendenteAnime = sinossiFinale;
-    else sinossiPendenteManga = sinossiFinale;
+    else {
+        sinossiPendenteManga = sinossiFinale;
+        if (ultimoDettaglioAniList.id) anilistIdPendenteManga = ultimoDettaglioAniList.id;
+    }
 
     // Applica i generi rilevati e ancora spuntati nel picker alle checkbox reali del form,
     // in modo ADDITIVO: non deseleziona mai un genere già scelto manualmente in precedenza.

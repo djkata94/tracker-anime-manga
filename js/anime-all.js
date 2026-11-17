@@ -700,17 +700,6 @@ function switchViewOra_(viewName) {
 
         window.suggAggiungiAnime_ = suggAggiungiAnime_;
 
-        // ＋ da un suggerimento manga: apre Nuovo Manga col titolo pronto.
-        function suggAggiungiManga_(titolo) {
-            chiudiSuggOverlay();
-            const btn = document.getElementById('btnNuovoManga');
-            if (btn) btn.click();
-            const inp = document.getElementById('inpTitoloManga');
-            if (inp) inp.value = titolo || '';
-        }
-
-        window.suggAggiungiManga_ = suggAggiungiManga_;
-
         // Stessa mappatura dell'import manga (guida: RELEASING→In corso, ecc).
         function statoMangaSugg_(s) {
             if (s === 'FINISHED' || s === 'CANCELLED') return 'Concluso';
@@ -719,13 +708,256 @@ function switchViewOra_(viewName) {
             return '';
         }
 
-        async function getSuggManga_(titolo) {
-            const hits = await cercaCandidatiAniListSB_(titolo, 'MANGA');
-            if (!hits || hits.length === 0 || !hits[0].id) {
-                throw new Error('Titolo non trovato su AniList.');
+        // ==========================================
+        //   💡 SUGGERIMENTI MANGA PUBBLICATI IN ITALIA (Richiesta 61)
+        //   1. Collegamento del manga ad AniList: ID salvato (manga.anilist_id),
+        //      altrimenti ricerca col titolo italiano (Wikidata, P8731 = ID
+        //      AniList manga) e su AniList; se non è sicuro si sceglie tra le
+        //      copertine e la scelta resta salvata.
+        //   2. 25 raccomandazioni AniList, tolti i manga già in lista (confronto
+        //      tollerante: spazi, piccoli refusi, ID, titolo italiano).
+        //   3. Edizione italiana: Wikidata → pagina it.wikipedia → infobox
+        //      "editore italiano" / "volumi in italiano". Fino a 10 confermati
+        //      in vista, gli altri in una riga chiusa.
+        // ==========================================
+
+        // Titolo compatto per i confronti: niente accenti, spazi né simboli.
+        function compattaTitoloSugg_(s) {
+            return String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, '');
+        }
+
+        // Distanza di modifica (Levenshtein) con uscita anticipata oltre `max`.
+        function distanzaTitoli_(a, b, max) {
+            if (Math.abs(a.length - b.length) > max) return max + 1;
+            let prec = [];
+            for (let j = 0; j <= b.length; j++) prec[j] = j;
+            for (let i = 1; i <= a.length; i++) {
+                const cur = [i];
+                let minRiga = i;
+                for (let j = 1; j <= b.length; j++) {
+                    cur[j] = Math.min(prec[j] + 1, cur[j - 1] + 1, prec[j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1));
+                    if (cur[j] < minRiga) minRiga = cur[j];
+                }
+                if (minRiga > max) return max + 1;
+                prec = cur;
             }
-            const gql = 'query ($id: Int) { Media(id: $id) { recommendations(sort: RATING_DESC, perPage: 10) { nodes { rating mediaRecommendation { id title { romaji english } startDate { year } coverImage { medium large } genres averageScore status volumes description(asHtml: false) } } } } }';
-            const json = await eseguireRichiestaAniList_(gql, { id: hits[0].id });
+            return prec[b.length];
+        }
+
+        // true se uno dei titoli è già nella lista: uguale una volta compattato,
+        // oppure con al massimo 2 lettere diverse se il titolo è lungo (refusi).
+        function titoloGiaPosseduto_(titoli, possedutiCompatti) {
+            return titoli.some(function(t) {
+                const c = compattaTitoloSugg_(t);
+                if (!c) return false;
+                if (possedutiCompatti.indexOf(c) !== -1) return true;
+                if (c.length < 9) return false;
+                return possedutiCompatti.some(function(p) { return p.length >= 9 && distanzaTitoli_(c, p, 2) <= 2; });
+            });
+        }
+
+        async function salvaAniListIdMangaSB_(titolo, anilistId) {
+            const { error } = await supabaseClient.from('manga').update({ anilist_id: anilistId }).eq('titolo', String(titolo).trim());
+            if (error) throw error;
+            const item = (mangaList || []).find(function(m) { return m && m.titolo === titolo; });
+            if (item) item.anilistId = anilistId;
+        }
+
+        // Wikidata: manga con ID AniList che corrispondono al titolo (anche
+        // italiano). Restituisce [{ anilistId, titoli: [it, en, mul] }].
+        async function cercaMangaWikidataPerTitolo_(titolo) {
+            const base = 'https://www.wikidata.org/w/api.php?format=json&formatversion=2&origin=*&';
+            const ricerca = await fetchJsonConLimite_(base + 'action=query&list=search&srprop=&srlimit=4&srsearch=' + encodeURIComponent(titolo + ' haswbstatement:P8731'), 6000);
+            const ids = ((ricerca.query && ricerca.query.search) || []).map(function(r) { return r.title; });
+            if (ids.length === 0) return [];
+            const ent = await fetchJsonConLimite_(base + 'action=wbgetentities&props=labels|aliases|claims&languages=it|en|mul&ids=' + ids.join('|'), 6000);
+            const out = [];
+            ids.forEach(function(id) {
+                const e = ent.entities && ent.entities[id];
+                const c = e && e.claims && e.claims.P8731 && e.claims.P8731[0];
+                const al = c && c.mainsnak && c.mainsnak.datavalue ? parseInt(c.mainsnak.datavalue.value) : NaN;
+                if (isNaN(al)) return;
+                const L = e.labels || {};
+                const A = e.aliases || {};
+                const alias = [].concat(A.it || [], A.en || [], A.mul || []).map(function(x) { return x.value; });
+                out.push({ anilistId: al, titoli: [L.it, L.en, L.mul].filter(function(x) { return x; }).map(function(x) { return x.value; }).concat(alias) });
+            });
+            return out;
+        }
+
+        async function infoMangaAniList_(ids) {
+            if (!ids.length) return [];
+            const gql = 'query ($ids: [Int]) { Page(perPage: 10) { media(id_in: $ids, type: MANGA) { id title { romaji english } startDate { year } format coverImage { medium } } } }';
+            const json = await eseguireRichiestaAniList_(gql, { ids: ids });
+            return (((json.data || {}).Page || {}).media || []).map(function(m) {
+                return {
+                    id: m.id, titolo: (m.title && (m.title.english || m.title.romaji)) || '', titoloAlt: m.title ? (m.title.romaji || '') : '',
+                    anno: (m.startDate && m.startDate.year) ? m.startDate.year : '', formato: m.format || '',
+                    immagine: (m.coverImage && m.coverImage.medium) || ''
+                };
+            });
+        }
+
+        // Trova l'ID AniList del manga di partenza. Se è sicuro lo salva e lo
+        // restituisce; altrimenti fa scegliere (null = annullato).
+        async function collegaMangaAniList_(item) {
+            if (item.anilistId) return item.anilistId;
+            const titoloC = compattaTitoloSugg_(item.titolo);
+            const esiti = await Promise.allSettled([cercaMangaWikidataPerTitolo_(item.titolo), cercaCandidatiAniListSB_(item.titolo, 'MANGA')]);
+            const wd = esiti[0].status === 'fulfilled' ? esiti[0].value : [];
+            const al = esiti[1].status === 'fulfilled' ? esiti[1].value : [];
+            if (esiti[1].status === 'rejected' && wd.length === 0) throw esiti[1].reason;
+
+            let sicuro = null;
+            const wdUguale = wd.find(function(w) { return w.titoli.some(function(t) { return compattaTitoloSugg_(t) === titoloC; }); });
+            if (wdUguale) sicuro = wdUguale.anilistId;
+            // Due fonti d'accordo: il primo manga di Wikidata (trovato col titolo
+            // italiano) è anche tra i risultati di AniList
+            if (!sicuro && wd.length > 0 && al.some(function(a) { return a.id === wd[0].anilistId; })) sicuro = wd[0].anilistId;
+            if (!sicuro) {
+                const alUguale = al.find(function(a) { return compattaTitoloSugg_(a.titolo) === titoloC || compattaTitoloSugg_(a.titoloAlt) === titoloC; });
+                if (alUguale) sicuro = alUguale.id;
+            }
+            if (sicuro) {
+                salvaAniListIdMangaSB_(item.titolo, sicuro).catch(function(err) { console.error('Collegamento AniList non salvato: ' + err); });
+                return sicuro;
+            }
+
+            // Scelta: prima i manga trovati da Wikidata (titolo italiano), poi AniList
+            const idsWd = wd.map(function(w) { return w.anilistId; });
+            let infoWd = [];
+            try { infoWd = await infoMangaAniList_(idsWd.slice(0, 3)); } catch (e) { console.error(e); }
+            const visti = {};
+            const scelte = [];
+            infoWd.concat(al).forEach(function(c) {
+                if (!c || !c.id || visti[c.id] || scelte.length >= 4) return;
+                visti[c.id] = true;
+                scelte.push(c);
+            });
+            // Nessun candidato: la finestra si apre lo stesso, con la casella per
+            // cercare con un altro titolo (inglese o giapponese)
+            const scelto = await scegliMangaAniList_(item.titolo, scelte);
+            if (!scelto) return null;
+            await salvaAniListIdMangaSB_(item.titolo, scelto);
+            return scelto;
+        }
+
+        // Finestra "Quale manga intendi?" dentro l'overlay dei suggerimenti.
+        function scegliMangaAniList_(titolo, scelte) {
+            return new Promise(function(risolvi) {
+                mostraSuggOverlay_(titolo, [], 'manga');
+                document.getElementById('suggOverlayTitolo').textContent = 'Quale manga intendi?';
+                const lista = document.getElementById('suggOverlayLista');
+                lista.innerHTML = '<p style="font-size:13px;opacity:0.8;margin:0;">' + (scelte.length
+                    ? 'Non sono sicuro di quale opera sia <b>' + escapeHtmlSugg_(titolo) + '</b>: scegli quella giusta, la ricorderò.'
+                    : 'Non trovo <b>' + escapeHtmlSugg_(titolo) + '</b> con questo titolo: prova a cercarlo con il titolo inglese o giapponese.') + '</p>';
+                const griglia = document.createElement('div');
+                griglia.style = 'display:grid;grid-template-columns:repeat(auto-fill,minmax(110px,1fr));gap:10px;';
+                const disegna = function(elenco) {
+                    griglia.innerHTML = '';
+                    if (elenco.length === 0) {
+                        griglia.innerHTML = '<div style="font-size:12px;opacity:0.7;">Nessun risultato.</div>';
+                        return;
+                    }
+                    elenco.forEach(function(c) {
+                        const card = document.createElement('div');
+                        card.style = 'cursor:pointer;border:1px solid var(--border-color);border-radius:8px;overflow:hidden;background:rgba(255,255,255,0.03);';
+                        card.innerHTML = (c.immagine ? '<img src="' + escapeHtmlSugg_(c.immagine) + '" alt="" style="width:100%;height:150px;object-fit:cover;display:block;background:#222;">' : '<div style="height:150px;display:flex;align-items:center;justify-content:center;background:#222;font-size:28px;">📕</div>') +
+                            '<div style="padding:6px;font-size:11px;line-height:1.3;"><div style="font-weight:700;">' + escapeHtmlSugg_(c.titolo) + '</div><div style="opacity:.7;">' + escapeHtmlSugg_([c.titoloAlt !== c.titolo ? c.titoloAlt : '', c.anno, c.formato].filter(Boolean).join(' · ')) + '</div></div>';
+                        card.onclick = function() { risolvi(c.id); };
+                        griglia.appendChild(card);
+                    });
+                };
+                if (scelte.length) disegna(scelte);
+                lista.appendChild(griglia);
+                // Ricerca con un altro titolo (inglese, giapponese, romaji)
+                const riga = document.createElement('div');
+                riga.style = 'display:flex;gap:6px;';
+                riga.innerHTML = '<input type="search" placeholder="Altro titolo (inglese o giapponese)" style="flex:1;min-width:0;font-family:inherit;">' +
+                    '<button type="button" class="btn">🔎 Cerca</button>';
+                const campo = riga.querySelector('input');
+                const cerca = function() {
+                    const q = campo.value.trim();
+                    if (!q) return;
+                    griglia.innerHTML = '<div style="font-size:12px;opacity:0.7;">⏳ Ricerca su AniList...</div>';
+                    cercaCandidatiAniListSB_(q, 'MANGA')
+                        .then(function(r) { disegna((r || []).slice(0, 6)); })
+                        .catch(function(err) { griglia.innerHTML = '<div style="font-size:12px;color:var(--danger);">' + escapeHtmlSugg_(err.message || String(err)) + '</div>'; });
+                };
+                riga.querySelector('button').onclick = cerca;
+                campo.addEventListener('keydown', function(e) { if (e.key === 'Enter') { e.preventDefault(); cerca(); } });
+                lista.appendChild(riga);
+                const nessuno = document.createElement('button');
+                nessuno.type = 'button';
+                nessuno.className = 'btn btn-danger';
+                nessuno.style = 'align-self:flex-end;';
+                nessuno.textContent = 'Nessuno di questi';
+                nessuno.onclick = function() { chiudiSuggOverlay(); risolvi(null); };
+                lista.appendChild(nessuno);
+            });
+        }
+
+        // Pulisce un valore di infobox Wikipedia: [[a|b]] → b, via commenti,
+        // note e modelli.
+        function pulisciValoreWiki_(v) {
+            return String(v || '')
+                .replace(/<!--[\s\S]*?-->/g, '').replace(/<ref[^>]*\/>/g, '').replace(/<ref[\s\S]*?<\/ref>/g, '')
+                .replace(/\{\{[^{}]*\}\}/g, '').replace(/<[^>]+>/g, '')
+                .replace(/\[\[(?:[^\]|]*\|)?([^\]]*)\]\]/g, '$1').replace(/'{2,}/g, '').trim();
+        }
+
+        // Edizione italiana di una lista di ID AniList. Restituisce
+        // { id: { titoloIt, editore, volumi } } solo per quelli confermati.
+        async function edizioniItalianeManga_(ids) {
+            const risultato = {};
+            if (!ids.length) return risultato;
+            const sparql = 'SELECT ?al ?itLabel ?pagina WHERE { VALUES ?al { ' + ids.map(function(i) { return '"' + i + '"'; }).join(' ') + ' } ' +
+                '?item wdt:P8731 ?al . OPTIONAL { ?item rdfs:label ?itLabel FILTER(lang(?itLabel) = "it") } ' +
+                'OPTIONAL { ?pagina schema:about ?item ; schema:isPartOf <https://it.wikipedia.org/> } }';
+            const wd = await fetchJsonConLimite_('https://query.wikidata.org/sparql?format=json&query=' + encodeURIComponent(sparql), 8000);
+            const perPagina = {};
+            const titoliIt = {};
+            ((wd.results && wd.results.bindings) || []).forEach(function(b) {
+                const id = parseInt(b.al.value);
+                if (b.itLabel) titoliIt[id] = b.itLabel.value;
+                if (b.pagina) {
+                    const pagina = decodeURIComponent(b.pagina.value.split('/wiki/')[1] || '').replace(/_/g, ' ');
+                    if (pagina) (perPagina[pagina] = perPagina[pagina] || []).push(id);
+                }
+            });
+            const pagine = Object.keys(perPagina);
+            for (let i = 0; i < pagine.length; i += 25) {
+                const blocco = pagine.slice(i, i + 25);
+                const w = await fetchJsonConLimite_('https://it.wikipedia.org/w/api.php?format=json&formatversion=2&origin=*&action=query&prop=revisions&rvprop=content&rvslots=main&redirects=1&titles=' + encodeURIComponent(blocco.join('|')), 8000);
+                const daTitolo = {};
+                ((w.query && w.query.normalized) || []).concat((w.query && w.query.redirects) || []).forEach(function(x) { daTitolo[x.to] = daTitolo[x.from] || x.from; });
+                ((w.query && w.query.pages) || []).forEach(function(p) {
+                    const testo = (p.revisions && p.revisions[0] && p.revisions[0].slots && p.revisions[0].slots.main) ? p.revisions[0].slots.main.content : '';
+                    if (!testo) return;
+                    // La pagina può avere più schede (manga, anime, film): uso quella del manga
+                    const schede = testo.split(/\{\{\s*Fumetto e animazione/i).slice(1);
+                    const scheda = schede.find(function(s) { return /\|\s*tipo\s*=\s*(manga|light novel|manhwa|romanzo)/i.test(s); });
+                    if (!scheda) return;
+                    const campo = function(nome) {
+                        const m = scheda.match(new RegExp('\\|\\s*' + nome + '\\s*=\\s*([^\\n]*)', 'i'));
+                        return m ? pulisciValoreWiki_(m[1]) : '';
+                    };
+                    const editore = campo('editore italiano') || campo('etichetta italiana');
+                    if (!editore) return;
+                    const volumi = parseInt(campo('volumi in italiano')) || null;
+                    const titoloScheda = campo('titolo italiano');
+                    const chiave = daTitolo[p.title] || p.title;
+                    (perPagina[chiave] || perPagina[p.title] || []).forEach(function(id) {
+                        risultato[id] = { titoloIt: titoliIt[id] || titoloScheda || '', editore: editore, volumi: volumi };
+                    });
+                });
+            }
+            return risultato;
+        }
+
+        async function getSuggManga_(anilistId) {
+            const gql = 'query ($id: Int) { Media(id: $id) { recommendations(sort: RATING_DESC, perPage: 25) { nodes { rating mediaRecommendation { id title { romaji english } startDate { year } coverImage { medium large } genres averageScore status volumes format description(asHtml: false) } } } } }';
+            const json = await eseguireRichiestaAniList_(gql, { id: anilistId });
             const nodes = ((((json.data || {}).Media || {}).recommendations || {}).nodes) || [];
             return nodes.map(function(n) {
                 const m = n.mediaRecommendation || {};
@@ -746,23 +978,128 @@ function switchViewOra_(viewName) {
         }
 
         async function suggManga_(titolo) {
+            const item = (mangaList || []).find(function(x) { return x && x.titolo === titolo; });
+            if (!item) return;
             showToast('Cerco suggerimenti…');
             try {
-                const posseduti = {};
-                mangaList.forEach(function(x) { if (x && x.titolo) posseduti[normTitoloSugg_(x.titolo)] = true; });
-                posseduti[normTitoloSugg_(titolo)] = true;
-                const res = await getSuggManga_(titolo);
-                const top = res.filter(function(c) {
-                    return !posseduti[normTitoloSugg_(c.titolo)] && !posseduti[normTitoloSugg_(c.titoloAlt)];
-                }).slice(0, 5);
-                mostraSuggOverlay_(titolo, top, 'manga');
-                arricchisciSuggLocali_(top);
+                const anilistId = await collegaMangaAniList_(item);
+                if (!anilistId) return; // scelta annullata
+                const possedutiC = [];
+                const possedutiId = {};
+                (mangaList || []).forEach(function(x) {
+                    if (!x) return;
+                    if (x.titolo) possedutiC.push(compattaTitoloSugg_(x.titolo));
+                    if (x.anilistId) possedutiId[x.anilistId] = true;
+                });
+                possedutiId[anilistId] = true;
+                const tutti = await getSuggManga_(anilistId);
+                let edizioni = {};
+                try {
+                    edizioni = await edizioniItalianeManga_(tutti.map(function(c) { return c.id; }));
+                } catch (errIt) {
+                    console.error('Verifica edizioni italiane non riuscita: ' + errIt);
+                    showToast('Non riesco a verificare le edizioni italiane: li mostro tutti come non confermati.', 'error');
+                }
+                const nuovi = tutti.filter(function(c) {
+                    if (possedutiId[c.id]) return false;
+                    const ed = edizioni[c.id];
+                    return !titoloGiaPosseduto_([c.titolo, c.titoloAlt, ed ? ed.titoloIt : ''], possedutiC);
+                });
+                nuovi.forEach(function(c) { c.edizione = edizioni[c.id] || null; });
+                const confermati = nuovi.filter(function(c) { return c.edizione; }).slice(0, 10);
+                const altri = nuovi.filter(function(c) { return !c.edizione; });
+                mostraSuggMangaOverlay_(item.titolo, confermati, altri);
             } catch (err) {
                 showToast(err.message || 'Suggerimenti non disponibili.', 'error');
             }
         }
 
         window.suggManga_ = suggManga_;
+
+        function cardSuggManga_(c, indice) {
+            const imgFull = c.immagine || '';
+            const img = c.immagine
+                ? '<img src="' + escapeHtmlSugg_(c.immagine) + '" alt="" style="width:45px;height:65px;border-radius:6px;object-fit:cover;flex-shrink:0;border:1px solid var(--border-color);cursor:zoom-in;" loading="lazy" onclick="apriLightbox(\'' + escapeHtmlSugg_(imgFull).replace(/'/g, "\\'") + '\')">'
+                : '<div style="width:45px;height:65px;border-radius:6px;flex-shrink:0;border:1px solid var(--border-color);"></div>';
+            const ed = c.edizione;
+            const titoloIt = ed && ed.titoloIt ? ed.titoloIt : '';
+            const principale = titoloIt || c.titolo;
+            const originale = (titoloIt && compattaTitoloSugg_(titoloIt) !== compattaTitoloSugg_(c.titolo)) ? c.titolo : '';
+            const rigaItalia = ed
+                ? '<div style="font-size:12px;color:var(--success);font-weight:600;">📚 In Italia: ' + escapeHtmlSugg_(ed.editore) + (ed.volumi ? ' · ' + ed.volumi + (ed.volumi === 1 ? ' volume' : ' volumi') + ' in italiano' : '') + '</div>'
+                : '<div style="font-size:12px;opacity:0.6;">Edizione italiana non confermata</div>';
+            const meta = [c.anno || '', c.stato ? c.stato + ' in Giappone' : '', c.generi || '', (c.voto !== null && c.voto !== undefined) ? '⭐ ' + c.voto : ''].filter(Boolean).join(' · ');
+            const titoloPerAdd = String(principale).replace(/\\/g, '\\\\').replace(/'/g, "\\'");
+            const addBtn = '<button class="action-icon-btn" style="flex-shrink:0;color:var(--primary);font-size:16px;font-weight:700;" onclick="suggAggiungiManga_(' + c.id + ', \'' + escapeHtmlSugg_(titoloPerAdd) + '\')" title="Aggiungi con tutti i dati">＋</button>';
+            return '<div style="display:flex;gap:12px;align-items:flex-start;">' + img +
+                '<div style="min-width:0;flex:1;"><div style="font-weight:600;">' + escapeHtmlSugg_(principale) + '</div>' +
+                (originale ? '<div style="font-size:11px;opacity:0.6;">' + escapeHtmlSugg_(originale) + '</div>' : '') +
+                rigaItalia +
+                '<div style="font-size:12px;opacity:0.7;">' + escapeHtmlSugg_(meta) + '</div>' +
+                '<div id="suggMangaTrama' + indice + '" class="sugg-trama" title="Clicca per espandere/comprimere" onclick="this.classList.toggle(\'trama-aperta\')" style="font-size:12px;opacity:0.85;margin-top:4px;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;"></div></div>' + addBtn + '</div>';
+        }
+
+        function mostraSuggMangaOverlay_(titoloBase, confermati, altri) {
+            mostraSuggOverlay_(titoloBase, [], 'manga');
+            const gen = suggGen_;
+            const lista = document.getElementById('suggOverlayLista');
+            let html = '';
+            if (confermati.length === 0) {
+                html += '<p style="font-size:13px;opacity:0.75;margin:0;">Nessun suggerimento risulta pubblicato in Italia.</p>';
+            } else {
+                html += confermati.map(function(c, i) { return cardSuggManga_(c, i); }).join('');
+            }
+            if (altri.length > 0) {
+                html += '<details id="suggMangaAltri" style="border-top:1px solid var(--border-color);padding-top:8px;">' +
+                    '<summary style="cursor:pointer;font-size:13px;opacity:0.85;">Altri ' + altri.length + ' non confermati in Italia (Wikipedia non conosce un\'edizione italiana: potrebbero comunque esserci)</summary>' +
+                    '<div style="display:flex;flex-direction:column;gap:10px;margin-top:10px;">' +
+                    altri.map(function(c, i) { return cardSuggManga_(c, confermati.length + i); }).join('') + '</div></details>';
+            }
+            lista.innerHTML = html;
+            const trame = confermati.concat(altri);
+            const traduci = function(da, a) {
+                trame.slice(da, a).forEach(function(c, k) {
+                    const i = da + k;
+                    const el = document.getElementById('suggMangaTrama' + i);
+                    if (!el || !c.trama) return;
+                    el.textContent = c.trama;
+                    if (c.trama.length > 40 && !c._tradotta) {
+                        c._tradotta = true;
+                        traduciLungoSugg_(c.trama).then(function(t) {
+                            if (gen !== suggGen_) return;
+                            const e2 = document.getElementById('suggMangaTrama' + i);
+                            if (e2 && t) e2.textContent = t;
+                        }).catch(function() {});
+                    }
+                });
+            };
+            traduci(0, confermati.length);
+            const dettagli = document.getElementById('suggMangaAltri');
+            if (dettagli) dettagli.addEventListener('toggle', function() { if (dettagli.open) traduci(confermati.length, trame.length); });
+        }
+
+        // ＋ da un suggerimento manga (Richiesta 61): apre Nuovo Manga e lo
+        // compila con l'import AniList di sempre (copertina, trama tradotta,
+        // generi, volumi, stato), con il titolo italiano e il collegamento.
+        function suggAggiungiManga_(anilistId, titoloIt) {
+            chiudiSuggOverlay();
+            const btn = document.getElementById('btnNuovoManga');
+            if (btn) btn.click();
+            const inp = document.getElementById('inpTitoloManga');
+            if (inp) inp.value = titoloIt || '';
+            if (!anilistId) return;
+            mostraOverlayAniList_();
+            document.getElementById('anilistTitle').innerText = '🔎 ' + (titoloIt || 'Manga suggerito');
+            document.getElementById('anilistBody').innerHTML = '<span style="color: var(--accent, #ff5da2); font-weight: 600; display: inline-block; animation: pulse 1.5s infinite;">⏳ Recupero dati e traduzione in corso...</span>';
+            getDettaglioTraduzioneAniListSB_(anilistId)
+                .then(function(d) {
+                    if (titoloIt) d.titolo = titoloIt;
+                    renderDettaglioAniList_('manga', d);
+                })
+                .catch(function(err) { renderErroreAniList_(err); });
+        }
+
+        window.suggAggiungiManga_ = suggAggiungiManga_;
 
         // Traduzione a pezzi (il traduttore gratis taglia i testi lunghi):
         // spezza a fine frase sotto i 900 caratteri e ricuce.

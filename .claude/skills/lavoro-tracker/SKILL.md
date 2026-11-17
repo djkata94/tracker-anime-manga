@@ -72,6 +72,14 @@ Se una regola qui è in conflitto con una richiesta esplicita di Gabriele, vale 
   chiavi. Google Books senza chiave risponde sempre 429: non riproporlo senza una chiave in una
   Edge Function. Fonti a pagamento escluse (tassativo).
 - Wikidata salva molti nomi solo nella lingua `mul`: chiedere sempre `languages=it|en|mul`.
+- Manga (Richiesta 61): il collegamento ad AniList sta in `manga.anilist_id`; Wikidata collega
+  l'ID AniList manga con la proprietà P8731. "Pubblicato in Italia" = infobox "Fumetto e
+  animazione" di it.wikipedia con `tipo = manga` e `editore italiano` (o `etichetta italiana`);
+  ci sono anche `volumi in italiano` e `titolo italiano`. Per molti ID insieme: una query SPARQL
+  e una sola richiesta Wikipedia con tutte le pagine.
+- Niente bandierine emoji (🇮🇹): su Windows compaiono come lettere ("IT").
+- Nelle prove senza login il sito, finito il caricamento, svuota le liste (`mangaList = []`):
+  assegnare i dati finti dopo qualche secondo, altrimenti i risultati sono falsati.
 - Wikimedia limita le richieste ravvicinate (429): nelle prove fare poche chiamate e distanziate.
 - `supabaseClient.functions` restituisce un oggetto nuovo a ogni lettura: per simulare una Edge
   Function nelle prove sostituire la funzione JS che la chiama (es. `cercaCandidatiLibriHC_`),

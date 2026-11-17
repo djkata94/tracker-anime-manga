@@ -1154,6 +1154,11 @@ function statoBadgeLibro_(stato) {
         //   Nuove voci: aggiungere in CIMA all'array.
         // ==========================================
         const PATCH_NOTES = [
+            { v: '1.1.6', titolo: 'Suggerimenti manga che trovi in Italia', data: '17/11/2026', punti: [
+                'Il 💡 dei manga ti propone prima quelli pubblicati in Italia, con titolo italiano, editore e volumi usciti. Gli altri sono nascosti in fondo, se vuoi guardarli.',
+                'Trova il manga giusto anche dal titolo italiano. Se non è sicuro ti fa scegliere la copertina una volta sola e poi se lo ricorda.',
+                'Non ti ripropone manga che hai già, anche se scritti in modo un po\' diverso. Il ＋ apre la scheda già compilata con copertina, trama, generi e volumi.'
+            ] },
             { v: '1.1.5', titolo: 'Libri cercati in italiano', data: '16/11/2026', punti: [
                 'Nella finestra del libro il bottone ora si chiama 🔎 Cerca e trova i libri anche dal titolo italiano, scritto pure a metà.',
                 'Titolo, autore, anno e saga arrivano da Wikidata con il nome della saga in italiano (es. Cronache del Mondo Emerso #1); la trama è l\'inizio di quella di Wikipedia, senza finale. Hardcover resta per copertina, generi e quando le altre fonti non sanno nulla.',

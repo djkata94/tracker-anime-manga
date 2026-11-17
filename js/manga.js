@@ -20,7 +20,8 @@ function calcolaColoreLetturaManga_(volumiTotali, volumiLetti, stato) {
                     titolo: m.titolo, tipologia: m.tipologia || 'Manga', volumi: m.volumi || 0,
                     stato: m.stato || 'In corso', acquistato: m.acquistato ? 'Sì' : 'No', note: notaTesto,
                     coloreLettura: coloreLettura, generi: m.generi || '', preferito: !!m.preferito,
-                    immagine: m.immagine || '', volumiLetti: m.volumi_letti || 0, priorita: !!m.priorita
+                    immagine: m.immagine || '', volumiLetti: m.volumi_letti || 0, priorita: !!m.priorita,
+                    anilistId: m.anilist_id || null // Richiesta 61: collegamento ad AniList
                 };
             });
         }
@@ -35,7 +36,8 @@ function calcolaColoreLetturaManga_(volumiTotali, volumiLetti, stato) {
                 titolo: dati.titolo || '', tipologia: dati.tipologia || 'Manga', volumi: volumiTotaliNuovaOpera,
                 stato: dati.stato || 'In corso', acquistato: acquistatoBool, note: dati.note || '',
                 generi: dati.generi || '', preferito: false, immagine: dati.immagine || '',
-                volumi_letti: volumiLettiIniziali, priorita: false
+                volumi_letti: volumiLettiIniziali, priorita: false,
+                anilist_id: dati.anilistId || null
             }]);
             if (errIns) throw errIns;
 
@@ -71,11 +73,15 @@ function calcolaColoreLetturaManga_(volumiTotali, volumiLetti, stato) {
 
             const acquistatoNuovo = dati.acquistato || 'No';
 
-            const { error: errUpd } = await supabaseClient.from('manga').update({
+            const campiAggiornati = {
                 titolo: dati.titolo || '', tipologia: dati.tipologia || 'Manga', volumi: volumiTotaliNuovi,
                 stato: statoNuovo, acquistato: (acquistatoNuovo === 'Sì'), note: dati.note || '',
                 generi: dati.generi || '', immagine: dati.immagine || '', volumi_letti: volumiLettiEsistenti
-            }).eq('titolo', vecchioTitoloTrim);
+            };
+            // Collegamento AniList (Richiesta 61): scritto solo se in questa modifica
+            // è stata scelta un'opera AniList, mai cancellato da una modifica normale.
+            if (dati.anilistId) campiAggiornati.anilist_id = dati.anilistId;
+            const { error: errUpd } = await supabaseClient.from('manga').update(campiAggiornati).eq('titolo', vecchioTitoloTrim);
             if (errUpd) throw errUpd;
 
             try {
@@ -405,6 +411,7 @@ function apriLightbox(url) {
         document.getElementById('btnNuovoManga').onclick = function() {
             targetEditTitleManga = null;
             sinossiPendenteManga = null; // <--- NUOVO: azzera eventuale sinossi AniList in sospeso
+            anilistIdPendenteManga = null; // Richiesta 61
             document.getElementById('modalTitleManga').innerText = "Aggiungi Nuovo Manga/LN";
             document.getElementById('mangaForm').reset();
             document.getElementById('inpImmagineManga').value = ''; // <--- NUOVO: Svuota campo immagine
@@ -420,6 +427,7 @@ function apriLightbox(url) {
             
             targetEditTitleManga = titolo;
             sinossiPendenteManga = null; // <--- NUOVO: azzera eventuale sinossi AniList in sospeso
+            anilistIdPendenteManga = null; // Richiesta 61
             document.getElementById('modalTitleManga').innerText = "Modifica Opera";
             document.getElementById('inpTitoloManga').value = item.titolo || '';
             document.getElementById('inpTipologiaManga').value = item.tipologia || 'Manga';
@@ -502,7 +510,8 @@ function apriLightbox(url) {
                 coloreLettura: document.getElementById('inpLetturaManga').value,
                 generi: selectedGenres,
                 immagine: document.getElementById('inpImmagineManga').value, // <--- NUOVO: Salva l'URL dell'immagine nel foglio
-                segnaComeLetto: cambiaVolumiLettiManga // Se true: volumi letti = volumi totali (vedi addMangaSB_/updateMangaSB_)
+                segnaComeLetto: cambiaVolumiLettiManga, // Se true: volumi letti = volumi totali (vedi addMangaSB_/updateMangaSB_)
+                anilistId: anilistIdPendenteManga // Richiesta 61: opera AniList scelta con 🔎 o dal ＋ dei suggerimenti
             };
             const isEditManga = !!targetEditTitleManga;
             const cb = function(data) {
@@ -517,6 +526,7 @@ function apriLightbox(url) {
                         });
                     sinossiPendenteManga = null;
                 }
+                anilistIdPendenteManga = null;
                 document.getElementById('btnSalvaManga').innerText = "Salva";
                 chiudiModale('Manga');
                 renderListManga();
