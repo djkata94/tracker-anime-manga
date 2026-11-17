@@ -1154,6 +1154,11 @@ function statoBadgeLibro_(stato) {
         //   Nuove voci: aggiungere in CIMA all'array.
         // ==========================================
         const PATCH_NOTES = [
+            { v: '1.1.8', titolo: 'Suggerimenti serie TV migliori', data: '17/11/2026', punti: [
+                'Il 💡 delle serie TV ora ne propone fino a 10, più gli altri da aprire, ordinati dal voto più alto.',
+                'Niente più serie vecchissime: solo quelle iniziate dal 2000 in poi. Le serie che hai già non ricompaiono, anche se le hai rinominate.',
+                'La trama è sempre in italiano: se TMDB ce l\'ha solo in inglese, viene tradotta.'
+            ] },
             { v: '1.1.7', titolo: 'Suggerimenti anime più precisi', data: '17/11/2026', punti: [
                 'Il 💡 degli anime trova la serie giusta anche con titoli italiani, con "(Netflix)" o un anno tra parentesi. Se non è sicuro ti fa scegliere la copertina una volta sola.',
                 'Propone sempre la prima stagione delle serie nuove e niente seconde stagioni, film o OVA di serie che hai già. Niente più spot e video musicali.',

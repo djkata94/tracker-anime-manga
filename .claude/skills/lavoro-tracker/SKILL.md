@@ -85,6 +85,15 @@ Se una regola qui è in conflitto con una richiesta esplicita di Gabriele, vale 
   PREQUEL solo tra serie TV/web (un OVA o un film "prequel" non è l'inizio).
 - AniList limita le richieste (circa 30 al minuto): nelle prove lasciare qualche secondo tra un
   💡 e l'altro, altrimenti i risultati sono falsati da errori 429.
+- `tmdb-proxy` (film e serie TV da TMDB) è nel repository in `supabase/functions/tmdb-proxy/`
+  (dalla Richiesta 64). Si modifica lì e si pubblica con `deploy_edge_function`,
+  `verify_jwt: false` (l'accesso lo controlla il codice). Le modifiche devono restare
+  compatibili con la versione del sito già online, perché la funzione va live subito.
+  Si prova chiamandola dal sito online con l'accesso di Gabriele (fatto da lui nel browser
+  integrato), mai dal localhost.
+- TMDB con `language=it-IT` a volte restituisce la trama in inglese: controllare con
+  `sembraItaliano_` e tradurre.
+- Serie TV suggerite solo dal 2000 in poi (scelta di Gabriele, Richiesta 64).
 - **Suggerimenti 💡 sempre ordinati per voto decrescente** (regola di Gabriele del 17/11/2026,
   Richiesta 63): usare `ordinaPerVotoSugg_` anche per serie TV, film e ogni sezione futura.
 - Niente bandierine emoji (🇮🇹): su Windows compaiono come lettere ("IT").

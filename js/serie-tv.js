@@ -435,6 +435,14 @@ function haProgressoStagioniParzialeSerieTv(titolo) {
             if (box) box.classList.remove('active');
         }
 
+        // 💡 Suggerimenti serie TV (Richiesta 64): fino a 40 da TMDB
+        // (tmdb-proxy, pagine 1-2), solo serie iniziate dal 2000 in poi
+        // (scelta dell'owner), tolte quelle già in lista per ID TMDB e per
+        // titolo, ordinate per voto (regola R63). Fino a 10 in vista, gli altri
+        // nella riga chiusa. Trama italiana di TMDB, altrimenti quella inglese
+        // tradotta; stato e stagioni arrivano dopo, una serie alla volta.
+        const ANNO_MINIMO_SUGG_SERIE_ = 2000;
+
         async function suggSerieTv_(titolo) {
             const item = (typeof serieTvList !== 'undefined' ? serieTvList : []).find(function(x) { return x && x.titolo === titolo; });
             if (!item || !item.tmdbId) {
@@ -443,19 +451,100 @@ function haProgressoStagioniParzialeSerieTv(titolo) {
             }
             showToast('Cerco suggerimenti…');
             try {
-                const posseduti = {};
-                serieTvList.forEach(function(x) { if (x && x.titolo) posseduti[normTitoloSugg_(x.titolo)] = true; });
-                posseduti[normTitoloSugg_(titolo)] = true;
+                const possedutiTitolo = {};
+                const possedutiId = {};
+                serieTvList.forEach(function(x) {
+                    if (!x) return;
+                    if (x.titolo) possedutiTitolo[normTitoloSugg_(x.titolo)] = true;
+                    if (x.tmdbId) possedutiId[String(x.tmdbId)] = true;
+                });
+                possedutiTitolo[normTitoloSugg_(titolo)] = true;
+                possedutiId[String(item.tmdbId)] = true;
                 const res = await getSuggSerieTv_(item.tmdbId);
-                const top = res.filter(function(c) { return !posseduti[normTitoloSugg_(c.titolo)]; }).slice(0, 5);
-                mostraSuggOverlay_(titolo, top, 'serie');
-                arricchisciSuggSerieTv_(top);
+                const visti = {};
+                const lista = res.filter(function(c) {
+                    if (!c || !c.id || visti[c.id]) return false;
+                    visti[c.id] = true;
+                    if (possedutiId[String(c.id)] || possedutiTitolo[normTitoloSugg_(c.titolo)]) return false;
+                    const anno = parseInt(c.anno);
+                    return !anno || anno >= ANNO_MINIMO_SUGG_SERIE_;
+                });
+                ordinaPerVotoSugg_(lista);
+                mostraSuggSerieOverlay_(titolo, lista.slice(0, 10), lista.slice(10));
             } catch (err) {
                 showToast(err.message || 'Suggerimenti non disponibili.', 'error');
             }
         }
 
         window.suggSerieTv_ = suggSerieTv_;
+
+        function cardSuggSerie_(c, i) {
+            const imgFull = c.immagine ? c.immagine.replace('/w342', '/w500') : '';
+            const img = c.immagine
+                ? '<img src="' + escapeHtmlSugg_(c.immagine) + '" alt="" style="width:45px;height:65px;border-radius:6px;object-fit:cover;flex-shrink:0;border:1px solid var(--border-color);cursor:zoom-in;" loading="lazy" onclick="apriLightbox(\'' + escapeHtmlSugg_(imgFull).replace(/'/g, "\\'") + '\')">'
+                : '<div style="width:45px;height:65px;border-radius:6px;flex-shrink:0;border:1px solid var(--border-color);"></div>';
+            const meta = [c.anno || '', (c.voto !== null && c.voto !== undefined) ? '⭐ ' + c.voto : ''].filter(Boolean).join(' · ');
+            const addBtn = '<button class="action-icon-btn" style="flex-shrink:0;color:var(--primary);font-size:16px;font-weight:700;" onclick="suggAggiungiSerieTv_(' + c.id + ')" title="Carica nella scheda nuova serie">＋</button>';
+            return '<div style="display:flex;gap:12px;align-items:flex-start;">' + img +
+                '<div style="min-width:0;flex:1;"><div style="font-weight:600;">' + escapeHtmlSugg_(c.titolo) + '</div>' +
+                '<div id="suggSerieMeta' + i + '" style="font-size:12px;opacity:0.7;">' + escapeHtmlSugg_(meta) + '</div>' +
+                '<div id="suggSerieTrama' + i + '" class="sugg-trama" title="Clicca per espandere/comprimere" onclick="this.classList.toggle(\'trama-aperta\')" style="font-size:12px;opacity:0.85;margin-top:4px;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;"></div></div>' + addBtn + '</div>';
+        }
+
+        function mostraSuggSerieOverlay_(titoloBase, primi, altri) {
+            mostraSuggOverlay_(titoloBase, [], 'serie');
+            const gen = suggGen_;
+            const lista = document.getElementById('suggOverlayLista');
+            let html = primi.length
+                ? primi.map(function(c, i) { return cardSuggSerie_(c, i); }).join('')
+                : '<p style="font-size:13px;opacity:0.75;margin:0;">Nessun suggerimento nuovo: le hai già tutte in lista.</p>';
+            if (altri.length > 0) {
+                html += '<details id="suggSerieAltri" style="border-top:1px solid var(--border-color);padding-top:8px;">' +
+                    '<summary style="cursor:pointer;font-size:13px;opacity:0.85;">Altri ' + altri.length + ' suggerimenti</summary>' +
+                    '<div style="display:flex;flex-direction:column;gap:10px;margin-top:10px;">' +
+                    altri.map(function(c, i) { return cardSuggSerie_(c, primi.length + i); }).join('') + '</div></details>';
+            }
+            lista.innerHTML = html;
+            const tutti = primi.concat(altri);
+            // Trama subito (italiana o inglese tradotta), poi stato e stagioni
+            const completati = {};
+            const completa = function(da, a) {
+                tutti.slice(da, a).forEach(function(c, k) {
+                    const i = da + k;
+                    if (completati[i]) return;
+                    completati[i] = true;
+                    const tramaEl = document.getElementById('suggSerieTrama' + i);
+                    // TMDB a volte manda in inglese anche la trama "italiana":
+                    // se non sembra italiano si traduce (sembraItaliano_ in libri-patch.js)
+                    const testo = c.trama || c.tramaEn || '';
+                    const daTradurre = !!testo && (!c.trama || !sembraItaliano_(c.trama));
+                    if (tramaEl && testo && !daTradurre) tramaEl.textContent = testo;
+                    else if (tramaEl && daTradurre) {
+                        tramaEl.textContent = testo;
+                        traduciLungoSugg_(testo).then(function(t) {
+                            if (gen !== suggGen_) return;
+                            const e2 = document.getElementById('suggSerieTrama' + i);
+                            if (e2 && t) e2.textContent = t;
+                        }).catch(function() {});
+                    }
+                    getDettaglioSerieTvTMDBSB_(c.id).then(function(d) {
+                        if (!d || gen !== suggGen_) return;
+                        const metaEl = document.getElementById('suggSerieMeta' + i);
+                        if (metaEl) {
+                            const pezzi = [c.anno || '', d.stato || ''].filter(Boolean);
+                            if (d.stagioni && d.stagioni.length > 0) pezzi.push(d.stagioni.length + (d.stagioni.length === 1 ? ' stagione' : ' stagioni'));
+                            if (c.voto !== null && c.voto !== undefined) pezzi.push('⭐ ' + c.voto);
+                            metaEl.textContent = pezzi.join(' · ');
+                        }
+                        const e3 = document.getElementById('suggSerieTrama' + i);
+                        if (e3 && !e3.textContent && d.trama) e3.textContent = d.trama;
+                    }).catch(function() {});
+                });
+            };
+            completa(0, primi.length);
+            const dettagli = document.getElementById('suggSerieAltri');
+            if (dettagli) dettagli.addEventListener('toggle', function() { if (dettagli.open) completa(primi.length, tutti.length); });
+        }
         window.chiudiSuggOverlay = chiudiSuggOverlay;
 
         // ＋ da un suggerimento: apre la modale nuova serie e lancia lo stesso
