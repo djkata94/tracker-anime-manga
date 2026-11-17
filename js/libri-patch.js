@@ -1154,6 +1154,11 @@ function statoBadgeLibro_(stato) {
         //   Nuove voci: aggiungere in CIMA all'array.
         // ==========================================
         const PATCH_NOTES = [
+            { v: '1.1.7', titolo: 'Suggerimenti anime più precisi', data: '17/11/2026', punti: [
+                'Il 💡 degli anime trova la serie giusta anche con titoli italiani, con "(Netflix)" o un anno tra parentesi. Se non è sicuro ti fa scegliere la copertina una volta sola.',
+                'Propone sempre la prima stagione delle serie nuove e niente seconde stagioni, film o OVA di serie che hai già. Niente più spot e video musicali.',
+                'Fino a 10 suggerimenti più gli altri da aprire; il ＋ apre la scheda già compilata con copertina, trama e generi, e puoi cercare subito le stagioni collegate.'
+            ] },
             { v: '1.1.6', titolo: 'Suggerimenti manga che trovi in Italia', data: '17/11/2026', punti: [
                 'Il 💡 dei manga ti propone prima quelli pubblicati in Italia, con titolo italiano, editore e volumi usciti. Gli altri sono nascosti in fondo, se vuoi guardarli.',
                 'Trova il manga giusto anche dal titolo italiano. Se non è sicuro ti fa scegliere la copertina una volta sola e poi se lo ricorda.',

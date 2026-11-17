@@ -693,6 +693,7 @@ function chiudiSinossi() {
 // ============================================================================
 
 let sinossiPendenteAnime = null;
+let anilistIdPendenteAnime = null; // Richiesta 62: ID AniList dell'anime scelto, salvato con l'anime
 let sinossiPendenteManga = null;
 let anilistIdPendenteManga = null; // Richiesta 61: ID AniList dell'opera scelta, salvato col manga
 let sinossiPendenteLibri = null; // View Libri (Richiesta 35): trama Hardcover in sospeso
@@ -1253,8 +1254,10 @@ function applicaDatiPrincipaliAniList_(tipo) {
         }
     }
 
-    if (tipo === 'anime') sinossiPendenteAnime = sinossiFinale;
-    else {
+    if (tipo === 'anime') {
+        sinossiPendenteAnime = sinossiFinale;
+        if (ultimoDettaglioAniList.id) anilistIdPendenteAnime = ultimoDettaglioAniList.id;
+    } else {
         sinossiPendenteManga = sinossiFinale;
         if (ultimoDettaglioAniList.id) anilistIdPendenteManga = ultimoDettaglioAniList.id;
     }

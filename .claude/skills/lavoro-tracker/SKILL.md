@@ -48,6 +48,9 @@ Se una regola qui è in conflitto con una richiesta esplicita di Gabriele, vale 
   (`.replace(/\r?\n/g, '\r\n')`).
 - **Mai backtick o `${...}` dentro un `node -e "..."` lanciato da bash**: la shell li esegue e
   cancella parole dal testo. In quei casi usa Edit oppure uno script in un file.
+- **Niente regex con `\` nelle sostituzioni fatte con `node -e`**: le barre si perdono
+  (`/\s*\(/` è diventata `/s*(/`, Richiesta 62). Per codice con barre usa Edit o Write.
+  Anche gli heredoc lunghi da bash possono troncarsi: per file lunghi usa Write.
 - `css/style.css` è UTF-8 **con BOM** e CRLF: non togliere il BOM.
 - Controlli dopo ogni modifica, sui file toccati:
   - `grep -cE 'Ã|ðŸ|â€|�' <file>` deve dare 0 (in `guida_migrazione.md` ce n'è 1 voluto);
@@ -77,6 +80,11 @@ Se una regola qui è in conflitto con una richiesta esplicita di Gabriele, vale 
   animazione" di it.wikipedia con `tipo = manga` e `editore italiano` (o `etichetta italiana`);
   ci sono anche `volumi in italiano` e `titolo italiano`. Per molti ID insieme: una query SPARQL
   e una sola richiesta Wikipedia con tutte le pagine.
+- Anime (Richiesta 62): ogni riga della lista è una serie intera; `anime.anilist_id` è l'ID AniList
+  della **prima stagione** (Wikidata: P8729). Per risalire alla prima stagione si seguono i
+  PREQUEL solo tra serie TV/web (un OVA o un film "prequel" non è l'inizio).
+- AniList limita le richieste (circa 30 al minuto): nelle prove lasciare qualche secondo tra un
+  💡 e l'altro, altrimenti i risultati sono falsati da errori 429.
 - Niente bandierine emoji (🇮🇹): su Windows compaiono come lettere ("IT").
 - Nelle prove senza login il sito, finito il caricamento, svuota le liste (`mangaList = []`):
   assegnare i dati finti dopo qualche secondo, altrimenti i risultati sono falsati.

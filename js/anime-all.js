@@ -120,7 +120,8 @@ function switchViewOra_(viewName) {
                     stagioniTotali: a.stagioni_totali || 0, stagioniViste: a.stagioni_viste || 0,
                     filmTotali: a.film_totali || 0, filmVisti: a.film_visti || 0,
                     coloreVisione: coloreVisione, generi: a.generi || '', preferito: !!a.preferito,
-                    immagine: a.immagine || '', priorita: !!a.priorita, abbandonata: !!a.abbandonata
+                    immagine: a.immagine || '', priorita: !!a.priorita, abbandonata: !!a.abbandonata,
+                    anilistId: a.anilist_id || null // Richiesta 62: collegamento ad AniList (prima stagione)
                 };
             });
         }
@@ -355,7 +356,8 @@ function switchViewOra_(viewName) {
                 stagioni_totali: parseInt(dati.stagioniTotali) || 0, stagioni_viste: parseInt(dati.stagioniViste) || 0,
                 film_totali: parseInt(dati.filmTotali) || 0, film_visti: parseInt(dati.filmVisti) || 0,
                 generi: dati.generi || '', preferito: false, immagine: dati.immagine || '', priorita: false,
-                abbandonata: !!dati.abbandonata
+                abbandonata: !!dati.abbandonata,
+                anilist_id: dati.anilistId || null
             }]);
             if (errIns) throw errIns;
 
@@ -391,13 +393,17 @@ function switchViewOra_(viewName) {
             const vecchieStagioniTotaliLog = vecchiaRiga.stagioni_totali || 0;
             const vecchiFilmTotaliLog = vecchiaRiga.film_totali || 0;
 
-            const { error: errUpd } = await supabaseClient.from('anime').update({
+            const campiAnime = {
                 titolo: dati.titolo, stato: dati.stato, note: dati.note,
                 valutazione: (dati.valutazione === '' || dati.valutazione === undefined || dati.valutazione === '-') ? null : dati.valutazione,
                 stagioni_totali: parseInt(dati.stagioniTotali) || 0, stagioni_viste: parseInt(dati.stagioniViste) || 0,
                 film_totali: parseInt(dati.filmTotali) || 0, film_visti: parseInt(dati.filmVisti) || 0,
                 generi: dati.generi || '', immagine: dati.immagine || '', abbandonata: !!dati.abbandonata
-            }).eq('titolo', vecchioTitoloTrim);
+            };
+            // Collegamento AniList (Richiesta 62): scritto solo se in questa modifica
+            // è stata scelta un'opera AniList, mai cancellato da una modifica normale.
+            if (dati.anilistId) campiAnime.anilist_id = dati.anilistId;
+            const { error: errUpd } = await supabaseClient.from('anime').update(campiAnime).eq('titolo', vecchioTitoloTrim);
             if (errUpd) throw errUpd;
 
             const nuovoTitoloEffettivo = dati.titolo || vecchioTitolo;
@@ -619,30 +625,6 @@ function switchViewOra_(viewName) {
             return String(s || '').replace(/<br\s*\/?>/gi, ' ').replace(/<[^>]+>/g, '').replace(/\s+/g, ' ').trim();
         }
 
-        async function getSuggAnime_(titolo) {
-            const hits = await cercaCandidatiAniListSB_(titolo, 'ANIME');
-            if (!hits || hits.length === 0 || !hits[0].id) {
-                throw new Error('Titolo non trovato su AniList.');
-            }
-            const gql = 'query ($id: Int) { Media(id: $id) { recommendations(sort: RATING_DESC, perPage: 10) { nodes { rating mediaRecommendation { id title { romaji english } startDate { year } coverImage { medium large } genres averageScore description(asHtml: false) } } } } }';
-            const json = await eseguireRichiestaAniList_(gql, { id: hits[0].id });
-            const nodes = ((((json.data || {}).Media || {}).recommendations || {}).nodes) || [];
-            return nodes.map(function(n) {
-                const m = n.mediaRecommendation || {};
-                const t = m.title || {};
-                return {
-                    id: m.id,
-                    titolo: t.english || t.romaji || 'Senza titolo',
-                    titoloAlt: t.romaji || '',
-                    anno: (m.startDate && m.startDate.year) ? m.startDate.year : '',
-                    voto: (typeof m.averageScore === 'number' && m.averageScore > 0) ? Math.round(m.averageScore) / 10 : null,
-                    immagine: (m.coverImage && (m.coverImage.large || m.coverImage.medium)) || '',
-                    generi: Array.isArray(m.genres) ? m.genres.join(', ') : '',
-                    trama: pulisciTramaAniList_(m.description || '')
-                };
-            }).filter(function(c) { return c.id; });
-        }
-
         // Scrive subito meta+trama (dati già in mano, niente rete), poi prova
         // la traduzione IT con lo stesso traduttore gratis dei manga.
         function arricchisciSuggLocali_(candidati) {
@@ -669,18 +651,192 @@ function switchViewOra_(viewName) {
             });
         }
 
+        // ==========================================
+        //   💡 SUGGERIMENTI ANIME (Richiesta 62)
+        //   - Anime di partenza: collegamento AniList salvato (anime.anilist_id)
+        //     o ricerca con Wikidata (P8729) + AniList, scelta della copertina se
+        //     non è sicuro (stesse funzioni dei manga, tipo 'ANIME').
+        //   - Nella lista ogni anime è una serie intera: ogni suggerimento viene
+        //     riportato alla sua PRIMA stagione (si risale la catena dei PREQUEL),
+        //     così niente 2ª/3ª stagione di serie che hai già e, per le serie
+        //     nuove, si parte sempre dall'inizio.
+        //   - 25 raccomandazioni, niente speciali e video musicali, esclusione
+        //     tollerante (sinonimi AniList, spazi, refusi, titolo contenuto).
+        //   - Fino a 10 in vista, gli altri in una riga chiusa.
+        // ==========================================
+
+        async function salvaAniListIdAnimeSB_(titolo, anilistId) {
+            const { error } = await supabaseClient.from('anime').update({ anilist_id: anilistId }).eq('titolo', String(titolo).trim());
+            if (error) throw error;
+            const item = (animeList || []).find(function(a) { return a && a.titolo === titolo; });
+            if (item) item.anilistId = anilistId;
+        }
+
+        const CAMPI_ANIME_SUGG_ = 'id title { romaji english } synonyms format episodes status startDate { year } coverImage { medium large } genres averageScore description(asHtml: false) relations { edges { relationType node { id type format } } }';
+        // Formati proposti come suggerimento (niente OVA, speciali, spot, video
+        // musicali) e formati seguiti per risalire alla prima stagione (solo
+        // serie: un OVA o un film "prequel" non è l'inizio della serie).
+        const FORMATI_SERIE_ANIME_ = ['TV', 'TV_SHORT', 'ONA', 'MOVIE'];
+        const FORMATI_STAGIONE_ANIME_ = ['TV', 'TV_SHORT', 'ONA'];
+
+        function animeDaAniList_(m) {
+            const t = m.title || {};
+            const prequel = ((m.relations && m.relations.edges) || []).find(function(e) {
+                return e && e.relationType === 'PREQUEL' && e.node && e.node.type === 'ANIME' &&
+                    FORMATI_STAGIONE_ANIME_.indexOf(e.node.format) !== -1 && FORMATI_STAGIONE_ANIME_.indexOf(m.format) !== -1;
+            });
+            // Tutte le opere anime collegate (stagioni, film, OVA, spin-off): servono
+            // a escludere dai suggerimenti i pezzi della stessa serie
+            const collegati = ((m.relations && m.relations.edges) || []).filter(function(e) {
+                return e && e.node && e.node.type === 'ANIME';
+            }).map(function(e) { return e.node.id; });
+            return {
+                id: m.id,
+                titolo: t.english || t.romaji || 'Senza titolo',
+                titoloAlt: t.romaji || '',
+                sinonimi: Array.isArray(m.synonyms) ? m.synonyms : [],
+                formato: m.format || '',
+                episodi: (typeof m.episodes === 'number' && m.episodes > 0) ? m.episodes : null,
+                anno: (m.startDate && m.startDate.year) ? m.startDate.year : '',
+                voto: (typeof m.averageScore === 'number' && m.averageScore > 0) ? Math.round(m.averageScore) / 10 : null,
+                immagine: (m.coverImage && (m.coverImage.large || m.coverImage.medium)) || '',
+                generi: Array.isArray(m.genres) ? m.genres.join(', ') : '',
+                trama: pulisciTramaAniList_(m.description || ''),
+                prequelId: prequel ? prequel.node.id : null,
+                collegati: collegati
+            };
+        }
+
+        // Per ogni anime risale i PREQUEL fino alla prima stagione (al massimo
+        // 6 passi, una richiesta per passo per tutti insieme).
+        async function radiciAnime_(anime) {
+            const noti = {};
+            anime.forEach(function(a) { noti[a.id] = a; });
+            const radice = {};
+            anime.forEach(function(a) { radice[a.id] = a.id; });
+            for (let passo = 0; passo < 6; passo++) {
+                const daCaricare = [];
+                Object.keys(radice).forEach(function(k) {
+                    const r = noti[radice[k]];
+                    if (r && r.prequelId && !noti[r.prequelId] && daCaricare.indexOf(r.prequelId) === -1) daCaricare.push(r.prequelId);
+                });
+                if (daCaricare.length > 0) {
+                    const gql = 'query ($ids: [Int]) { Page(perPage: 50) { media(id_in: $ids, type: ANIME) { ' + CAMPI_ANIME_SUGG_ + ' } } }';
+                    const json = await eseguireRichiestaAniList_(gql, { ids: daCaricare });
+                    (((json.data || {}).Page || {}).media || []).forEach(function(m) { noti[m.id] = animeDaAniList_(m); });
+                }
+                let mosso = false;
+                Object.keys(radice).forEach(function(k) {
+                    const r = noti[radice[k]];
+                    if (r && r.prequelId && noti[r.prequelId] && r.prequelId !== radice[k]) { radice[k] = r.prequelId; mosso = true; }
+                });
+                if (!mosso) break;
+            }
+            const out = {};
+            Object.keys(radice).forEach(function(k) { out[k] = noti[radice[k]] || noti[k]; });
+            return out;
+        }
+
+        // Titolo per i confronti anime: senza parentesi ("(Netflix)", "(2019)")
+        // e senza "The" iniziale, poi compattato.
+        function compattaTitoloAnime_(s) {
+            return compattaTitoloSugg_(String(s || '').replace(/\([^)]*\)/g, ' ').replace(/^\s*the\s+/i, ''));
+        }
+
+        // true se l'anime è già nella lista: titolo (o sinonimo) uguale, con al
+        // massimo 2 lettere diverse se lungo, oppure un titolo contiene l'altro
+        // (es. "From me to you" in "Kimi ni Todoke: From Me to You").
+        function animeGiaPosseduto_(titoli, posseduti) {
+            return titoli.some(function(t) {
+                const c = compattaTitoloAnime_(t);
+                if (!c || c.length < 3) return false;
+                return posseduti.some(function(p) {
+                    if (!p) return false;
+                    if (p === c) return true;
+                    if (c.length >= 9 && p.length >= 9 && distanzaTitoli_(c, p, 2) <= 2) return true;
+                    if (p.length >= 8 && c.indexOf(p) !== -1) return true;
+                    if (c.length >= 8 && p.indexOf(c) !== -1) return true;
+                    return false;
+                });
+            });
+        }
+
+        async function getSuggAnime_(anilistId) {
+            const gql = 'query ($id: Int) { Media(id: $id) { ' + CAMPI_ANIME_SUGG_ + ' recommendations(sort: RATING_DESC, perPage: 25) { nodes { mediaRecommendation { ' + CAMPI_ANIME_SUGG_ + ' } } } } }';
+            const json = await eseguireRichiestaAniList_(gql, { id: anilistId });
+            const media = (json.data || {}).Media || {};
+            const base = media.id ? animeDaAniList_(media) : null;
+            const nodes = ((media.recommendations || {}).nodes) || [];
+            const consigli = nodes.map(function(n) { return n.mediaRecommendation; }).filter(function(m) {
+                return m && m.id && FORMATI_SERIE_ANIME_.indexOf(m.format) !== -1; // niente speciali, spot, video musicali
+            }).map(animeDaAniList_);
+            return { base: base, consigli: consigli };
+        }
+
         async function suggAnime_(titolo) {
+            const item = (animeList || []).find(function(x) { return x && x.titolo === titolo; });
+            if (!item) return;
             showToast('Cerco suggerimenti…');
             try {
-                const posseduti = {};
-                animeList.forEach(function(x) { if (x && x.titolo) posseduti[normTitoloSugg_(x.titolo)] = true; });
-                posseduti[normTitoloSugg_(titolo)] = true;
-                const res = await getSuggAnime_(titolo);
-                const top = res.filter(function(c) {
-                    return !posseduti[normTitoloSugg_(c.titolo)] && !posseduti[normTitoloSugg_(c.titoloAlt)];
-                }).slice(0, 5);
-                mostraSuggOverlay_(titolo, top, 'anime');
-                arricchisciSuggLocali_(top);
+                let anilistId = await collegaMangaAniList_(item, 'ANIME');
+                if (!anilistId) return; // scelta annullata
+                let res = await getSuggAnime_(anilistId);
+                // Il collegamento va sempre alla prima stagione: se è una stagione
+                // successiva si risale e si salva la prima, poi si riparte da lì
+                if (res.base && res.base.prequelId) {
+                    try {
+                        const rb = (await radiciAnime_([res.base]))[res.base.id];
+                        if (rb && rb.id !== anilistId) {
+                            anilistId = rb.id;
+                            salvaAniListIdAnimeSB_(item.titolo, anilistId).catch(function(err) { console.error('Collegamento AniList non salvato: ' + err); });
+                            res = await getSuggAnime_(anilistId);
+                        }
+                    } catch (errB) { console.error('Prima stagione non trovata: ' + errB); }
+                }
+                const daRisalire = res.consigli.slice();
+                if (res.base) daRisalire.push(res.base);
+                let radici = {};
+                try { radici = await radiciAnime_(daRisalire); } catch (errR) { console.error('Prime stagioni non ricostruite: ' + errR); }
+
+                const posseduti = [];
+                const possedutiId = {};
+                (animeList || []).forEach(function(x) {
+                    if (!x) return;
+                    if (x.titolo) posseduti.push(compattaTitoloAnime_(x.titolo));
+                    if (x.anilistId) possedutiId[x.anilistId] = true;
+                });
+                possedutiId[anilistId] = true;
+                // Serie di partenza: lei, la sua prima stagione e tutto ciò che
+                // AniList le collega (stagioni, film, OVA, spin-off)
+                const stessaSerie = {};
+                stessaSerie[anilistId] = true;
+                if (res.base) {
+                    possedutiId[res.base.id] = true;
+                    stessaSerie[res.base.id] = true;
+                    (res.base.collegati || []).forEach(function(id) { stessaSerie[id] = true; });
+                    const rb = radici[res.base.id];
+                    if (rb) {
+                        possedutiId[rb.id] = true;
+                        stessaSerie[rb.id] = true;
+                        (rb.collegati || []).forEach(function(id) { stessaSerie[id] = true; });
+                    }
+                }
+                const dellaStessaSerie = function(x) {
+                    return !!x && (stessaSerie[x.id] || (x.collegati || []).some(function(id) { return stessaSerie[id]; }));
+                };
+
+                const visti = {};
+                const lista = [];
+                res.consigli.forEach(function(c) {
+                    const r = radici[c.id] || c;
+                    if (visti[r.id] || possedutiId[r.id] || possedutiId[c.id]) return;
+                    if (dellaStessaSerie(c) || dellaStessaSerie(r)) return;
+                    const titoli = [r.titolo, r.titoloAlt].concat(r.sinonimi, [c.titolo, c.titoloAlt], c.sinonimi);
+                    if (animeGiaPosseduto_(titoli, posseduti)) return;
+                    visti[r.id] = true;
+                    lista.push(r);
+                });
+                mostraSuggAnimeOverlay_(item.titolo, lista.slice(0, 10), lista.slice(10));
             } catch (err) {
                 showToast(err.message || 'Suggerimenti non disponibili.', 'error');
             }
@@ -688,14 +844,75 @@ function switchViewOra_(viewName) {
 
         window.suggAnime_ = suggAnime_;
 
-        // ＋ da un suggerimento anime: apre Nuovo Anime col titolo pronto
-        // (l'import resta manuale, come da modale).
-        function suggAggiungiAnime_(titolo) {
+        function cardSuggAnime_(c, indice) {
+            const img = c.immagine
+                ? '<img src="' + escapeHtmlSugg_(c.immagine) + '" alt="" style="width:45px;height:65px;border-radius:6px;object-fit:cover;flex-shrink:0;border:1px solid var(--border-color);cursor:zoom-in;" loading="lazy" onclick="apriLightbox(\'' + escapeHtmlSugg_(c.immagine).replace(/'/g, "\\'") + '\')">'
+                : '<div style="width:45px;height:65px;border-radius:6px;flex-shrink:0;border:1px solid var(--border-color);"></div>';
+            const originale = (c.titoloAlt && compattaTitoloSugg_(c.titoloAlt) !== compattaTitoloSugg_(c.titolo)) ? c.titoloAlt : '';
+            const formati = { TV: 'Serie TV', TV_SHORT: 'Serie TV corta', ONA: 'Serie web', OVA: 'OVA', MOVIE: 'Film' };
+            const meta = [c.anno || '', formati[c.formato] || c.formato || '', (c.episodi && c.formato !== 'MOVIE') ? c.episodi + (c.episodi === 1 ? ' episodio' : ' episodi') : '', c.generi || '', (c.voto !== null && c.voto !== undefined) ? '⭐ ' + c.voto : ''].filter(Boolean).join(' · ');
+            const titoloPerAdd = String(c.titolo).replace(/\\/g, '\\\\').replace(/'/g, "\\'");
+            const addBtn = '<button class="action-icon-btn" style="flex-shrink:0;color:var(--primary);font-size:16px;font-weight:700;" onclick="suggAggiungiAnime_(' + c.id + ', \'' + escapeHtmlSugg_(titoloPerAdd) + '\')" title="Aggiungi con tutti i dati">＋</button>';
+            return '<div style="display:flex;gap:12px;align-items:flex-start;">' + img +
+                '<div style="min-width:0;flex:1;"><div style="font-weight:600;">' + escapeHtmlSugg_(c.titolo) + '</div>' +
+                (originale ? '<div style="font-size:11px;opacity:0.6;">' + escapeHtmlSugg_(originale) + '</div>' : '') +
+                '<div style="font-size:12px;opacity:0.7;">' + escapeHtmlSugg_(meta) + '</div>' +
+                '<div id="suggAnimeTrama' + indice + '" class="sugg-trama" title="Clicca per espandere/comprimere" onclick="this.classList.toggle(\'trama-aperta\')" style="font-size:12px;opacity:0.85;margin-top:4px;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;"></div></div>' + addBtn + '</div>';
+        }
+
+        function mostraSuggAnimeOverlay_(titoloBase, primi, altri) {
+            mostraSuggOverlay_(titoloBase, [], 'anime');
+            const gen = suggGen_;
+            const lista = document.getElementById('suggOverlayLista');
+            let html = primi.length
+                ? primi.map(function(c, i) { return cardSuggAnime_(c, i); }).join('')
+                : '<p style="font-size:13px;opacity:0.75;margin:0;">Nessun suggerimento nuovo: li hai già tutti in lista.</p>';
+            if (altri.length > 0) {
+                html += '<details id="suggAnimeAltri" style="border-top:1px solid var(--border-color);padding-top:8px;">' +
+                    '<summary style="cursor:pointer;font-size:13px;opacity:0.85;">Altri ' + altri.length + ' suggerimenti</summary>' +
+                    '<div style="display:flex;flex-direction:column;gap:10px;margin-top:10px;">' +
+                    altri.map(function(c, i) { return cardSuggAnime_(c, primi.length + i); }).join('') + '</div></details>';
+            }
+            lista.innerHTML = html;
+            const tutti = primi.concat(altri);
+            const traduci = function(da, a) {
+                tutti.slice(da, a).forEach(function(c, k) {
+                    const i = da + k;
+                    const el = document.getElementById('suggAnimeTrama' + i);
+                    if (!el || !c.trama) return;
+                    el.textContent = c.trama;
+                    if (c.trama.length > 40 && !c._tradotta) {
+                        c._tradotta = true;
+                        traduciLungoSugg_(c.trama).then(function(t) {
+                            if (gen !== suggGen_) return;
+                            const e2 = document.getElementById('suggAnimeTrama' + i);
+                            if (e2 && t) e2.textContent = t;
+                        }).catch(function() {});
+                    }
+                });
+            };
+            traduci(0, primi.length);
+            const dettagli = document.getElementById('suggAnimeAltri');
+            if (dettagli) dettagli.addEventListener('toggle', function() { if (dettagli.open) traduci(primi.length, tutti.length); });
+        }
+
+        // ＋ da un suggerimento anime (Richiesta 62): apre Nuovo Anime e lo
+        // compila con l'import AniList di sempre (copertina, trama tradotta,
+        // generi, "Cerca stagioni/film collegati"); il collegamento AniList
+        // viene salvato con l'anime.
+        function suggAggiungiAnime_(anilistId, titolo) {
             chiudiSuggOverlay();
             const btn = document.getElementById('btnNuovoAnime');
             if (btn) btn.click();
             const inp = document.getElementById('inpTitoloAnime');
             if (inp) inp.value = titolo || '';
+            if (!anilistId) return;
+            mostraOverlayAniList_();
+            document.getElementById('anilistTitle').innerText = '🔎 ' + (titolo || 'Anime suggerito');
+            document.getElementById('anilistBody').innerHTML = '<span style="color: var(--primary, #7c6cff); font-weight: 600; display: inline-block; animation: pulse 1.5s infinite;">⏳ Recupero dati e traduzione in corso...</span>';
+            getDettaglioTraduzioneAniListSB_(anilistId)
+                .then(function(d) { renderDettaglioAniList_('anime', d); })
+                .catch(function(err) { renderErroreAniList_(err); });
         }
 
         window.suggAggiungiAnime_ = suggAggiungiAnime_;
@@ -765,16 +982,18 @@ function switchViewOra_(viewName) {
 
         // Wikidata: manga con ID AniList che corrispondono al titolo (anche
         // italiano). Restituisce [{ anilistId, titoli: [it, en, mul] }].
-        async function cercaMangaWikidataPerTitolo_(titolo) {
+        // tipo: 'MANGA' (P8731) o 'ANIME' (P8729, Richiesta 62)
+        async function cercaMangaWikidataPerTitolo_(titolo, tipo) {
+            const prop = (tipo === 'ANIME') ? 'P8729' : 'P8731';
             const base = 'https://www.wikidata.org/w/api.php?format=json&formatversion=2&origin=*&';
-            const ricerca = await fetchJsonConLimite_(base + 'action=query&list=search&srprop=&srlimit=4&srsearch=' + encodeURIComponent(titolo + ' haswbstatement:P8731'), 6000);
+            const ricerca = await fetchJsonConLimite_(base + 'action=query&list=search&srprop=&srlimit=4&srsearch=' + encodeURIComponent(titolo + ' haswbstatement:' + prop), 6000);
             const ids = ((ricerca.query && ricerca.query.search) || []).map(function(r) { return r.title; });
             if (ids.length === 0) return [];
             const ent = await fetchJsonConLimite_(base + 'action=wbgetentities&props=labels|aliases|claims&languages=it|en|mul&ids=' + ids.join('|'), 6000);
             const out = [];
             ids.forEach(function(id) {
                 const e = ent.entities && ent.entities[id];
-                const c = e && e.claims && e.claims.P8731 && e.claims.P8731[0];
+                const c = e && e.claims && e.claims[prop] && e.claims[prop][0];
                 const al = c && c.mainsnak && c.mainsnak.datavalue ? parseInt(c.mainsnak.datavalue.value) : NaN;
                 if (isNaN(al)) return;
                 const L = e.labels || {};
@@ -785,9 +1004,9 @@ function switchViewOra_(viewName) {
             return out;
         }
 
-        async function infoMangaAniList_(ids) {
+        async function infoMangaAniList_(ids, tipo) {
             if (!ids.length) return [];
-            const gql = 'query ($ids: [Int]) { Page(perPage: 10) { media(id_in: $ids, type: MANGA) { id title { romaji english } startDate { year } format coverImage { medium } } } }';
+            const gql = 'query ($ids: [Int]) { Page(perPage: 10) { media(id_in: $ids, type: ' + (tipo === 'ANIME' ? 'ANIME' : 'MANGA') + ') { id title { romaji english } startDate { year } format coverImage { medium } } } }';
             const json = await eseguireRichiestaAniList_(gql, { ids: ids });
             return (((json.data || {}).Page || {}).media || []).map(function(m) {
                 return {
@@ -800,17 +1019,41 @@ function switchViewOra_(viewName) {
 
         // Trova l'ID AniList del manga di partenza. Se è sicuro lo salva e lo
         // restituisce; altrimenti fa scegliere (null = annullato).
-        async function collegaMangaAniList_(item) {
+        // tipo: 'MANGA' (predefinito) o 'ANIME' (Richiesta 62). Per la ricerca si
+        // tolgono le aggiunte tra parentesi ("(Netflix)", "(2019)").
+        async function collegaMangaAniList_(item, tipo) {
+            tipo = (tipo === 'ANIME') ? 'ANIME' : 'MANGA';
+            const salva = (tipo === 'ANIME') ? salvaAniListIdAnimeSB_ : salvaAniListIdMangaSB_;
             if (item.anilistId) return item.anilistId;
-            const titoloC = compattaTitoloSugg_(item.titolo);
-            const esiti = await Promise.allSettled([cercaMangaWikidataPerTitolo_(item.titolo), cercaCandidatiAniListSB_(item.titolo, 'MANGA')]);
+            const titoloRicerca = String(item.titolo).replace(/\s*\([^)]*\)\s*/g, ' ').trim() || item.titolo;
+            const titoloC = compattaTitoloSugg_(titoloRicerca);
+            const esiti = await Promise.allSettled([cercaMangaWikidataPerTitolo_(titoloRicerca, tipo), cercaCandidatiAniListSB_(titoloRicerca, tipo)]);
             const wd = esiti[0].status === 'fulfilled' ? esiti[0].value : [];
             const al = esiti[1].status === 'fulfilled' ? esiti[1].value : [];
-            if (esiti[1].status === 'rejected' && wd.length === 0) throw esiti[1].reason;
+            // AniList non risponde (es. troppe richieste): meglio dirlo che mostrare
+            // un "non trovo" fuorviante; senza AniList i suggerimenti non partono comunque
+            if (esiti[1].status === 'rejected') throw esiti[1].reason;
 
             let sicuro = null;
+            // Anime: Wikidata mette spesso per primi film o stagioni successive,
+            // quindi prima il titolo identico su AniList (Richiesta 62)
+            // Un anno tra parentesi nel titolo ("Fruits Basket (2019)") indica la
+            // versione: si sceglie quella di quell'anno, mai un'altra in automatico
+            const annoTitolo = (String(item.titolo).match(/\((\d{4})\)/) || [])[1] || '';
+            if (tipo === 'ANIME') {
+                const iniziaCon = function(a) { return compattaTitoloSugg_(a.titolo).indexOf(titoloC) === 0 || compattaTitoloSugg_(a.titoloAlt).indexOf(titoloC) === 0; };
+                const alPrima = annoTitolo
+                    ? al.find(function(a) { return String(a.anno) === annoTitolo && iniziaCon(a); })
+                    : al.find(function(a) { return compattaTitoloSugg_(a.titolo) === titoloC || compattaTitoloSugg_(a.titoloAlt) === titoloC; });
+                if (alPrima) sicuro = alPrima.id;
+            }
+            const annoDiverso = function(id) {
+                if (!annoTitolo) return false;
+                const a = al.find(function(x) { return x.id === id; });
+                return !!(a && a.anno && String(a.anno) !== annoTitolo);
+            };
             const wdUguale = wd.find(function(w) { return w.titoli.some(function(t) { return compattaTitoloSugg_(t) === titoloC; }); });
-            if (wdUguale) sicuro = wdUguale.anilistId;
+            if (!sicuro && wdUguale) sicuro = wdUguale.anilistId;
             // Due fonti d'accordo: il primo manga di Wikidata (trovato col titolo
             // italiano) è anche tra i risultati di AniList
             if (!sicuro && wd.length > 0 && al.some(function(a) { return a.id === wd[0].anilistId; })) sicuro = wd[0].anilistId;
@@ -818,15 +1061,16 @@ function switchViewOra_(viewName) {
                 const alUguale = al.find(function(a) { return compattaTitoloSugg_(a.titolo) === titoloC || compattaTitoloSugg_(a.titoloAlt) === titoloC; });
                 if (alUguale) sicuro = alUguale.id;
             }
+            if (sicuro && annoDiverso(sicuro)) sicuro = null; // anno diverso da quello nel titolo: si chiede
             if (sicuro) {
-                salvaAniListIdMangaSB_(item.titolo, sicuro).catch(function(err) { console.error('Collegamento AniList non salvato: ' + err); });
+                salva(item.titolo, sicuro).catch(function(err) { console.error('Collegamento AniList non salvato: ' + err); });
                 return sicuro;
             }
 
             // Scelta: prima i manga trovati da Wikidata (titolo italiano), poi AniList
             const idsWd = wd.map(function(w) { return w.anilistId; });
             let infoWd = [];
-            try { infoWd = await infoMangaAniList_(idsWd.slice(0, 3)); } catch (e) { console.error(e); }
+            try { infoWd = await infoMangaAniList_(idsWd.slice(0, 3), tipo); } catch (e) { console.error(e); }
             const visti = {};
             const scelte = [];
             infoWd.concat(al).forEach(function(c) {
@@ -836,17 +1080,18 @@ function switchViewOra_(viewName) {
             });
             // Nessun candidato: la finestra si apre lo stesso, con la casella per
             // cercare con un altro titolo (inglese o giapponese)
-            const scelto = await scegliMangaAniList_(item.titolo, scelte);
+            const scelto = await scegliMangaAniList_(item.titolo, scelte, tipo);
             if (!scelto) return null;
-            await salvaAniListIdMangaSB_(item.titolo, scelto);
+            await salva(item.titolo, scelto);
             return scelto;
         }
 
         // Finestra "Quale manga intendi?" dentro l'overlay dei suggerimenti.
-        function scegliMangaAniList_(titolo, scelte) {
+        function scegliMangaAniList_(titolo, scelte, tipo) {
+            const isAnime = (tipo === 'ANIME');
             return new Promise(function(risolvi) {
-                mostraSuggOverlay_(titolo, [], 'manga');
-                document.getElementById('suggOverlayTitolo').textContent = 'Quale manga intendi?';
+                mostraSuggOverlay_(titolo, [], isAnime ? 'anime' : 'manga');
+                document.getElementById('suggOverlayTitolo').textContent = isAnime ? 'Quale anime intendi?' : 'Quale manga intendi?';
                 const lista = document.getElementById('suggOverlayLista');
                 lista.innerHTML = '<p style="font-size:13px;opacity:0.8;margin:0;">' + (scelte.length
                     ? 'Non sono sicuro di quale opera sia <b>' + escapeHtmlSugg_(titolo) + '</b>: scegli quella giusta, la ricorderò.'
@@ -862,7 +1107,7 @@ function switchViewOra_(viewName) {
                     elenco.forEach(function(c) {
                         const card = document.createElement('div');
                         card.style = 'cursor:pointer;border:1px solid var(--border-color);border-radius:8px;overflow:hidden;background:rgba(255,255,255,0.03);';
-                        card.innerHTML = (c.immagine ? '<img src="' + escapeHtmlSugg_(c.immagine) + '" alt="" style="width:100%;height:150px;object-fit:cover;display:block;background:#222;">' : '<div style="height:150px;display:flex;align-items:center;justify-content:center;background:#222;font-size:28px;">📕</div>') +
+                        card.innerHTML = (c.immagine ? '<img src="' + escapeHtmlSugg_(c.immagine) + '" alt="" style="width:100%;height:150px;object-fit:cover;display:block;background:#222;">' : '<div style="height:150px;display:flex;align-items:center;justify-content:center;background:#222;font-size:28px;">' + (isAnime ? '📺' : '📕') + '</div>') +
                             '<div style="padding:6px;font-size:11px;line-height:1.3;"><div style="font-weight:700;">' + escapeHtmlSugg_(c.titolo) + '</div><div style="opacity:.7;">' + escapeHtmlSugg_([c.titoloAlt !== c.titolo ? c.titoloAlt : '', c.anno, c.formato].filter(Boolean).join(' · ')) + '</div></div>';
                         card.onclick = function() { risolvi(c.id); };
                         griglia.appendChild(card);
@@ -880,7 +1125,7 @@ function switchViewOra_(viewName) {
                     const q = campo.value.trim();
                     if (!q) return;
                     griglia.innerHTML = '<div style="font-size:12px;opacity:0.7;">⏳ Ricerca su AniList...</div>';
-                    cercaCandidatiAniListSB_(q, 'MANGA')
+                    cercaCandidatiAniListSB_(q, isAnime ? 'ANIME' : 'MANGA')
                         .then(function(r) { disegna((r || []).slice(0, 6)); })
                         .catch(function(err) { griglia.innerHTML = '<div style="font-size:12px;color:var(--danger);">' + escapeHtmlSugg_(err.message || String(err)) + '</div>'; });
                 };
@@ -1401,6 +1646,7 @@ function switchViewOra_(viewName) {
             targetEditTitleAnime = null;
             sinossiPendenteAnime = null; // <--- NUOVO: azzera eventuale sinossi AniList in sospeso
             episodiPerStagionePendenteAnime = null;
+            anilistIdPendenteAnime = null; // Richiesta 62
             document.getElementById('modalTitleAnime').innerText = "Nuovo Anime";
             document.getElementById('animeForm').reset();
             document.getElementById('inpStagioniTotaliAnime').value = 0;
@@ -1423,6 +1669,7 @@ function switchViewOra_(viewName) {
             targetEditTitleAnime = titolo;
             sinossiPendenteAnime = null; // <--- NUOVO: azzera eventuale sinossi AniList in sospeso
             episodiPerStagionePendenteAnime = null;
+            anilistIdPendenteAnime = null; // Richiesta 62
             document.getElementById('modalTitleAnime').innerText = "Modifica Anime";
             document.getElementById('inpTitoloAnime').value = item.titolo || '';
             document.getElementById('inpStatoAnime').value = item.stato || '';
@@ -1584,12 +1831,14 @@ function switchViewOra_(viewName) {
                 immagine: document.getElementById('inpImmagineAnime').value, // <--- NUOVO: Salva l'URL dell'immagine nel foglio
                 episodiPerStagione: episodiPerStagionePendenteAnime,
                 segnaComeVista: segnaComeVistaAnime,
-                abbandonata: abbandonataNuovaAnime
+                abbandonata: abbandonataNuovaAnime,
+                anilistId: anilistIdPendenteAnime // Richiesta 62: opera AniList scelta con 🔎 o dal ＋ dei suggerimenti
             };
             const isEditAnime = !!targetEditTitleAnime;
             const cb = function(data) {
                 animeList = data || [];
                 episodiPerStagionePendenteAnime = null;
+                anilistIdPendenteAnime = null;
                 // Se in questa sessione del modale è stata scelta una sinossi da AniList,
                 // la scriviamo ora sul foglio satellite: a questo punto la riga in SinossiAnime
                 // esiste di sicuro (creata da addAnime, o già presente in caso di modifica).
