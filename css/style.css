@@ -2856,3 +2856,18 @@ body {
     /* sul telefono a tutta riga, come il menu dell ordinamento */
     #filterPiattaformaSerieTv, #filterPiattaformaCinema { max-width: none; width: 100%; }
 }
+
+/* ================================================================
+   MENU A TENDINA: VOCI LEGGIBILI (Richiesta 67)
+   Con lo stile vetro i menu hanno lo sfondo trasparente: Chrome su PC
+   apriva l'elenco delle voci su grigio chiaro con il testo bianco.
+   Le voci hanno ora uno sfondo scuro pieno, uguale per tutti i menu.
+   ================================================================ */
+select option,
+select optgroup {
+    background-color: #1b1e30;
+    color: #f2f3fa;
+}
+select option:disabled {
+    color: #8a8da3;
+}

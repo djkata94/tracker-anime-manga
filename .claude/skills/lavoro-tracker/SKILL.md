@@ -64,6 +64,10 @@ Se una regola qui è in conflitto con una richiesta esplicita di Gabriele, vale 
 - Animare `opacity` o `filter` su un contenitore toglie il blur ai pannelli di vetro dentro
   (a fine animazione il vetro "salta"). Anima `transform` o elementi senza vetro.
 - Piano B già presente: `@supports not (backdrop-filter)` e `prefers-reduced-transparency`.
+- Menu a tendina (`select`): lo sfondo del menu è trasparente, quindi le voci aperte prendono
+  lo sfondo dal blocco globale "MENU A TENDINA: VOCI LEGGIBILI" in fondo a `css/style.css`
+  (Richiesta 67). Non togliere quel blocco: senza, Chrome su PC apre l'elenco su grigio chiaro
+  con il testo bianco. Un menu nuovo è già coperto; controllalo comunque aprendolo.
 - Effetto genio tra le sezioni (main.js, "CAMBIO SEZIONE A GENIO"): tempi approvati da Gabriele,
   PC `{esce:500, daQuando:500, entra:500, attesa:700}` (prima finisce il risucchio, poi esce
   la nuova), telefono `{esce:340, daQuando:240, entra:360, attesa:700}`. Non cambiarli senza
