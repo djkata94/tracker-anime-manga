@@ -93,7 +93,10 @@ Se una regola qui è in conflitto con una richiesta esplicita di Gabriele, vale 
   integrato), mai dal localhost.
 - TMDB con `language=it-IT` a volte restituisce la trama in inglese: controllare con
   `sembraItaliano_` e tradurre.
-- Serie TV suggerite solo dal 2000 in poi (scelta di Gabriele, Richiesta 64).
+- Serie TV e film suggeriti solo dal 2000 in poi (scelta di Gabriele, Richieste 64 e 65).
+- La tabella `cinema` non ha l'ID TMDB: per ritrovare un film su TMDB si cerca il titolo e si
+  sceglie il risultato con l'anno di `data_uscita` (±1), mai il primo a occhi chiusi (remake).
+  Per riconoscere un film già posseduto servono titolo **e** anno.
 - **Suggerimenti 💡 sempre ordinati per voto decrescente** (regola di Gabriele del 17/11/2026,
   Richiesta 63): usare `ordinaPerVotoSugg_` anche per serie TV, film e ogni sezione futura.
 - Niente bandierine emoji (🇮🇹): su Windows compaiono come lettere ("IT").

@@ -1154,6 +1154,11 @@ function statoBadgeLibro_(stato) {
         //   Nuove voci: aggiungere in CIMA all'array.
         // ==========================================
         const PATCH_NOTES = [
+            { v: '1.1.9', titolo: 'Suggerimenti film migliori', data: '17/11/2026', punti: [
+                'Il 💡 dei film parte dal film giusto anche quando ci sono remake con lo stesso titolo (es. Il re leone del 2019, non quello del 1994).',
+                'Fino a 10 suggerimenti più gli altri da aprire, ordinati dal voto più alto, solo film dal 2000 in poi.',
+                'I film che hai già non ricompaiono, ma un remake che non hai sì. La trama è sempre in italiano.'
+            ] },
             { v: '1.1.8', titolo: 'Suggerimenti serie TV migliori', data: '17/11/2026', punti: [
                 'Il 💡 delle serie TV ora ne propone fino a 10, più gli altri da aprire, ordinati dal voto più alto.',
                 'Niente più serie vecchissime: solo quelle iniziate dal 2000 in poi. Le serie che hai già non ricompaiono, anche se le hai rinominate.',

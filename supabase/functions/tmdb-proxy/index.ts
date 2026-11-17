@@ -98,18 +98,41 @@ Deno.serve(async (req) => {
     }
 
     if (action === 'movie_recommendations') {
+      // Richiesta 65: come tv_recommendations (R64) ma per i film: pagine 1 e
+      // 2 (fino a 40, prima le prime 10), con trama italiana e, dove manca,
+      // inglese (tramaEn). Campi vecchi invariati: compatibile col sito vecchio.
       const id = body.id || '';
-      const tmdbUrl = 'https://api.themoviedb.org/3/movie/' + encodeURIComponent(id)
-        + '/recommendations?api_key=' + encodeURIComponent(apiKey) + '&language=it-IT&region=IT&page=1';
-      const resp = await fetch(tmdbUrl);
-      const json = await resp.json();
-      const risultati = (json.results || []).slice(0, 10).map((m: any) => ({
+      const urlPagina = (lingua: string, pagina: number) => 'https://api.themoviedb.org/3/movie/' + encodeURIComponent(id)
+        + '/recommendations?api_key=' + encodeURIComponent(apiKey) + '&language=' + lingua + '&region=IT&page=' + pagina;
+      const leggi = async (lingua: string, pagina: number) => {
+        try {
+          const r = await fetch(urlPagina(lingua, pagina));
+          const j = await r.json();
+          return (j && Array.isArray(j.results)) ? j.results : [];
+        } catch (_e) { return []; }
+      };
+      const [p1, p2] = await Promise.all([leggi('it-IT', 1), leggi('it-IT', 2)]);
+      const visti = new Set<number>();
+      const grezzi = p1.concat(p2).filter((m: any) => {
+        if (!m || !m.id || visti.has(m.id)) return false;
+        visti.add(m.id);
+        return true;
+      });
+      const tramaEn: Record<number, string> = {};
+      if (grezzi.some((m: any) => !m.overview)) {
+        const [e1, e2] = await Promise.all([leggi('en-US', 1), leggi('en-US', 2)]);
+        e1.concat(e2).forEach((m: any) => { if (m && m.id && m.overview) tramaEn[m.id] = m.overview; });
+      }
+      const risultati = grezzi.map((m: any) => ({
         id: m.id,
         tipo: m.media_type || '',
         titolo: m.title || m.original_title || 'Senza titolo',
         anno: (m.release_date || '').substring(0, 4),
         voto: (typeof m.vote_average === 'number' && m.vote_average > 0) ? Math.round(m.vote_average * 10) / 10 : null,
-        immagine: m.poster_path ? ('https://image.tmdb.org/t/p/w342' + m.poster_path) : ''
+        votiTotali: (typeof m.vote_count === 'number') ? m.vote_count : null,
+        immagine: m.poster_path ? ('https://image.tmdb.org/t/p/w342' + m.poster_path) : '',
+        trama: m.overview || '',
+        tramaEn: m.overview ? '' : (tramaEn[m.id] || '')
       }));
       return new Response(JSON.stringify(risultati), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
     }

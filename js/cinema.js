@@ -150,7 +150,21 @@ function formattaDataCinemaISO_(valoreGrezzo) {
         // --- SUGGERIMENTI CINEMA (Richiesta 35) ---
         // Niente id salvato: search-first sul titolo, poi recommendations.
         // Stesso overlay delle serie (mostraSuggOverlay_), trama progressiva.
-        async function getSuggCinema_(titolo) {
+        // 💡 Suggerimenti film (Richiesta 65). La tabella cinema non ha l'ID
+        // TMDB: il film di partenza si cerca per titolo e, tra i risultati, si
+        // prende quello dell'anno di uscita salvato (±1, così Il re leone del
+        // 2019 non diventa quello del 1994). Fino a 40 consigli (tmdb-proxy,
+        // pagine 1-2), solo film dal 2000 (scelta dell'owner), tolti quelli già
+        // in lista per titolo E anno (un remake con lo stesso titolo non è il
+        // tuo film), ordinati per voto (R63), 10 in vista + "Altri N".
+        const ANNO_MINIMO_SUGG_FILM_ = 2000;
+
+        function annoDaData_(s) {
+            const m = String(s || '').match(/(\d{4})/);
+            return m ? parseInt(m[1]) : null;
+        }
+
+        async function getSuggCinema_(titolo, annoSalvato) {
             const sres = await supabaseClient.functions.invoke('tmdb-proxy', {
                 body: { action: 'search', query: titolo }
             });
@@ -160,46 +174,123 @@ function formattaDataCinemaISO_(valoreGrezzo) {
             if (!Array.isArray(cand) || cand.length === 0 || !cand[0].id) {
                 throw new Error('Film non trovato su TMDB.');
             }
+            let base = cand[0];
+            if (annoSalvato) {
+                const tc = normTitoloSugg_(titolo);
+                const stessoAnno = function(c) { const a = annoDaData_(c.anno); return a && Math.abs(a - annoSalvato) <= 1; };
+                base = cand.find(function(c) { return stessoAnno(c) && normTitoloSugg_(c.titolo) === tc; })
+                    || cand.find(stessoAnno)
+                    || cand[0];
+            }
             const rres = await supabaseClient.functions.invoke('tmdb-proxy', {
-                body: { action: 'movie_recommendations', id: cand[0].id }
+                body: { action: 'movie_recommendations', id: base.id }
             });
             if (rres.error) throw new Error('Impossibile contattare TMDB. Riprova più tardi.');
             const data = rres.data;
             if (data && data.error) throw new Error(data.error);
             const lista = Array.isArray(data) ? data : [];
-            // TMDB mischia film e serie: tieni solo film (se l'Edge non
-            // passa ancora il tipo, non filtrare per non svuotare tutto).
-            return lista.filter(function(m) { return !m.tipo || m.tipo === 'movie'; });
-        }
-
-        function arricchisciSuggCinema_(candidati) {
-            const gen = suggGen_;
-            candidati.slice(0, 5).forEach(function(c, i) {
-                if (!c || !c.id) return;
-                getDettaglioCinemaTMDBSB_(c.id).then(function(d) {
-                    if (!d || gen !== suggGen_) return;
-                    const tramaEl = document.getElementById('suggTrama' + i);
-                    if (tramaEl && d.trama) tramaEl.textContent = d.trama;
-                }).catch(function() {});
-            });
+            // TMDB mischia film e serie: tieni solo film
+            return { baseId: base.id, consigli: lista.filter(function(m) { return !m.tipo || m.tipo === 'movie'; }) };
         }
 
         async function suggCinema_(titolo) {
             showToast('Cerco suggerimenti…');
             try {
+                const item = cinemaList.find(function(x) { return x && x.titolo === titolo; });
+                // Film posseduti: titolo → anni di uscita (per riconoscere i remake)
                 const posseduti = {};
-                cinemaList.forEach(function(x) { if (x && x.titolo) posseduti[normTitoloSugg_(x.titolo)] = true; });
-                posseduti[normTitoloSugg_(titolo)] = true;
-                const res = await getSuggCinema_(titolo);
-                const top = res.filter(function(c) { return !posseduti[normTitoloSugg_(c.titolo)]; }).slice(0, 5);
-                mostraSuggOverlay_(titolo, top, 'cinema');
-                arricchisciSuggCinema_(top);
+                cinemaList.forEach(function(x) {
+                    if (!x || !x.titolo) return;
+                    const k = normTitoloSugg_(x.titolo);
+                    (posseduti[k] = posseduti[k] || []).push(annoDaData_(x.dataUscita));
+                });
+                const giaTuo = function(c) {
+                    const anni = posseduti[normTitoloSugg_(c.titolo)];
+                    if (!anni) return false;
+                    const a = annoDaData_(c.anno);
+                    return anni.some(function(x) { return !x || !a || Math.abs(x - a) <= 1; });
+                };
+                const res = await getSuggCinema_(titolo, item ? annoDaData_(item.dataUscita) : null);
+                const visti = {};
+                visti[res.baseId] = true;
+                const lista = res.consigli.filter(function(c) {
+                    if (!c || !c.id || visti[c.id]) return false;
+                    visti[c.id] = true;
+                    if (giaTuo(c)) return false;
+                    const a = annoDaData_(c.anno);
+                    return !a || a >= ANNO_MINIMO_SUGG_FILM_;
+                });
+                ordinaPerVotoSugg_(lista);
+                mostraSuggCinemaOverlay_(titolo, lista.slice(0, 10), lista.slice(10));
             } catch (err) {
                 showToast(err.message || 'Suggerimenti non disponibili.', 'error');
             }
         }
 
         window.suggCinema_ = suggCinema_;
+
+        function cardSuggCinema_(c, i) {
+            const imgFull = c.immagine ? c.immagine.replace('/w342', '/w500') : '';
+            const img = c.immagine
+                ? '<img src="' + escapeHtmlSugg_(c.immagine) + '" alt="" style="width:45px;height:65px;border-radius:6px;object-fit:cover;flex-shrink:0;border:1px solid var(--border-color);cursor:zoom-in;" loading="lazy" onclick="apriLightbox(\'' + escapeHtmlSugg_(imgFull).replace(/'/g, "\\'") + '\')">'
+                : '<div style="width:45px;height:65px;border-radius:6px;flex-shrink:0;border:1px solid var(--border-color);"></div>';
+            const meta = [c.anno || '', (c.voto !== null && c.voto !== undefined) ? '⭐ ' + c.voto : ''].filter(Boolean).join(' · ');
+            const titoloAdd = String(c.titolo || '').replace(/\\/g, '\\\\').replace(/'/g, "\\'");
+            const addBtn = '<button class="action-icon-btn" style="flex-shrink:0;color:var(--primary);font-size:16px;font-weight:700;" onclick="suggAggiungiCinema_(' + c.id + ', \'' + escapeHtmlSugg_(titoloAdd) + '\')" title="Carica nella scheda nuovo film">＋</button>';
+            return '<div style="display:flex;gap:12px;align-items:flex-start;">' + img +
+                '<div style="min-width:0;flex:1;"><div style="font-weight:600;">' + escapeHtmlSugg_(c.titolo) + '</div>' +
+                '<div id="suggFilmMeta' + i + '" style="font-size:12px;opacity:0.7;">' + escapeHtmlSugg_(meta) + '</div>' +
+                '<div id="suggFilmTrama' + i + '" class="sugg-trama" title="Clicca per espandere/comprimere" onclick="this.classList.toggle(\'trama-aperta\')" style="font-size:12px;opacity:0.85;margin-top:4px;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;"></div></div>' + addBtn + '</div>';
+        }
+
+        function mostraSuggCinemaOverlay_(titoloBase, primi, altri) {
+            mostraSuggOverlay_(titoloBase, [], 'cinema');
+            const gen = suggGen_;
+            const lista = document.getElementById('suggOverlayLista');
+            let html = primi.length
+                ? primi.map(function(c, i) { return cardSuggCinema_(c, i); }).join('')
+                : '<p style="font-size:13px;opacity:0.75;margin:0;">Nessun suggerimento nuovo: li hai già tutti in lista.</p>';
+            if (altri.length > 0) {
+                html += '<details id="suggFilmAltri" style="border-top:1px solid var(--border-color);padding-top:8px;">' +
+                    '<summary style="cursor:pointer;font-size:13px;opacity:0.85;">Altri ' + altri.length + ' suggerimenti</summary>' +
+                    '<div style="display:flex;flex-direction:column;gap:10px;margin-top:10px;">' +
+                    altri.map(function(c, i) { return cardSuggCinema_(c, primi.length + i); }).join('') + '</div></details>';
+            }
+            lista.innerHTML = html;
+            const tutti = primi.concat(altri);
+            const completati = {};
+            // Trama subito (italiana o tradotta), poi i generi dal dettaglio
+            const completa = function(da, a) {
+                tutti.slice(da, a).forEach(function(c, k) {
+                    const i = da + k;
+                    if (completati[i]) return;
+                    completati[i] = true;
+                    const tramaEl = document.getElementById('suggFilmTrama' + i);
+                    const testo = c.trama || c.tramaEn || '';
+                    const daTradurre = !!testo && (!c.trama || !sembraItaliano_(c.trama));
+                    if (tramaEl && testo) tramaEl.textContent = testo;
+                    if (tramaEl && daTradurre) {
+                        traduciLungoSugg_(testo).then(function(t) {
+                            if (gen !== suggGen_) return;
+                            const e2 = document.getElementById('suggFilmTrama' + i);
+                            if (e2 && t) e2.textContent = t;
+                        }).catch(function() {});
+                    }
+                    getDettaglioCinemaTMDBSB_(c.id).then(function(d) {
+                        if (!d || gen !== suggGen_) return;
+                        const metaEl = document.getElementById('suggFilmMeta' + i);
+                        if (metaEl && d.generi) {
+                            metaEl.textContent = [c.anno || '', d.generi, (c.voto !== null && c.voto !== undefined) ? '⭐ ' + c.voto : ''].filter(Boolean).join(' · ');
+                        }
+                        const e3 = document.getElementById('suggFilmTrama' + i);
+                        if (e3 && !e3.textContent && d.trama) e3.textContent = d.trama;
+                    }).catch(function() {});
+                });
+            };
+            completa(0, primi.length);
+            const dettagli = document.getElementById('suggFilmAltri');
+            if (dettagli) dettagli.addEventListener('toggle', function() { if (dettagli.open) completa(primi.length, tutti.length); });
+        }
 
         function renderListCinema() {
             const tbodyDaVedere = document.getElementById('cinemaTableBodyDaVedere');
