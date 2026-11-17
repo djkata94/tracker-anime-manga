@@ -26,7 +26,10 @@ function formattaDataCinemaISO_(valoreGrezzo) {
                 return {
                     titolo: c.titolo, dataUscita: c.data_uscita || '', dataVisione: c.data_visione || '',
                     visione: c.visione ? 'Sì' : 'No', immagine: c.immagine || '', streaming: !!c.streaming,
-                    trama: c.trama || '', generi: c.generi || ''
+                    trama: c.trama || '', generi: c.generi || '',
+                    // Richiesta 66: ID TMDB, piattaforme di streaming e ultimo controllo
+                    tmdbId: c.tmdb_id || null,
+                    piattaforme: Array.isArray(c.piattaforme) ? c.piattaforme : [], piattaformeAgg: c.piattaforme_agg || null
                 };
             });
         }
@@ -36,7 +39,8 @@ function formattaDataCinemaISO_(valoreGrezzo) {
             const { error } = await supabaseClient.from('cinema').insert([{
                 titolo: dati.titolo || '', data_uscita: formattaDataCinemaISO_(dati.dataUscita || '') || null,
                 data_visione: null, visione: false, immagine: dati.immagine || '', streaming: isStreaming,
-                trama: dati.trama || '', generi: dati.generi || ''
+                trama: dati.trama || '', generi: dati.generi || '',
+                tmdb_id: dati.tmdbId || null // Richiesta 66
             }]);
             if (error) throw error;
             await registraLogSB_(dati.titolo, 'CINEMA', 'CREAZIONE', 'N/D', isStreaming ? 'Da vedere (streaming)' : 'Da vedere');
@@ -121,6 +125,7 @@ function formattaDataCinemaISO_(valoreGrezzo) {
                 document.getElementById('loadingCinema').style.display = 'none';
                 document.getElementById('cinemaContent').style.display = 'block';
                 renderListCinema();
+                aggiornaPiattaformeCinema_(); // Richiesta 66: in background
             }).catch(function(err) {
                 console.error('Errore caricamento Cinema: ', err);
                 document.getElementById('loadingCinema').innerText = '⚠️ Errore durante il caricamento dei dati.';
@@ -305,6 +310,10 @@ function formattaDataCinemaISO_(valoreGrezzo) {
 
             const termineRicerca = (currentSearchCinema || '').toLowerCase();
             let filtered = cinemaList.filter(item => item && (item.titolo || '').toLowerCase().includes(termineRicerca));
+
+            // Richiesta 66: filtro per piattaforma (menu costruito dalla lista)
+            currentFilterPiattaformaCinema = aggiornaMenuPiattaforme_('filterPiattaformaCinema', cinemaList, currentFilterPiattaformaCinema) || 'all';
+            filtered = filtered.filter(item => passaFiltroPiattaforma_(item, currentFilterPiattaformaCinema));
 
             // Filtro generi: un film passa se ha ALMENO UNO dei generi selezionati
             // (il campo "generi" è una stringa tipo "Azione, Fantascienza").
@@ -555,6 +564,7 @@ function formattaDataCinemaISO_(valoreGrezzo) {
                         ${posterHTML}
                         <div style="display: flex; flex-direction: column; gap: 3px;">
                             <span class="media-title">${item.titolo || 'Senza Titolo'}</span>
+                            ${htmlPiattaforme_(item.piattaforme)}
                             ${generiCinemaHTML}
                         </div>
                     </div>
@@ -811,6 +821,7 @@ function formattaDataCinemaISO_(valoreGrezzo) {
             const searchEl = document.getElementById('searchInpCinema');
             if (searchEl) searchEl.value = '';
             selectedGenresCinema = [];
+            currentFilterPiattaformaCinema = 'all';
             document.querySelectorAll('.cinema-filter-genre-cb:checked').forEach(cb => cb.checked = false);
             const badgeCinemaGeneri = document.getElementById('badgeGenresCinemaCount');
             if (badgeCinemaGeneri) badgeCinemaGeneri.innerText = '0';
@@ -876,6 +887,15 @@ function formattaDataCinemaISO_(valoreGrezzo) {
             if (searchCinemaEl) {
                 searchCinemaEl.addEventListener('input', function() {
                     currentSearchCinema = this.value;
+                    renderListCinema();
+                });
+            }
+
+            // Richiesta 66: filtro per piattaforma
+            const filtroPiattaformaCinemaEl = document.getElementById('filterPiattaformaCinema');
+            if (filtroPiattaformaCinemaEl) {
+                filtroPiattaformaCinemaEl.addEventListener('change', function() {
+                    currentFilterPiattaformaCinema = this.value;
                     renderListCinema();
                 });
             }
@@ -1089,6 +1109,7 @@ function formattaDataCinemaISO_(valoreGrezzo) {
                 immagine: (ultimoDettaglioCinemaTMDB && ultimoDettaglioCinemaTMDB.immagine) || '',
                 trama: (ultimoDettaglioCinemaTMDB && ultimoDettaglioCinemaTMDB.trama) || '',
                 generi: (ultimoDettaglioCinemaTMDB && ultimoDettaglioCinemaTMDB.generi) || '',
+                tmdbId: (ultimoDettaglioCinemaTMDB && ultimoDettaglioCinemaTMDB.id) || null, // Richiesta 66
                 streaming: isStreamingCinemaSelezionato_()
             };
             salvaNuovoCinema_(dati);
@@ -1110,6 +1131,7 @@ function formattaDataCinemaISO_(valoreGrezzo) {
             addCinemaSB_(dati)
                 .then(function(data) {
                     cinemaList = data || [];
+                    setTimeout(aggiornaPiattaformeCinema_, 500); // Richiesta 66: piattaforme del film nuovo
                     ultimoDettaglioCinemaTMDB = null;
                     document.getElementById('modalOverlayCinema').classList.remove('active');
                     // Se ho appena salvato un film in streaming attivo il pannello
@@ -1127,6 +1149,72 @@ function formattaDataCinemaISO_(valoreGrezzo) {
                 });
         }
 
+
+
+        // 📺 Piattaforme dei film (Richiesta 66), per tutti i film (scelta
+        // dell'owner). I film salvati prima non hanno l'ID TMDB: si cerca con
+        // titolo + anno di uscita (movie_match, solo abbinamenti sicuri). Chi non
+        // si trova resta senza piattaforma e si riprova dopo 7 giorni.
+        let currentFilterPiattaformaCinema = 'all';
+        let aggiornamentoPiattaformeCinemaInCorso_ = false;
+
+        async function salvaPiattaformeCinema_(item, campi) {
+            const { error } = await supabaseClient.from('cinema').update(campi).eq('titolo', item.titolo);
+            if (error) { console.error('Salvataggio piattaforme di "' + item.titolo + '": ' + error.message); return false; }
+            return true;
+        }
+
+        async function aggiornaPiattaformeCinema_() {
+            if (aggiornamentoPiattaformeCinemaInCorso_) return;
+            const daFare = (cinemaList || []).filter(function(f) { return f && f.titolo && piattaformeDaAggiornare_(f); });
+            if (daFare.length === 0) return;
+            aggiornamentoPiattaformeCinemaInCorso_ = true;
+            try {
+                // 1) ID TMDB per i film che non ce l'hanno
+                const senzaId = daFare.filter(function(f) { return !f.tmdbId; });
+                for (let i = 0; i < senzaId.length; i += 20) {
+                    const gruppo = senzaId.slice(i, i + 20);
+                    const res = await supabaseClient.functions.invoke('tmdb-proxy', { body: {
+                        action: 'movie_match',
+                        film: gruppo.map(function(f) { return { titolo: f.titolo, anno: String(f.dataUscita || '').substring(0, 4) }; })
+                    } });
+                    if (res.error || !res.data || !Array.isArray(res.data.risultati)) { console.error('Abbinamento film non riuscito'); break; }
+                    const adesso = new Date().toISOString();
+                    for (let k = 0; k < gruppo.length; k++) {
+                        const f = gruppo[k];
+                        const r = res.data.risultati[k];
+                        if (r && r.id) {
+                            if (await salvaPiattaformeCinema_(f, { tmdb_id: r.id })) f.tmdbId = r.id;
+                        } else if (await salvaPiattaformeCinema_(f, { piattaforme: [], piattaforme_agg: adesso })) {
+                            // Non trovato con certezza: niente piattaforma, si riprova tra 7 giorni
+                            f.piattaforme = [];
+                            f.piattaformeAgg = adesso;
+                        }
+                    }
+                }
+                // 2) Piattaforme per i film con ID, a gruppi di 25
+                const conId = daFare.filter(function(f) { return f.tmdbId && piattaformeDaAggiornare_(f); });
+                for (let i = 0; i < conId.length; i += 25) {
+                    const gruppo = conId.slice(i, i + 25);
+                    let risultati;
+                    try { risultati = await chiediPiattaforme_('movie', gruppo.map(function(f) { return f.tmdbId; })); }
+                    catch (e) { console.error('Piattaforme film non aggiornate: ' + e); break; }
+                    const adesso = new Date().toISOString();
+                    for (let k = 0; k < gruppo.length; k++) {
+                        const f = gruppo[k];
+                        const p = risultati[f.tmdbId];
+                        if (!Array.isArray(p)) continue;
+                        if (await salvaPiattaformeCinema_(f, { piattaforme: p, piattaforme_agg: adesso })) {
+                            f.piattaforme = p;
+                            f.piattaformeAgg = adesso;
+                        }
+                    }
+                    renderListCinema();
+                }
+            } finally {
+                aggiornamentoPiattaformeCinemaInCorso_ = false;
+            }
+        }
 
         // ==========================================
         //   🔔 TOAST DI CONFERMA (feedback azioni CRUD)

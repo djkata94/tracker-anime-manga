@@ -94,6 +94,10 @@ Se una regola qui è in conflitto con una richiesta esplicita di Gabriele, vale 
 - TMDB con `language=it-IT` a volte restituisce la trama in inglese: controllare con
   `sembraItaliano_` e tradurre.
 - Serie TV e film suggeriti solo dal 2000 in poi (scelta di Gabriele, Richieste 64 e 65).
+- Piattaforme di streaming (Richiesta 66): `watch_providers` di `tmdb-proxy`, solo Italia e solo
+  abbonamento/gratis; TMDB non ha lo storico, si mostra sempre la situazione di oggi
+  ("rimpiazza"), ricontrollata ogni 7 giorni. Citare sempre JustWatch ("Piattaforme: dati
+  JustWatch"): è una condizione dei termini TMDB. `cinema.tmdb_id` esiste dalla Richiesta 66.
 - La tabella `cinema` non ha l'ID TMDB: per ritrovare un film su TMDB si cerca il titolo e si
   sceglie il risultato con l'anno di `data_uscita` (±1), mai il primo a occhi chiusi (remake).
   Per riconoscere un film già posseduto servono titolo **e** anno.

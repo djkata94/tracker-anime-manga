@@ -23,7 +23,7 @@
          cache 10 minuti, cambiando il valore il browser li riscarica subito.
          Non va toccato a mano: lo calcola tools/bump-version.js (qui e sugli
          script in fondo), lanciato in automatico prima di ogni commit. -->
-    <link rel="stylesheet" href="css/style.css?v=5c534602">
+    <link rel="stylesheet" href="css/style.css?v=4d90f90b">
 
 </head>
 <body>
@@ -434,6 +434,9 @@
                 <div id="dropdownGenresSerieTv" class="dropdown-genres"></div>
             </div>
 
+            <!-- Filtro per piattaforma di streaming (Richiesta 66): opzioni costruite dalla lista -->
+            <select id="filterPiattaformaSerieTv" title="Filtra per piattaforma di streaming"><option value="all">📺 Tutte le piattaforme</option></select>
+
             <select id="sortSelSerieTv">
                 <option value="title-asc">Titolo A-Z</option>
                 <option value="title-desc">Titolo Z-A</option>
@@ -457,6 +460,7 @@
 
             <button type="button" id="btnResetFiltriSerieTv" class="btn-reset-filters">↺ Reset Filtri</button>
             <span id="countSerieTv" class="filter-count"></span>
+            <span class="fonte-justwatch" title="Disponibilità in Italia fornita da JustWatch tramite TMDB">Piattaforme: dati JustWatch</span>
         </div>
 
         <div id="loadingSerieTv" style="color:var(--warning); padding:20px; font-weight:600;">Caricamento dati dal server...</div>
@@ -707,8 +711,12 @@
                 <div id="dropdownGenresCinema" class="dropdown-genres"></div>
             </div>
 
+            <!-- Filtro per piattaforma di streaming (Richiesta 66): opzioni costruite dalla lista -->
+            <select id="filterPiattaformaCinema" title="Filtra per piattaforma di streaming"><option value="all">📺 Tutte le piattaforme</option></select>
+
             <button type="button" id="btnResetFiltriCinema" class="btn-reset-filters">↺ Reset Filtri</button>
             <span id="countCinema" class="filter-count"></span>
+            <span class="fonte-justwatch" title="Disponibilità in Italia fornita da JustWatch tramite TMDB">Piattaforme: dati JustWatch</span>
         </div>
 
         <div id="loadingCinema" style="color:var(--warning); padding:20px; font-weight:600;">Caricamento dati dal server...</div>
@@ -1287,10 +1295,10 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.119.0"></script>
     <script src="js/state-ui.js?v=2a7043e9"></script>
     <script src="js/anime-all.js?v=e960adb0"></script>
-    <script src="js/serie-tv.js?v=b7499b3f"></script>
+    <script src="js/serie-tv.js?v=d30e0c3a"></script>
     <script src="js/manga.js?v=d8cfcd01"></script>
-    <script src="js/libri-patch.js?v=ba720ad3"></script>
-    <script src="js/cinema.js?v=81fffd06"></script>
+    <script src="js/libri-patch.js?v=b4139080"></script>
+    <script src="js/cinema.js?v=e06b6cc1"></script>
     <script src="js/main.js?v=fa0149de"></script>
     <script src="js/config-auth.js?v=f1d6b1cb"></script>
 

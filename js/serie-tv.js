@@ -63,7 +63,9 @@ function haProgressoStagioniParzialeSerieTv(titolo) {
                     titolo: s.titolo, stato: s.stato || 'In corso', note: notaTesto,
                     stagioniTotali: s.stagioni_totali || 0, stagioniViste: s.stagioni_viste || 0,
                     coloreVisione: coloreVisione, generi: s.generi || '', preferito: !!s.preferito,
-                    immagine: s.immagine || '', tmdbId: s.tmdb_id || null, abbandonata: !!s.abbandonata
+                    immagine: s.immagine || '', tmdbId: s.tmdb_id || null, abbandonata: !!s.abbandonata,
+                    // Richiesta 66: piattaforme di streaming e data dell'ultimo controllo
+                    piattaforme: Array.isArray(s.piattaforme) ? s.piattaforme : [], piattaformeAgg: s.piattaforme_agg || null
                 };
             });
         }
@@ -327,6 +329,7 @@ function haProgressoStagioniParzialeSerieTv(titolo) {
                     document.getElementById('loadingSerieTv').style.display = 'none';
                     document.getElementById('serietvTable').style.display = 'table';
                     renderListSerieTv();
+                    aggiornaPiattaformeSerieTv_(); // Richiesta 66: in background
                 })
                 .catch(function(err) {
                     console.error('Errore caricamento dati Serie TV da Supabase:', err);
@@ -608,6 +611,9 @@ function haProgressoStagioniParzialeSerieTv(titolo) {
             const statEpEl = document.getElementById('statSerieTvEpisodiVisti');
             if (statEpEl) statEpEl.innerText = `${episodiVistiGlobali} / ${episodiTotaliGlobali}`;
 
+            // Richiesta 66: menu del filtro piattaforma costruito dalla lista
+            currentFilterPiattaformaSerieTv = aggiornaMenuPiattaforme_('filterPiattaformaSerieTv', serieTvList, currentFilterPiattaformaSerieTv) || 'all';
+
             let filtered = serieTvList.filter(item => {
                 if (!item) return false;
 
@@ -662,7 +668,9 @@ function haProgressoStagioniParzialeSerieTv(titolo) {
                     matchesFav = (item.preferito === true);
                 }
 
-                return matchesSearch && matchesStato && matchesVisione && matchesGenres && matchesFav;
+                const matchesPiattaforma = passaFiltroPiattaforma_(item, currentFilterPiattaformaSerieTv);
+
+                return matchesSearch && matchesStato && matchesVisione && matchesGenres && matchesFav && matchesPiattaforma;
             });
 
             const countEl = document.getElementById('countSerieTv');
@@ -729,6 +737,7 @@ function haProgressoStagioniParzialeSerieTv(titolo) {
                                 <div style="font-weight: 600; display: flex; align-items: center; gap: 6px;">
                                     <span>${item.titolo || 'Senza Titolo'}</span>
                                 </div>
+                                ${htmlPiattaforme_(item.piattaforme)}
                                 <div style="font-size: 12px; color: var(--text-muted); font-weight: normal;">
                                     <span class="stagioni-titolo">Stagioni: <b>${stagioniViste}/${stagioniTotali}</b></span>${item.abbandonata ? ' <span style="color:#f87171; font-weight:700;">⛔ Abbandonata</span>' : ''}
                                 </div>
@@ -885,6 +894,7 @@ function haProgressoStagioniParzialeSerieTv(titolo) {
             };
             const cb = function(data) {
                 serieTvList = data || [];
+                setTimeout(aggiornaPiattaformeSerieTv_, 500); // Richiesta 66: piattaforme della serie nuova
                 episodiPerStagionePendenteSerieTv = null;
                 anniPerStagionePendenteSerieTv = null;
                 generiSelezionatiSerieTv = '';
@@ -1681,6 +1691,7 @@ function haProgressoStagioniParzialeSerieTv(titolo) {
             currentFilterVisioneSerieTv = 'all';
             currentFavFilterSerieTv = 'all';
             selectedGenresSerieTv = [];
+            currentFilterPiattaformaSerieTv = 'all';
 
             document.getElementById('searchInpSerieTv').value = '';
             document.getElementById('sortSelSerieTv').value = 'title-asc';
@@ -1705,6 +1716,12 @@ function haProgressoStagioniParzialeSerieTv(titolo) {
         document.getElementById('searchInpSerieTv').oninput = function(e) { currentSearchSerieTv = e.target.value; renderListSerieTv(); };
         document.getElementById('sortSelSerieTv').onchange = renderListSerieTv;
         document.getElementById('btnResetFiltriSerieTv').onclick = resetFiltriSerieTv;
+        // Richiesta 66: filtro per piattaforma
+        let currentFilterPiattaformaSerieTv = 'all';
+        document.getElementById('filterPiattaformaSerieTv').onchange = function(e) {
+            currentFilterPiattaformaSerieTv = e.target.value;
+            renderListSerieTv();
+        };
 
         document.querySelectorAll('#filterGroupStatoSerieTv .filter-btn').forEach(btn => {
             btn.onclick = function(e) {
@@ -1918,5 +1935,102 @@ function haProgressoStagioniParzialeSerieTv(titolo) {
 
 
 
+
+        // ==========================================
+        //   📺 PIATTAFORME DI STREAMING (Richiesta 66)
+        //   Dove si trova oggi ogni serie/film in Italia (solo abbonamento o
+        //   gratis), dati TMDB forniti da JustWatch (citazione obbligatoria).
+        //   TMDB non tiene lo storico: si mostra sempre la situazione di oggi
+        //   (scelta dell'owner "rimpiazza"), ricontrollata ogni 7 giorni.
+        //   Salvate in serie_tv / cinema: piattaforme (jsonb [{nome, logo}]) e
+        //   piattaforme_agg (data dell'ultimo controllo).
+        // ==========================================
+        const GIORNI_AGGIORNA_PIATTAFORME_ = 7;
+
+        // Riga sotto il titolo: loghi 16 px + nomi. Vuota se non c'è niente.
+        function htmlPiattaforme_(piattaforme) {
+            if (!Array.isArray(piattaforme) || piattaforme.length === 0) return '';
+            const esc = function(s) { return String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); };
+            return '<div class="riga-piattaforme">' + piattaforme.map(function(p) {
+                return '<span class="piattaforma" title="Disponibile su ' + esc(p.nome) + ' (dati JustWatch)">' +
+                    (p.logo ? '<img src="' + esc(p.logo) + '" alt="" loading="lazy">' : '') + esc(p.nome) + '</span>';
+            }).join('') + '</div>';
+        }
+
+        function piattaformeDaAggiornare_(item) {
+            if (!item.piattaformeAgg) return true;
+            const eta = Date.now() - new Date(item.piattaformeAgg).getTime();
+            return isNaN(eta) || eta > GIORNI_AGGIORNA_PIATTAFORME_ * 24 * 3600 * 1000;
+        }
+
+        async function chiediPiattaforme_(tipo, ids) {
+            const res = await supabaseClient.functions.invoke('tmdb-proxy', { body: { action: 'watch_providers', tipo: tipo, ids: ids } });
+            if (res.error) throw new Error('TMDB non raggiungibile');
+            return (res.data && res.data.risultati) || {};
+        }
+
+        // Menu del filtro: "Tutte", le piattaforme presenti nella lista (in
+        // ordine di quanti titoli ne hanno) e "Nessuna piattaforma".
+        function aggiornaMenuPiattaforme_(idSelect, lista, valoreCorrente) {
+            const sel = document.getElementById(idSelect);
+            if (!sel) return;
+            const conteggi = {};
+            let senza = 0;
+            (lista || []).forEach(function(x) {
+                const p = (x && Array.isArray(x.piattaforme)) ? x.piattaforme : [];
+                if (p.length === 0) senza++;
+                p.forEach(function(q) { conteggi[q.nome] = (conteggi[q.nome] || 0) + 1; });
+            });
+            const nomi = Object.keys(conteggi).sort(function(a, b) { return conteggi[b] - conteggi[a] || a.localeCompare(b); });
+            const esc = function(s) { return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/"/g, '&quot;'); };
+            let html = '<option value="all">📺 Tutte le piattaforme</option>';
+            nomi.forEach(function(n) { html += '<option value="' + esc(n) + '">' + esc(n) + ' (' + conteggi[n] + ')</option>'; });
+            if (senza > 0) html += '<option value="__nessuna">Nessuna piattaforma (' + senza + ')</option>';
+            if (sel.innerHTML !== html) sel.innerHTML = html;
+            const valido = valoreCorrente === 'all' || valoreCorrente === '__nessuna' ? (valoreCorrente !== '__nessuna' || senza > 0) : !!conteggi[valoreCorrente];
+            sel.value = valido ? valoreCorrente : 'all';
+            sel.classList.toggle('filter-active', sel.value !== 'all');
+            return sel.value;
+        }
+
+        function passaFiltroPiattaforma_(item, filtro) {
+            if (!filtro || filtro === 'all') return true;
+            const p = Array.isArray(item.piattaforme) ? item.piattaforme : [];
+            if (filtro === '__nessuna') return p.length === 0;
+            return p.some(function(q) { return q.nome === filtro; });
+        }
+
+        // Serie TV (Richiesta 66): all'apertura della sezione e dopo un
+        // salvataggio, le serie mai controllate o controllate da più di 7 giorni
+        // ricevono le piattaforme di oggi, a gruppi di 25, in background.
+        let aggiornamentoPiattaformeSerieInCorso_ = false;
+        async function aggiornaPiattaformeSerieTv_() {
+            if (aggiornamentoPiattaformeSerieInCorso_) return;
+            const daFare = (serieTvList || []).filter(function(s) { return s && s.tmdbId && piattaformeDaAggiornare_(s); });
+            if (daFare.length === 0) return;
+            aggiornamentoPiattaformeSerieInCorso_ = true;
+            try {
+                for (let i = 0; i < daFare.length; i += 25) {
+                    const gruppo = daFare.slice(i, i + 25);
+                    let risultati;
+                    try { risultati = await chiediPiattaforme_('tv', gruppo.map(function(s) { return s.tmdbId; })); }
+                    catch (e) { console.error('Piattaforme serie non aggiornate: ' + e); break; }
+                    const adesso = new Date().toISOString();
+                    for (let k = 0; k < gruppo.length; k++) {
+                        const s = gruppo[k];
+                        const p = risultati[s.tmdbId];
+                        if (!Array.isArray(p)) continue; // TMDB non ha risposto per questa: si riprova la prossima volta
+                        const { error } = await supabaseClient.from('serie_tv')
+                            .update({ piattaforme: p, piattaforme_agg: adesso }).eq('titolo', s.titolo);
+                        if (error) { console.error('Salvataggio piattaforme di "' + s.titolo + '": ' + error.message); continue; }
+                        s.piattaforme = p;
+                        s.piattaformeAgg = adesso;
+                    }
+                    renderListSerieTv();
+                }
+            } finally {
+                aggiornamentoPiattaformeSerieInCorso_ = false;
+            }
+        }
 
         // ---- FINE SERIE TV ----

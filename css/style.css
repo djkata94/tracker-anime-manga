@@ -2810,3 +2810,39 @@ body {
 @media (prefers-reduced-motion: reduce) {
     .login-icona { animation: none; }
 }
+
+/* ==========================================================================
+   PIATTAFORME DI STREAMING (Richiesta 66)
+   Riga sotto il titolo di serie TV e film: logo 16 px + nome. Dati JustWatch
+   tramite TMDB, citati con la scritta .fonte-justwatch nei filtri.
+   ========================================================================== */
+.riga-piattaforme {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px 10px;
+    font-size: 11.5px;
+    font-weight: 600;
+    color: var(--text-muted);
+}
+.riga-piattaforme .piattaforma {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    white-space: nowrap;
+}
+.riga-piattaforme .piattaforma img {
+    width: 16px;
+    height: 16px;
+    border-radius: 4px;
+    flex-shrink: 0;
+    object-fit: cover;
+}
+.fonte-justwatch {
+    font-size: 11px;
+    color: var(--text-muted);
+    opacity: 0.75;
+    white-space: nowrap;
+}
+#filterPiattaformaSerieTv, #filterPiattaformaCinema {
+    max-width: 210px;
+}

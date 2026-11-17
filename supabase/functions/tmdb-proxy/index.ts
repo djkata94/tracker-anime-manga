@@ -88,6 +88,7 @@ Deno.serve(async (req) => {
       if (!dataUscitaIT && media.release_date) dataUscitaIT = media.release_date;
 
       const dettaglio = {
+        id: media.id, // Richiesta 66: salvato col film (cinema.tmdb_id)
         titolo: media.title || media.original_title || '',
         dataUscita: dataUscitaIT,
         immagine: immagine,
@@ -244,7 +245,79 @@ Deno.serve(async (req) => {
       return new Response(JSON.stringify(risultati), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
     }
 
-    return new Response(JSON.stringify({ error: 'Parametro "action" mancante o non valido (usa "search", "detail", "movie_recommendations", "tv_search", "tv_detail" o "tv_recommendations").' }), {
+    if (action === 'watch_providers') {
+      // Richiesta 66: piattaforme di streaming in Italia per più titoli in una
+      // chiamata (fino a 25). Solo abbonamento e gratis (flatrate, free, ads),
+      // niente noleggio/acquisto. Varianti come "with Ads" o "Amazon Channel"
+      // riunite nel servizio principale. Dati TMDB forniti da JustWatch.
+      const tipo = body.tipo === 'movie' ? 'movie' : 'tv';
+      const ids = (Array.isArray(body.ids) ? body.ids : []).map((x: any) => parseInt(x)).filter((x: number) => x > 0).slice(0, 25);
+      const nomi: Record<string, string> = {
+        'Amazon Prime Video': 'Prime Video', 'Disney Plus': 'Disney+', 'Paramount Plus': 'Paramount+',
+        'Paramount Plus Premium': 'Paramount+', 'Apple TV Plus': 'Apple TV+', 'MGM Plus': 'MGM+',
+        'Lionsgate Plus': 'Lionsgate+', 'Now TV': 'NOW', 'Rai Play': 'RaiPlay', 'Mediaset Infinity': 'Infinity',
+        'Infinity Selection': 'Infinity+'
+      };
+      const pulisci = (n: string) => {
+        const base = String(n || '')
+          .replace(/\s+(Standard|Basic|Essential)?\s*with Ads$/i, '')
+          .replace(/\s+(Amazon Channel|Apple TV Channel|Roku Premium Channel)$/i, '')
+          .trim();
+        return nomi[base] || base;
+      };
+      const risultati: Record<number, any[]> = {};
+      await Promise.all(ids.map(async (tid: number) => {
+        try {
+          const r = await fetch('https://api.themoviedb.org/3/' + tipo + '/' + tid + '/watch/providers?api_key=' + encodeURIComponent(apiKey));
+          const j = await r.json();
+          const it = (j && j.results && j.results.IT) || {};
+          const elenco = [].concat(it.flatrate || [], it.free || [], it.ads || []);
+          // Prima le voci "pulite" (il logo del servizio principale), poi per priorità TMDB
+          elenco.sort((a: any, b: any) => {
+            const va = pulisci(a.provider_name) === a.provider_name ? 0 : 1;
+            const vb = pulisci(b.provider_name) === b.provider_name ? 0 : 1;
+            return va - vb || (a.display_priority || 99) - (b.display_priority || 99);
+          });
+          const visti = new Set<string>();
+          const out: any[] = [];
+          elenco.forEach((p: any) => {
+            const nome = pulisci(p.provider_name);
+            if (!nome || visti.has(nome)) return;
+            visti.add(nome);
+            out.push({ nome, logo: p.logo_path ? ('https://image.tmdb.org/t/p/w45' + p.logo_path) : '', priorita: p.display_priority || 99 });
+          });
+          out.sort((a, b) => a.priorita - b.priorita);
+          risultati[tid] = out.map((p) => ({ nome: p.nome, logo: p.logo }));
+        } catch (_e) { /* titolo saltato: il sito riproverà */ }
+      }));
+      return new Response(JSON.stringify({ risultati }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+    }
+
+    if (action === 'movie_match') {
+      // Richiesta 66: trova l'ID TMDB di film salvati senza ID, con titolo e
+      // anno di uscita (±1). Solo abbinamenti sicuri: stesso titolo (italiano
+      // o originale) e stesso anno; altrimenti null.
+      const film = (Array.isArray(body.film) ? body.film : []).slice(0, 20);
+      const norma = (s: string) => String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, '');
+      const risultati = await Promise.all(film.map(async (f: any) => {
+        try {
+          const anno = parseInt(String(f.anno || '').substring(0, 4)) || 0;
+          const r = await fetch('https://api.themoviedb.org/3/search/movie?api_key=' + encodeURIComponent(apiKey)
+            + '&query=' + encodeURIComponent(f.titolo || '') + '&language=it-IT&include_adult=false');
+          const j = await r.json();
+          const t = norma(f.titolo);
+          const vicino = (m: any) => {
+            const a = parseInt(String(m.release_date || '').substring(0, 4)) || 0;
+            return !anno || !a || Math.abs(a - anno) <= 1;
+          };
+          const trovato = (j.results || []).slice(0, 10).find((m: any) => vicino(m) && (norma(m.title) === t || norma(m.original_title) === t));
+          return { titolo: f.titolo, id: trovato ? trovato.id : null };
+        } catch (_e) { return { titolo: f.titolo, id: null }; }
+      }));
+      return new Response(JSON.stringify({ risultati }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+    }
+
+    return new Response(JSON.stringify({ error: 'Parametro "action" mancante o non valido (usa "search", "detail", "movie_recommendations", "tv_search", "tv_detail", "tv_recommendations", "watch_providers" o "movie_match").' }), {
       status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' }
     });
   } catch (err) {

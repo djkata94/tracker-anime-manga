@@ -1154,6 +1154,11 @@ function statoBadgeLibro_(stato) {
         //   Nuove voci: aggiungere in CIMA all'array.
         // ==========================================
         const PATCH_NOTES = [
+            { v: '1.2.0', titolo: 'Dove guardare serie e film', data: '17/11/2026', punti: [
+                'Sotto il titolo di ogni serie TV e di ogni film vedi su quale piattaforma si trova oggi in Italia (Netflix, Prime Video, Disney+...), con il logo.',
+                'Nuovo filtro "Tutte le piattaforme" in Serie TV e Cinema: scegli una piattaforma e vedi solo quello che c\'è lì, oppure i titoli che non sono su nessuna.',
+                'Le piattaforme si aggiornano da sole ogni settimana: se un titolo cambia piattaforma, vedi quella nuova. Dati forniti da JustWatch.'
+            ] },
             { v: '1.1.9', titolo: 'Suggerimenti film migliori', data: '17/11/2026', punti: [
                 'Il 💡 dei film parte dal film giusto anche quando ci sono remake con lo stesso titolo (es. Il re leone del 2019, non quello del 1994).',
                 'Fino a 10 suggerimenti più gli altri da aprire, ordinati dal voto più alto, solo film dal 2000 in poi.',
