@@ -11,6 +11,16 @@
 import { createClient } from 'npm:@supabase/supabase-js@2.119.0';
 import { buildTrackerFeed, type AnimeRow, type LogRow, type MangaRow, type SerieRow } from './build.ts';
 import { APP_URL, FEED_TOKEN_SHA256, OWNER_USER_ID } from './config.ts';
+import {
+  buildItemDetail,
+  DETAIL_KINDS,
+  KIND_COLUMNS,
+  KIND_SOURCE,
+  type DetailKind,
+  type DetailLogRow,
+  type EpisodeRow,
+  type Row,
+} from './detail.ts';
 
 const json = (body: unknown, status = 200) =>
   new Response(JSON.stringify(body), {
@@ -50,6 +60,62 @@ Deno.serve(async (req) => {
   const db = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!, {
     auth: { persistSession: false, autoRefreshToken: false },
   });
+
+  // Scheda di una sola opera (?tipo=anime&titolo=...): la Dashboard la chiede al clic su un titolo.
+  const url = new URL(req.url);
+  const tipo = url.searchParams.get('tipo');
+  if (tipo !== null) {
+    const titolo = (url.searchParams.get('titolo') ?? '').trim();
+    if (!(DETAIL_KINDS as readonly string[]).includes(tipo) || !titolo || titolo.length > 300) {
+      return json({ errore: 'Richiesta della scheda non valida.' }, 400);
+    }
+    const kind = tipo as DetailKind;
+    const { table, media } = KIND_SOURCE[kind];
+    try {
+      const found = await db
+        .from(table)
+        .select(KIND_COLUMNS[kind])
+        .eq('user_id', OWNER_USER_ID)
+        .eq('titolo', titolo)
+        .limit(1);
+      const rows = must(found, 'scheda') as unknown as Row[];
+      if (rows.length === 0) return json({ errore: 'Opera non trovata nel tracker.' }, 404);
+      const [episodes, logs] = await Promise.all([
+        kind === 'anime'
+          ? db
+              .from('episodi_anime')
+              .select('tipo, numero, episodi_totali, episodi_visti')
+              .eq('user_id', OWNER_USER_ID)
+              .eq('anime_titolo', titolo)
+          : kind === 'serie'
+            ? db
+                .from('episodi_serie_tv')
+                .select('numero, anno, episodi_totali, episodi_visti')
+                .eq('user_id', OWNER_USER_ID)
+                .eq('serie_titolo', titolo)
+            : Promise.resolve({ data: [], error: null }),
+        db
+          .from('log_attivita')
+          .select('timestamp, tipo_evento, valore_nuovo')
+          .eq('user_id', OWNER_USER_ID)
+          .eq('tipo_media', media)
+          .eq('id_titolo', titolo)
+          .order('timestamp', { ascending: false })
+          .limit(10),
+      ]);
+      return json(
+        buildItemDetail({
+          kind,
+          row: rows[0],
+          episodes: must(episodes, 'episodi') as EpisodeRow[],
+          logs: must(logs, 'attività') as DetailLogRow[],
+          appUrl: APP_URL,
+        }),
+      );
+    } catch {
+      return json({ errore: 'Lettura del tracker non riuscita.' }, 500);
+    }
+  }
 
   try {
     const [anime, animeEp, series, seriesEp, manga, books, logs] = await Promise.all([

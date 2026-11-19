@@ -16,6 +16,11 @@ Se una regola qui è in conflitto con una richiesta esplicita di Gabriele, vale 
   repo pubblica `djkata94/tracker-anime-manga`). **Un push su main va subito online.**
 - Backend Supabase, ref `jcclzcyezqbhmxptlnoo`. RLS "solo le proprie righe" su tutte le tabelle.
   Edge Function: `tmdb-proxy`, `hardcover-proxy`, `tracker-feed` (in `supabase/functions/`).
+- `tracker-feed` (per la Dashboard personale, sola lettura, token `X-Feed-Token`) ha due usi: il
+  riassunto (senza parametri) e la **scheda di un'opera** (`?tipo=anime|serie|manga|film|libro&titolo=`,
+  `detail.ts`), che la Dashboard chiede solo al clic e mostra nella sua scheda laterale. La scheda
+  comprende le note personali (scelta di Gabriele del 19/11/2026). Se cambia una colonna letta,
+  aggiornare `KIND_COLUMNS` e provare le select sul database vero prima di pubblicare.
 - `supabaseClient` è una `const` globale, non `window.supabaseClient`.
 - Diario tecnico: `guida_migrazione.md` (una sezione "## Richiesta N" per ogni richiesta).
 
